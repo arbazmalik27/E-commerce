@@ -1,0 +1,11 @@
+{
+  "name": "trendvolt-ecommerce-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "test:backend": "npm run test:all --prefix backend",
+    "build:frontend": "npm run build --prefix frontend"
+  }
+}

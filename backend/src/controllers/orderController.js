@@ -1,6 +1,7 @@
 const Order = require('../models/Order')
 const Cart = require('../models/Cart')
 const Product = require('../models/Product')
+const User = require('../models/User')
 const {
   isValidObjectId,
   validateCreateOrderInput,
@@ -180,10 +181,78 @@ const updateOrderStatus = async (req, res) => {
   }
 }
 
+// GET /api/orders/admin/dashboard
+const getAdminDashboard = async (_req, res) => {
+  try {
+    const [
+      totalUsers,
+      totalProducts,
+      totalOrders,
+      revenueAgg,
+      pendingOrders,
+      processingOrders,
+      shippedOrders,
+      deliveredOrders,
+      recentOrders,
+    ] = await Promise.all([
+      User.countDocuments(),
+      Product.countDocuments(),
+      Order.countDocuments(),
+      Order.aggregate([
+        {
+          $match: {
+            paymentStatus: 'paid',
+            orderStatus: { $ne: 'cancelled' },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: '$totalAmount' },
+          },
+        },
+      ]),
+      Order.countDocuments({ orderStatus: 'pending' }),
+      Order.countDocuments({ orderStatus: 'processing' }),
+      Order.countDocuments({ orderStatus: 'shipped' }),
+      Order.countDocuments({ orderStatus: 'delivered' }),
+      Order.find()
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate('user', 'name email')
+        .select('orderNumber totalAmount orderStatus paymentStatus createdAt user')
+        .lean(),
+    ])
+
+    const totalRevenue =
+      revenueAgg.length > 0 && typeof revenueAgg[0].totalRevenue === 'number'
+        ? Number(revenueAgg[0].totalRevenue.toFixed(2))
+        : 0
+
+    return res.status(200).json({
+      success: true,
+      stats: {
+        totalUsers,
+        totalProducts,
+        totalOrders,
+        totalRevenue,
+        pendingOrders,
+        processingOrders,
+        shippedOrders,
+        deliveredOrders,
+      },
+      recentOrders,
+    })
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Server error' })
+  }
+}
+
 module.exports = {
   createOrder,
   getMyOrders,
   getOrderById,
   getAdminOrders,
   updateOrderStatus,
+  getAdminDashboard,
 }

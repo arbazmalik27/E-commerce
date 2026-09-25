@@ -4,6 +4,11 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import { selectIsAuthenticated } from '../features/auth/authSlice'
 import { addToCart } from '../features/cart/cartSlice'
+import {
+  addToWishlist,
+  removeFromWishlist,
+  selectIsInWishlist,
+} from '../features/wishlist/wishlistSlice'
 import api from '../services/api'
 import {
   getCategoryLabel,
@@ -19,6 +24,7 @@ function ProductDetailsPage() {
 
   // Product data & loading states
   const [product, setProduct] = useState(null)
+  const isInWishlist = useSelector(selectIsInWishlist(product?._id || id || ''))
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isNotFound, setIsNotFound] = useState(false)
@@ -244,9 +250,26 @@ function ProductDetailsPage() {
     }
   }
 
-  // Wishlist placeholder notification
-  const handleWishlist = () => {
-    setWishlistFeedback('Wishlist will be enabled in an upcoming release.')
+  // Wishlist toggle – dispatches real Redux actions, shows feedback
+  const handleWishlist = async () => {
+    if (!isAuthenticated) {
+      setWishlistFeedback('Please sign in to save items to your wishlist.')
+      setTimeout(() => setWishlistFeedback(null), 3000)
+      return
+    }
+    if (!product?._id) return
+
+    try {
+      if (isInWishlist) {
+        await dispatch(removeFromWishlist(product._id))
+        setWishlistFeedback('Removed from wishlist.')
+      } else {
+        await dispatch(addToWishlist(product._id))
+        setWishlistFeedback('Added to wishlist!')
+      }
+    } catch {
+      setWishlistFeedback('Unable to update wishlist. Please try again.')
+    }
     setTimeout(() => setWishlistFeedback(null), 3000)
   }
 
@@ -623,15 +646,20 @@ function ProductDetailsPage() {
                       <button
                         type="button"
                         onClick={handleWishlist}
-                        aria-label="Add to wishlist"
-                        className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full border border-white/15 bg-white/5 text-neutral-300 hover:text-red-400 hover:border-red-400/30 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                        aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+                        aria-pressed={isInWishlist}
+                        className={`min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full border transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
+                          isInWishlist
+                            ? 'bg-rose-500/15 border-rose-400/40 text-rose-400'
+                            : 'border-white/15 bg-white/5 text-neutral-300 hover:text-rose-400 hover:border-rose-400/30'
+                        }`}
                       >
                         <svg
                           className="h-4 w-4"
-                          fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
                           strokeWidth="1.75"
+                          fill={isInWishlist ? 'currentColor' : 'none'}
                           aria-hidden="true"
                         >
                           <path

@@ -270,10 +270,12 @@ const getWishlist = async (req, res) => {
     }
 
     // Return all wishlisted products; flag inactive ones so the UI can handle them safely
-    const products = (user.wishlist || []).map((product) => ({
-      ...product.toObject(),
-      _wishlisted: true,
-    }))
+    const products = (user.wishlist || [])
+      .filter(Boolean)
+      .map((product) => ({
+        ...(product.toObject ? product.toObject() : product),
+        _wishlisted: true,
+      }))
 
     return res.status(200).json({
       success: true,
@@ -318,9 +320,24 @@ const addToWishlist = async (req, res) => {
     user.wishlist.push(productId)
     await user.save()
 
+    // Return the updated populated wishlist so the client can sync in one round-trip
+    await user.populate({
+      path: 'wishlist',
+      model: 'Product',
+      select: 'name description price category department subcategory brand images stock isActive',
+    })
+
+    const products = (user.wishlist || [])
+      .filter(Boolean)
+      .map((p) => ({
+        ...(p.toObject ? p.toObject() : p),
+        _wishlisted: true,
+      }))
+
     return res.status(200).json({
       success: true,
       message: 'Added to wishlist',
+      wishlist: products,
     })
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Server error' })
@@ -345,9 +362,202 @@ const removeFromWishlist = async (req, res) => {
     user.wishlist = user.wishlist.filter((id) => id.toString() !== productId)
     await user.save()
 
+    // Return the updated populated wishlist so the client can sync in one round-trip
+    await user.populate({
+      path: 'wishlist',
+      model: 'Product',
+      select: 'name description price category department subcategory brand images stock isActive',
+    })
+
+    const products = (user.wishlist || [])
+      .filter(Boolean)
+      .map((p) => ({
+        ...(p.toObject ? p.toObject() : p),
+        _wishlisted: true,
+      }))
+
     return res.status(200).json({
       success: true,
       message: 'Removed from wishlist',
+      wishlist: products,
+    })
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Server error' })
+  }
+}
+
+// GET /api/users/admin
+const getAdminUsers = async (req, res) => {
+  const { search, role, status } = req.query
+
+  const filter = {}
+
+  if (search && typeof search === 'string' && search.trim().length > 0) {
+    const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    filter.$or = [
+      { name: { $regex: escaped, $options: 'i' } },
+      { email: { $regex: escaped, $options: 'i' } },
+    ]
+  }
+
+  if (role && ['customer', 'admin'].includes(role)) {
+    filter.role = role
+  }
+
+  if (status && ['active', 'disabled'].includes(status)) {
+    if (status === 'active') {
+      filter.isActive = { $ne: false }
+    } else {
+      filter.isActive = false
+    }
+  }
+
+  try {
+    const users = await User.find(filter)
+      .select('_id name email role isActive createdAt')
+      .sort({ createdAt: -1 })
+      .lean()
+
+    const sanitizedUsers = users.map((u) => ({
+      _id: u._id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      isActive: u.isActive !== false,
+      createdAt: u.createdAt,
+    }))
+
+    return res.status(200).json({
+      success: true,
+      count: sanitizedUsers.length,
+      users: sanitizedUsers,
+    })
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Server error' })
+  }
+}
+
+// PATCH /api/users/admin/:id/status
+const updateUserStatus = async (req, res) => {
+  const { id } = req.params
+  const { isActive } = req.body
+
+  if (!isValidObjectId(id)) {
+    return res.status(400).json({ success: false, message: 'Invalid user ID' })
+  }
+
+  if (typeof isActive !== 'boolean') {
+    return res.status(400).json({ success: false, message: 'isActive must be a boolean' })
+  }
+
+  // Security Rule 1: An admin cannot disable their own account
+  if (req.user.id.toString() === id && isActive === false) {
+    return res.status(400).json({
+      success: false,
+      message: 'You cannot disable your own administrator account',
+    })
+  }
+
+  try {
+    const targetUser = await User.findById(id)
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+
+    // Security Rule 2: Cannot disable the last remaining active admin
+    if (targetUser.role === 'admin' && isActive === false) {
+      const activeAdminCount = await User.countDocuments({
+        role: 'admin',
+        isActive: { $ne: false },
+      })
+
+      if (activeAdminCount <= 1) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot disable the last active administrator',
+        })
+      }
+    }
+
+    targetUser.isActive = isActive
+    await targetUser.save()
+
+    return res.status(200).json({
+      success: true,
+      message: `User account ${isActive ? 'activated' : 'disabled'} successfully`,
+      user: {
+        _id: targetUser._id,
+        name: targetUser.name,
+        email: targetUser.email,
+        role: targetUser.role,
+        isActive: targetUser.isActive !== false,
+        createdAt: targetUser.createdAt,
+      },
+    })
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Server error' })
+  }
+}
+
+// PATCH /api/users/admin/:id/role
+const updateUserRole = async (req, res) => {
+  const { id } = req.params
+  const { role } = req.body
+
+  if (!isValidObjectId(id)) {
+    return res.status(400).json({ success: false, message: 'Invalid user ID' })
+  }
+
+  if (!['customer', 'admin'].includes(role)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Role must be either "customer" or "admin"',
+    })
+  }
+
+  // Security Rule 1: An admin cannot change their own role
+  if (req.user.id.toString() === id) {
+    return res.status(400).json({
+      success: false,
+      message: 'You cannot modify your own administrator role',
+    })
+  }
+
+  try {
+    const targetUser = await User.findById(id)
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+
+    // Security Rule 2: Cannot demote the last remaining active admin
+    if (targetUser.role === 'admin' && role === 'customer') {
+      const activeAdminCount = await User.countDocuments({
+        role: 'admin',
+        isActive: { $ne: false },
+      })
+
+      if (activeAdminCount <= 1) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot demote the last remaining administrator',
+        })
+      }
+    }
+
+    targetUser.role = role
+    await targetUser.save()
+
+    return res.status(200).json({
+      success: true,
+      message: `User role updated to ${role} successfully`,
+      user: {
+        _id: targetUser._id,
+        name: targetUser.name,
+        email: targetUser.email,
+        role: targetUser.role,
+        isActive: targetUser.isActive !== false,
+        createdAt: targetUser.createdAt,
+      },
     })
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Server error' })
@@ -365,4 +575,7 @@ module.exports = {
   getWishlist,
   addToWishlist,
   removeFromWishlist,
+  getAdminUsers,
+  updateUserStatus,
+  updateUserRole,
 }

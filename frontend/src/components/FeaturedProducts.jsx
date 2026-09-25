@@ -338,16 +338,18 @@ function FeaturedProducts() {
         // Fashion-only fetch — backend now returns only fashion products,
         // but we explicitly filter as a defensive measure.
         const response = await api.get('/products', { params: { category: 'fashion' } })
+        const rawProducts = Array.isArray(response.data?.products)
+          ? response.data.products
+          : Array.isArray(response.data)
+          ? response.data
+          : []
         if (isMounted) {
-          if (response.data?.success && Array.isArray(response.data.products)) {
-            const activeList = response.data.products.filter((p) => p.isActive !== false)
-            setAllProducts(activeList)
-          } else {
-            setAllProducts([])
-          }
+          const activeList = rawProducts.filter((p) => p && p.isActive !== false)
+          setAllProducts(activeList)
         }
-      } catch {
+      } catch (err) {
         if (isMounted) {
+          console.error('FeaturedProducts failed to load products:', err?.message || err)
           setError('Unable to load featured products.')
         }
       } finally {
@@ -370,13 +372,15 @@ function FeaturedProducts() {
     setError(null)
     try {
       const response = await api.get('/products', { params: { category: 'fashion' } })
-      if (response.data?.success && Array.isArray(response.data.products)) {
-        const activeList = response.data.products.filter((p) => p.isActive !== false)
-        setAllProducts(activeList)
-      } else {
-        setAllProducts([])
-      }
-    } catch {
+      const rawProducts = Array.isArray(response.data?.products)
+        ? response.data.products
+        : Array.isArray(response.data)
+        ? response.data
+        : []
+      const activeList = rawProducts.filter((p) => p && p.isActive !== false)
+      setAllProducts(activeList)
+    } catch (err) {
+      console.error('FeaturedProducts retry failed:', err?.message || err)
       setError('Unable to load featured products.')
     } finally {
       setLoading(false)

@@ -11,10 +11,12 @@ import OrdersPage from '../pages/OrdersPage'
 import OrderDetailsPage from '../pages/OrderDetailsPage'
 import ProfilePage from '../pages/ProfilePage'
 import CartPage from '../pages/CartPage'
+import WishlistPage from '../pages/WishlistPage'
 import CheckoutPage from '../pages/CheckoutPage'
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage'
 import AdminProductsPage from '../pages/admin/AdminProductsPage'
 import AdminOrdersPage from '../pages/admin/AdminOrdersPage'
+import AdminUsersPage from '../pages/admin/AdminUsersPage'
 import NotFoundPage from '../pages/NotFoundPage'
 import ProtectedRoute from '../components/ProtectedRoute'
 import AdminRoute from '../components/AdminRoute'
@@ -104,6 +106,14 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/wishlist"
+          element={
+            <ProtectedRoute>
+              <WishlistPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Admin Routes */}
         <Route
@@ -127,6 +137,14 @@ function AppRoutes() {
           element={
             <AdminRoute>
               <AdminOrdersPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <AdminRoute>
+              <AdminUsersPage />
             </AdminRoute>
           }
         />

@@ -10,6 +10,7 @@ const cartRoutes = require('./routes/cartRoutes')
 const orderRoutes = require('./routes/orderRoutes')
 const paymentRoutes = require('./routes/paymentRoutes')
 const userRoutes = require('./routes/userRoutes')
+const newsletterRoutes = require('./routes/newsletterRoutes')
 
 const app = express()
 
@@ -57,5 +58,17 @@ app.use('/api/cart', cartRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/payments', paymentRoutes)
 app.use('/api/users', userRoutes)
+app.use('/api/newsletter', newsletterRoutes)
+
+// Centralized error handling middleware
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({ success: false, message: 'Invalid JSON payload' })
+  }
+  return res.status(err.status || 500).json({
+    success: false,
+    message: err.message && process.env.NODE_ENV !== 'production' ? err.message : 'Server error',
+  })
+})
 
 module.exports = app

@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "node scripts/test_taxonomy_kids.js"
+    "test": "node scripts/test_taxonomy_kids.js",
+    "test:featured": "node scripts/test_featured_products.js",
+    "test:all": "node scripts/test_taxonomy_kids.js && node scripts/test_pagination.js && node scripts/test_featured_products.js"
   },
   "keywords": [],
   "author": "",

@@ -1,16 +1,19 @@
 import { useState } from 'react'
 import Eyebrow from './Eyebrow'
+import api from '../services/api'
 
 function NewsletterCTA() {
   const [email, setEmail] = useState('')
-  const [status, setStatus] = useState('idle') // 'idle' | 'error' | 'success'
+  const [status, setStatus] = useState('idle') // 'idle' | 'submitting' | 'error' | 'success'
   const [errorMsg, setErrorMsg] = useState('')
+  const [successHeading, setSuccessHeading] = useState("You're on the list.")
+  const [successSub, setSuccessSub] = useState('Thanks for subscribing to TrendVolt.')
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (status === 'success') return
+    if (status === 'submitting' || status === 'success') return
 
     const trimmed = email.trim()
     if (!trimmed) {
@@ -25,14 +28,36 @@ function NewsletterCTA() {
       return
     }
 
-    setStatus('success')
-    setErrorMsg('')
+    try {
+      setStatus('submitting')
+      setErrorMsg('')
+
+      const response = await api.post('/newsletter/subscribe', { email: trimmed })
+
+      if (response.data?.alreadySubscribed) {
+        setSuccessHeading("You're already subscribed.")
+        setSuccessSub("You're already on our newsletter list.")
+      } else {
+        setSuccessHeading("You're subscribed. Welcome to TrendVolt.")
+        setSuccessSub('Thanks for subscribing to TrendVolt.')
+      }
+      setStatus('success')
+    } catch (err) {
+      setStatus('error')
+      const serverMsg =
+        err.response?.data?.message ||
+        err.response?.data?.errors?.email ||
+        'Unable to subscribe right now. Please try again later.'
+      setErrorMsg(serverMsg)
+    }
   }
 
   const handleReset = () => {
     setEmail('')
     setStatus('idle')
     setErrorMsg('')
+    setSuccessHeading("You're on the list.")
+    setSuccessSub('Thanks for subscribing to TrendVolt.')
   }
 
   return (
@@ -98,10 +123,10 @@ function NewsletterCTA() {
                     </svg>
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white">
-                    You&apos;re on the list.
+                    {successHeading}
                   </h3>
                   <p className="mt-1.5 text-xs sm:text-sm text-neutral-300">
-                    Thanks for subscribing to TrendVolt.
+                    {successSub}
                   </p>
                   <button
                     type="button"
@@ -125,6 +150,7 @@ function NewsletterCTA() {
                       id="newsletter-email"
                       type="email"
                       autoComplete="email"
+                      disabled={status === 'submitting'}
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value)
@@ -136,13 +162,14 @@ function NewsletterCTA() {
                       placeholder="Enter your email address"
                       aria-invalid={status === 'error'}
                       aria-describedby={status === 'error' ? 'newsletter-error' : undefined}
-                      className="flex-1 bg-transparent px-4 py-3 text-sm text-white placeholder-neutral-400 focus:outline-none min-w-0"
+                      className="flex-1 bg-transparent px-4 py-3 text-sm text-white placeholder-neutral-400 focus:outline-none min-w-0 disabled:opacity-60"
                     />
                     <button
                       type="submit"
-                      className="min-h-[44px] shrink-0 rounded-full bg-white px-7 py-3 text-xs font-bold uppercase tracking-wider text-neutral-950 transition-all hover:bg-neutral-200 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white shadow-md"
+                      disabled={status === 'submitting'}
+                      className="min-h-[44px] shrink-0 rounded-full bg-white px-7 py-3 text-xs font-bold uppercase tracking-wider text-neutral-950 transition-all hover:bg-neutral-200 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      Subscribe
+                      {status === 'submitting' ? 'Subscribing...' : 'Subscribe'}
                     </button>
                   </div>
 

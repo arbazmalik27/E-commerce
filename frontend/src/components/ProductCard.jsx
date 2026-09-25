@@ -3,6 +3,11 @@ import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
 import { selectIsAuthenticated } from '../features/auth/authSlice'
 import { addToCart } from '../features/cart/cartSlice'
+import {
+  addToWishlist,
+  removeFromWishlist,
+  selectIsInWishlist,
+} from '../features/wishlist/wishlistSlice'
 
 function ProductCard({
   product,
@@ -19,6 +24,8 @@ function ProductCard({
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const isAuthenticated = useSelector(selectIsAuthenticated)
+  const isInWishlist = useSelector(selectIsInWishlist(product._id))
+  const [wishlistBusy, setWishlistBusy] = useState(false)
 
   const hasImage =
     product.images &&
@@ -64,6 +71,28 @@ function ProductCard({
       setTimeout(() => setAddFeedback(null), 3000)
     } finally {
       setIsAdding(false)
+    }
+  }
+
+  const handleWishlistToggle = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (!isAuthenticated) {
+      navigate('/login')
+      return
+    }
+
+    if (wishlistBusy) return
+    setWishlistBusy(true)
+    try {
+      if (isInWishlist) {
+        await dispatch(removeFromWishlist(product._id))
+      } else {
+        await dispatch(addToWishlist(product._id))
+      }
+    } finally {
+      setWishlistBusy(false)
     }
   }
 
@@ -118,6 +147,34 @@ function ProductCard({
               </span>
             </div>
           )}
+          {/* Wishlist Heart Button (top-right overlay) */}
+          <button
+            type="button"
+            onClick={handleWishlistToggle}
+            disabled={wishlistBusy}
+            aria-label={isInWishlist ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
+            aria-pressed={isInWishlist}
+            className={`absolute top-2.5 right-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full backdrop-blur-md border transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 disabled:opacity-50 ${
+              isInWishlist
+                ? 'bg-rose-500/90 border-rose-400/60 text-white'
+                : 'bg-neutral-950/75 border-white/15 text-neutral-300 hover:text-rose-400 hover:border-rose-400/40'
+            }`}
+          >
+            <svg
+              className="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              fill={isInWishlist ? 'currentColor' : 'none'}
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+              />
+            </svg>
+          </button>
         </Link>
 
         {/* Editorial Details Bottom Area */}
@@ -246,15 +303,36 @@ function ProductCard({
           </span>
         </div>
 
-        {/* Real Department / Category Tag in Upper Right */}
-        {product.category && (
-          <div className="absolute top-2.5 right-2.5 z-10">
-            <span className="rounded-full border border-white/10 bg-neutral-950/75 px-2.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider text-neutral-300 backdrop-blur-md">
-              {product.category}
-            </span>
-          </div>
-        )}
+        {/* Wishlist Heart Button (top-right overlay) */}
+        <button
+          type="button"
+          onClick={handleWishlistToggle}
+          disabled={wishlistBusy}
+          aria-label={isInWishlist ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
+          aria-pressed={isInWishlist}
+          className={`absolute top-2.5 right-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full backdrop-blur-md border transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 disabled:opacity-50 opacity-0 group-hover:opacity-100 focus:opacity-100 ${
+            isInWishlist
+              ? '!opacity-100 bg-rose-500/90 border-rose-400/60 text-white'
+              : 'bg-neutral-950/75 border-white/15 text-neutral-300 hover:text-rose-400 hover:border-rose-400/40'
+          }`}
+        >
+          <svg
+            className="h-3.5 w-3.5"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            fill={isInWishlist ? 'currentColor' : 'none'}
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+            />
+          </svg>
+        </button>
       </Link>
+
 
       {/* Product Content Details */}
       <div className="flex flex-1 flex-col justify-between p-3.5 sm:p-4 lg:p-5">

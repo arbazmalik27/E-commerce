@@ -11,6 +11,11 @@ import {
   selectCartInitialized,
   selectCartTotalItems,
 } from '../features/cart/cartSlice'
+import {
+  fetchWishlist,
+  selectWishlistInitialized,
+  selectWishlistTotalItems,
+} from '../features/wishlist/wishlistSlice'
 
 function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -24,12 +29,17 @@ function Navbar() {
   const user = useSelector(selectUser)
   const cartTotalItems = useSelector(selectCartTotalItems)
   const cartInitialized = useSelector(selectCartInitialized)
+  const wishlistTotalItems = useSelector(selectWishlistTotalItems)
+  const wishlistInitialized = useSelector(selectWishlistInitialized)
 
   useEffect(() => {
     if (isAuthenticated && !cartInitialized) {
       dispatch(fetchCart())
     }
-  }, [dispatch, isAuthenticated, cartInitialized])
+    if (isAuthenticated && !wishlistInitialized) {
+      dispatch(fetchWishlist())
+    }
+  }, [dispatch, isAuthenticated, cartInitialized, wishlistInitialized])
 
   const handleLogout = async () => {
     await dispatch(logout())
@@ -186,6 +196,35 @@ function Navbar() {
                 </button>
               )}
 
+              {/* Wishlist Icon Link */}
+              {isAuthenticated && (
+                <Link
+                  to="/wishlist"
+                  aria-label={`Wishlist${wishlistTotalItems > 0 ? `, ${wishlistTotalItems} saved` : ''}`}
+                  className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-full text-neutral-300 hover:text-rose-400 hover:bg-white/10 transition-colors relative"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                    />
+                  </svg>
+                  {wishlistTotalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white leading-none shadow-sm">
+                      {wishlistTotalItems > 99 ? '99+' : wishlistTotalItems}
+                    </span>
+                  )}
+                </Link>
+              )}
+
               {/* Shopping Cart Button */}
               <Link
                 to="/cart"
@@ -336,6 +375,35 @@ function Navbar() {
                 </svg>
               </button>
 
+              {/* Wishlist (mobile) */}
+              {isAuthenticated && (
+                <Link
+                  to="/wishlist"
+                  aria-label={`Wishlist${wishlistTotalItems > 0 ? `, ${wishlistTotalItems} saved` : ''}`}
+                  className="min-w-[40px] min-h-[40px] flex items-center justify-center text-neutral-300 hover:text-rose-400 transition-colors relative"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                    />
+                  </svg>
+                  {wishlistTotalItems > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white leading-none shadow-sm">
+                      {wishlistTotalItems > 99 ? '99+' : wishlistTotalItems}
+                    </span>
+                  )}
+                </Link>
+              )}
+
               {/* Cart */}
               <Link
                 to="/cart"
@@ -471,6 +539,19 @@ function Navbar() {
                   className="px-3 py-2.5 rounded-xl text-purple-300 hover:bg-white/5 transition-colors"
                 >
                   Admin Portal
+                </Link>
+              )}
+
+              {isAuthenticated && (
+                <Link
+                  to="/wishlist"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors flex items-center justify-between"
+                >
+                  <span>Wishlist</span>
+                  {wishlistTotalItems > 0 && (
+                    <span className="text-xs font-semibold text-rose-400">{wishlistTotalItems}</span>
+                  )}
                 </Link>
               )}
 

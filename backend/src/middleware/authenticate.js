@@ -18,6 +18,10 @@ const authenticate = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Not authenticated' })
     }
 
+    if (user.isActive === false) {
+      return res.status(403).json({ success: false, message: 'Account has been disabled' })
+    }
+
     req.user = {
       id: user._id,
       name: user.name,

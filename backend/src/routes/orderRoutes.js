@@ -5,6 +5,7 @@ const {
   getOrderById,
   getAdminOrders,
   updateOrderStatus,
+  getAdminDashboard,
 } = require('../controllers/orderController')
 const authenticate = require('../middleware/authenticate')
 const authorize = require('../middleware/authorize')
@@ -19,6 +20,7 @@ router.post('/', createOrder)
 router.get('/', getMyOrders)
 
 // Admin endpoints (must define /admin before /:id)
+router.get('/admin/dashboard', authorize('admin'), getAdminDashboard)
 router.get('/admin', authorize('admin'), getAdminOrders)
 router.patch('/:id/status', authorize('admin'), updateOrderStatus)
 

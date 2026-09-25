@@ -14,21 +14,22 @@ function TrendingProducts() {
     const loadProducts = async () => {
       try {
         const response = await api.get('/products', { params: { category: 'fashion' } })
+        const rawProducts = Array.isArray(response.data?.products)
+          ? response.data.products
+          : Array.isArray(response.data)
+          ? response.data
+          : []
         if (isMounted) {
-          if (response.data?.success && Array.isArray(response.data.products)) {
-            // Filter strictly for active fashion items
-            const fashionProducts = response.data.products.filter(
-              (p) => p.isActive !== false && p.category === 'fashion'
-            )
-
-            // Display up to 8 real products to match the visual lookbook grid
-            setProducts(fashionProducts.slice(0, 8))
-          } else {
-            setProducts([])
-          }
+          // Filter strictly for active fashion items
+          const fashionProducts = rawProducts.filter(
+            (p) => p && p.isActive !== false && p.category === 'fashion'
+          )
+          // Display up to 8 real products to match the visual lookbook grid
+          setProducts(fashionProducts.slice(0, 8))
         }
-      } catch {
+      } catch (err) {
         if (isMounted) {
+          console.error('TrendingProducts failed to load products:', err?.message || err)
           setError('Unable to load fresh picks. Please check your connection and try again.')
         }
       } finally {
@@ -50,15 +51,17 @@ function TrendingProducts() {
     setError(null)
     try {
       const response = await api.get('/products', { params: { category: 'fashion' } })
-      if (response.data?.success && Array.isArray(response.data.products)) {
-        const fashionProducts = response.data.products.filter(
-          (p) => p.isActive !== false && p.category === 'fashion'
-        )
-        setProducts(fashionProducts.slice(0, 8))
-      } else {
-        setProducts([])
-      }
-    } catch {
+      const rawProducts = Array.isArray(response.data?.products)
+        ? response.data.products
+        : Array.isArray(response.data)
+        ? response.data
+        : []
+      const fashionProducts = rawProducts.filter(
+        (p) => p && p.isActive !== false && p.category === 'fashion'
+      )
+      setProducts(fashionProducts.slice(0, 8))
+    } catch (err) {
+      console.error('TrendingProducts retry failed:', err?.message || err)
       setError('Unable to load fresh picks. Please check your connection and try again.')
     } finally {
       setLoading(false)
