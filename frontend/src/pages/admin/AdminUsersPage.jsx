@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { selectUser } from '../../features/auth/authSlice'
 import api from '../../services/api'
 import Eyebrow from '../../components/Eyebrow'
+import AdminNav from '../../components/AdminNav'
 
 // ─── Formatters & Badges ───────────────────────────────────────────────────────
 
@@ -24,12 +24,12 @@ function RoleBadge({ role }) {
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold border ${
         isAdmin
-          ? 'bg-purple-500/15 border-purple-500/30 text-purple-300'
-          : 'bg-blue-500/15 border-blue-500/30 text-blue-300'
+          ? 'bg-[#34452F]/10 border-[#34452F]/25 text-[#34452F]'
+          : 'bg-[#FAF7F0] border-[#DED7CA] text-[#5F6057]'
       }`}
     >
       {isAdmin ? (
-        <svg className="w-3 h-3 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-3 h-3 text-[#34452F]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -38,7 +38,7 @@ function RoleBadge({ role }) {
           />
         </svg>
       ) : (
-        <svg className="w-3 h-3 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-3 h-3 text-[#5F6057]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -58,12 +58,12 @@ function StatusBadge({ isActive }) {
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold border ${
         active
-          ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
-          : 'bg-red-500/15 border-red-500/30 text-red-300'
+          ? 'bg-[#3F6B45]/10 border-[#3F6B45]/25 text-[#3F6B45]'
+          : 'bg-[#A65332]/10 border-[#A65332]/25 text-[#A65332]'
       }`}
     >
       <span
-        className={`h-1.5 w-1.5 rounded-full ${active ? 'bg-emerald-400' : 'bg-red-400'}`}
+        className={`h-1.5 w-1.5 rounded-full ${active ? 'bg-[#3F6B45]' : 'bg-[#A65332]'}`}
         aria-hidden="true"
       />
       {active ? 'Active' : 'Disabled'}
@@ -117,6 +117,8 @@ function AdminUsersPage() {
     async (isManualRefresh = false) => {
       if (isManualRefresh) {
         setIsRefreshing(true)
+      } else {
+        setLoading(true)
       }
       setError(null)
 
@@ -268,38 +270,42 @@ function AdminUsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white pt-24 pb-20 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-20 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* =========================================================================
+            SUB-NAVIGATION BAR
+           ========================================================================= */}
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <AdminNav />
+          <div className="flex items-center gap-2 text-xs font-medium text-[#5F6057]">
+            <span className="h-2 w-2 rounded-full bg-[#34452F]" />
+            <span>Store Membership & Access</span>
+          </div>
+        </div>
+
         {/* =========================================================================
             HEADER & NAVIGATION
            ========================================================================= */}
-        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-white/10 pb-6">
+        <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 pb-6 border-b border-[#DED7CA]">
           <div>
             <div className="flex items-center gap-3">
-              <Link
-                to="/admin"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-400 hover:text-purple-300 transition-colors uppercase tracking-wider"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                Admin Dashboard
-              </Link>
-              <span className="text-neutral-600">/</span>
-              <Eyebrow text="User Directory" />
+              <Eyebrow variant="olive">USER DIRECTORY</Eyebrow>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#34452F]/10 text-[#34452F] border border-[#34452F]/20">
+                Security & Roles
+              </span>
             </div>
 
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold tracking-tight text-[#1F211C]">
                 User Management
               </h1>
-              <span className="inline-flex items-center rounded-full bg-cyan-500/10 border border-cyan-500/30 px-2.5 py-0.5 text-xs font-mono font-bold text-cyan-300">
+              <span className="inline-flex items-center rounded-full bg-[#FAF7F0] border border-[#DED7CA] px-3 py-1 text-xs font-mono font-bold text-[#34452F]">
                 {totalCount} {totalCount === 1 ? 'Account' : 'Accounts'}
               </span>
             </div>
 
-            <p className="mt-1 text-sm text-neutral-400">
-              Inspect registered accounts, filter by role/status, toggle active login privileges, and configure admin roles.
+            <p className="mt-2 text-sm text-[#5F6057] max-w-2xl leading-relaxed">
+              Inspect registered customer accounts, filter by role/status, toggle active login privileges, and safely manage admin roles.
             </p>
           </div>
 
@@ -308,11 +314,11 @@ function AdminUsersPage() {
               type="button"
               onClick={() => fetchUsers(true)}
               disabled={loading || isRefreshing}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-200 text-xs font-semibold border border-white/10 transition-all cursor-pointer disabled:opacity-50"
+              className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FFFDF8] hover:bg-[#FAF7F0] text-[#1F211C] text-xs font-semibold border border-[#DED7CA] transition-all cursor-pointer disabled:opacity-50 shadow-xs"
               title="Refresh users directory"
             >
               <svg
-                className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-purple-400' : 'text-neutral-400'}`}
+                className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-[#34452F]' : 'text-[#5F6057]'}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -336,19 +342,19 @@ function AdminUsersPage() {
           <div
             role="status"
             aria-live="polite"
-            className={`p-4 rounded-xl border flex items-center justify-between gap-3 animate-in fade-in duration-200 shadow-lg ${
+            className={`p-4 rounded-xl border flex items-center justify-between gap-3 animate-in fade-in duration-200 shadow-xl ${
               toast.type === 'success'
-                ? 'bg-emerald-950/80 border-emerald-500/40 text-emerald-200'
-                : 'bg-red-950/80 border-red-500/40 text-red-200'
+                ? 'bg-[#34452F] border-[#263722] text-[#FFFDF8]'
+                : 'bg-[#A65332] border-[#8D4428] text-[#FFFDF8]'
             }`}
           >
             <div className="flex items-center gap-2.5">
               {toast.type === 'success' ? (
-                <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-[#FFFDF8] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               ) : (
-                <svg className="w-5 h-5 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-[#FFFDF8] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               )}
@@ -357,7 +363,7 @@ function AdminUsersPage() {
             <button
               type="button"
               onClick={() => setToast(null)}
-              className="text-neutral-400 hover:text-white p-1 rounded-md transition-colors"
+              className="text-white/70 hover:text-white p-1 rounded-md transition-colors"
               aria-label="Dismiss toast"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -372,7 +378,7 @@ function AdminUsersPage() {
            ========================================================================= */}
         <section
           aria-label="Search and filter users"
-          className="p-5 rounded-2xl bg-neutral-900/60 border border-white/10 shadow-xl backdrop-blur-md"
+          className="p-5 rounded-2xl bg-[#FFFDF8] border border-[#DED7CA] shadow-xs"
         >
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
             {/* Search Input */}
@@ -380,7 +386,7 @@ function AdminUsersPage() {
               <label htmlFor="user-search" className="sr-only">
                 Search users by name or email
               </label>
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#85857A]">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"
@@ -396,14 +402,14 @@ function AdminUsersPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by user name or email..."
-                className="w-full pl-10 pr-9 py-2.5 rounded-xl bg-neutral-950/80 border border-white/10 text-sm text-white placeholder-neutral-500 focus:outline-hidden focus:border-purple-400 transition-colors"
+                className="w-full pl-10 pr-9 py-2.5 rounded-xl bg-[#FAF7F0] border border-[#DED7CA] text-sm text-[#1F211C] placeholder-[#85857A] focus:outline-hidden focus:border-[#34452F] transition-colors"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
                   aria-label="Clear search"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 hover:text-white"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#85857A] hover:text-[#1F211C]"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -421,7 +427,7 @@ function AdminUsersPage() {
                 id="role-filter"
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="w-full py-2.5 px-3 rounded-xl bg-neutral-950/80 border border-white/10 text-sm text-neutral-200 focus:outline-hidden focus:border-purple-400 cursor-pointer transition-colors"
+                className="w-full py-2.5 px-3 rounded-xl bg-[#FAF7F0] border border-[#DED7CA] text-sm text-[#1F211C] focus:outline-hidden focus:border-[#34452F] cursor-pointer transition-colors"
               >
                 <option value="all">All Roles</option>
                 <option value="customer">Customers Only</option>
@@ -438,7 +444,7 @@ function AdminUsersPage() {
                 id="status-filter"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full py-2.5 px-3 rounded-xl bg-neutral-950/80 border border-white/10 text-sm text-neutral-200 focus:outline-hidden focus:border-purple-400 cursor-pointer transition-colors"
+                className="w-full py-2.5 px-3 rounded-xl bg-[#FAF7F0] border border-[#DED7CA] text-sm text-[#1F211C] focus:outline-hidden focus:border-[#34452F] cursor-pointer transition-colors"
               >
                 <option value="all">All Statuses</option>
                 <option value="active">Active Only</option>
@@ -452,30 +458,30 @@ function AdminUsersPage() {
             USERS CONTENT: LOADING, ERROR, EMPTY, OR LIST
            ========================================================================= */}
         {loading && (
-          <div className="p-12 rounded-2xl bg-neutral-900/40 border border-white/10 flex flex-col items-center justify-center space-y-4">
-            <svg className="w-8 h-8 text-purple-400 animate-spin" fill="none" viewBox="0 0 24 24">
+          <div className="p-12 rounded-2xl bg-[#FFFDF8] border border-[#DED7CA] flex flex-col items-center justify-center space-y-4 shadow-xs">
+            <svg className="w-8 h-8 text-[#34452F] animate-spin" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
             </svg>
-            <p className="text-sm text-neutral-400">Loading user accounts...</p>
+            <p className="text-sm text-[#5F6057]">Loading user accounts...</p>
           </div>
         )}
 
         {!loading && error && (
-          <div className="p-8 rounded-2xl bg-red-950/30 border border-red-500/30 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 mx-auto flex items-center justify-center text-red-400">
+          <div className="p-8 rounded-2xl bg-[#A65332]/10 border border-[#A65332]/30 text-center space-y-4 shadow-xs">
+            <div className="w-12 h-12 rounded-full bg-[#A65332]/15 border border-[#A65332]/25 mx-auto flex items-center justify-center text-[#A65332]">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">Failed to Load User Accounts</h2>
-              <p className="mt-1 text-sm text-red-300">{error}</p>
+              <h2 className="text-base font-bold text-[#1F211C]">Failed to Load User Accounts</h2>
+              <p className="mt-1 text-sm text-[#A65332]">{error}</p>
             </div>
             <button
               type="button"
               onClick={() => fetchUsers()}
-              className="px-4 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-200 text-xs font-semibold border border-red-500/30 transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-[#34452F] text-[#FFFDF8] hover:bg-[#263722] text-xs font-semibold transition-colors cursor-pointer"
             >
               Retry Loading
             </button>
@@ -483,15 +489,15 @@ function AdminUsersPage() {
         )}
 
         {!loading && !error && users.length === 0 && (
-          <div className="p-12 rounded-2xl bg-neutral-900/40 border border-white/10 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 mx-auto flex items-center justify-center text-neutral-400">
+          <div className="p-12 rounded-2xl bg-[#FFFDF8] border border-[#DED7CA] text-center space-y-4 shadow-xs">
+            <div className="w-12 h-12 rounded-full bg-[#FAF7F0] border border-[#DED7CA] mx-auto flex items-center justify-center text-[#5F6057]">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">No Users Found</h2>
-              <p className="mt-1 text-sm text-neutral-400">
+              <h2 className="text-base font-serif font-bold text-[#1F211C]">No Users Found</h2>
+              <p className="mt-1 text-sm text-[#5F6057]">
                 {searchQuery || roleFilter !== 'all' || statusFilter !== 'all'
                   ? 'No registered accounts match your active search or filter criteria.'
                   : 'There are currently no registered users in the database.'}
@@ -505,7 +511,7 @@ function AdminUsersPage() {
                   setRoleFilter('all')
                   setStatusFilter('all')
                 }}
-                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#1F211C] border border-[#DED7CA] text-xs font-semibold transition-colors cursor-pointer"
               >
                 Reset Filters
               </button>
@@ -517,20 +523,20 @@ function AdminUsersPage() {
             DESKTOP TABLE (Screens >= 768px)
            ========================================================================= */}
         {!loading && !error && users.length > 0 && (
-          <div className="hidden md:block rounded-2xl border border-white/10 bg-neutral-900/60 shadow-2xl backdrop-blur-md overflow-hidden">
+          <div className="hidden md:block rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-neutral-300">
-                <thead className="bg-neutral-950/70 border-b border-white/10 text-xs uppercase font-mono tracking-wider text-neutral-400">
+              <table className="w-full text-left text-sm text-[#1F211C]">
+                <thead className="bg-[#FAF7F0] border-b border-[#DED7CA] text-xs uppercase font-mono tracking-wider text-[#5F6057]">
                   <tr>
-                    <th scope="col" className="py-4 pl-6 pr-3">User</th>
-                    <th scope="col" className="py-4 px-3">Email Address</th>
-                    <th scope="col" className="py-4 px-3">Role</th>
-                    <th scope="col" className="py-4 px-3">Status</th>
-                    <th scope="col" className="py-4 px-3">Joined Date</th>
-                    <th scope="col" className="py-4 pl-3 pr-6 text-right">Actions</th>
+                    <th scope="col" className="py-4 pl-6 pr-3 font-semibold">User</th>
+                    <th scope="col" className="py-4 px-3 font-semibold">Email Address</th>
+                    <th scope="col" className="py-4 px-3 font-semibold">Role</th>
+                    <th scope="col" className="py-4 px-3 font-semibold">Status</th>
+                    <th scope="col" className="py-4 px-3 font-semibold">Joined Date</th>
+                    <th scope="col" className="py-4 pl-3 pr-6 text-right font-semibold">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-[#DED7CA]/70">
                   {users.map((user) => {
                     const isSelf = user._id === currentUserId
                     const isActive = user.isActive !== false
@@ -540,28 +546,28 @@ function AdminUsersPage() {
                     return (
                       <tr
                         key={user._id}
-                        className={`hover:bg-white/5 transition-colors ${
-                          isSelf ? 'bg-purple-950/15' : ''
+                        className={`hover:bg-[#FAF7F0] transition-colors ${
+                          isSelf ? 'bg-[#FAF7F0]/60' : ''
                         }`}
                       >
                         {/* User Identity */}
                         <td className="py-4 pl-6 pr-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-600/30 to-cyan-600/30 border border-white/10 flex items-center justify-center text-xs font-bold text-white shrink-0">
+                            <div className="w-9 h-9 rounded-full bg-[#EEE7DC] border border-[#DED7CA] flex items-center justify-center text-xs font-bold text-[#34452F] shrink-0">
                               {userInitial}
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
-                                <span className="font-semibold text-white truncate">
+                                <span className="font-semibold text-[#1F211C] truncate">
                                   {user.name || 'Unnamed User'}
                                 </span>
                                 {isSelf && (
-                                  <span className="shrink-0 px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 text-[10px] font-bold uppercase tracking-wider">
+                                  <span className="shrink-0 px-2 py-0.5 rounded-full bg-[#34452F]/10 border border-[#34452F]/30 text-[#34452F] text-[10px] font-bold uppercase tracking-wider">
                                     You
                                   </span>
                                 )}
                               </div>
-                              <span className="text-xs text-neutral-500 font-mono truncate block">
+                              <span className="text-xs text-[#85857A] font-mono truncate block">
                                 ID: {user._id}
                               </span>
                             </div>
@@ -569,7 +575,7 @@ function AdminUsersPage() {
                         </td>
 
                         {/* Email */}
-                        <td className="py-4 px-3 font-mono text-xs text-neutral-300">
+                        <td className="py-4 px-3 font-mono text-xs text-[#5F6057]">
                           {user.email}
                         </td>
 
@@ -584,7 +590,7 @@ function AdminUsersPage() {
                         </td>
 
                         {/* Joined Date */}
-                        <td className="py-4 px-3 text-xs text-neutral-400">
+                        <td className="py-4 px-3 text-xs text-[#5F6057]">
                           {formatDate(user.createdAt)}
                         </td>
 
@@ -592,7 +598,7 @@ function AdminUsersPage() {
                         <td className="py-4 pl-3 pr-6 text-right">
                           <div className="flex items-center justify-end gap-2">
                             {isSelf ? (
-                              <span className="text-xs text-neutral-500 italic pr-2">
+                              <span className="text-xs text-[#85857A] italic pr-2 font-medium">
                                 Current Admin
                               </span>
                             ) : (
@@ -603,8 +609,8 @@ function AdminUsersPage() {
                                   onClick={() => handleOpenRoleModal(user)}
                                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer active:scale-95 ${
                                     isAdmin
-                                      ? 'bg-amber-500/10 border-amber-500/20 text-amber-300 hover:bg-amber-500/20'
-                                      : 'bg-purple-500/10 border-purple-500/20 text-purple-300 hover:bg-purple-500/20'
+                                      ? 'bg-[#A86B2D]/10 border-[#A86B2D]/25 text-[#A86B2D] hover:bg-[#A86B2D]/20'
+                                      : 'bg-[#34452F]/10 border-[#34452F]/25 text-[#34452F] hover:bg-[#34452F]/20'
                                   }`}
                                   title={isAdmin ? 'Demote to Customer' : 'Promote to Admin'}
                                 >
@@ -617,8 +623,8 @@ function AdminUsersPage() {
                                   onClick={() => handleOpenStatusModal(user)}
                                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer active:scale-95 ${
                                     isActive
-                                      ? 'bg-red-500/10 border-red-500/20 text-red-300 hover:bg-red-500/20'
-                                      : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/20'
+                                      ? 'bg-[#A65332]/10 border-[#A65332]/25 text-[#A65332] hover:bg-[#A65332]/20'
+                                      : 'bg-[#3F6B45]/10 border-[#3F6B45]/25 text-[#3F6B45] hover:bg-[#3F6B45]/20'
                                   }`}
                                   title={isActive ? 'Disable User' : 'Enable User'}
                                 >
@@ -651,30 +657,30 @@ function AdminUsersPage() {
               return (
                 <article
                   key={user._id}
-                  className={`rounded-2xl border p-5 shadow-xl backdrop-blur-md space-y-4 ${
+                  className={`rounded-2xl border p-5 shadow-xs space-y-4 ${
                     isSelf
-                      ? 'bg-neutral-900/90 border-purple-500/30'
-                      : 'bg-neutral-900/70 border-white/10'
+                      ? 'bg-[#FFFDF8] border-[#34452F]/30'
+                      : 'bg-[#FFFDF8] border-[#DED7CA]'
                   }`}
                 >
                   {/* Card Header: Avatar, Name, Email, "You" Badge */}
-                  <div className="flex items-start justify-between gap-3 border-b border-white/5 pb-3">
+                  <div className="flex items-start justify-between gap-3 border-b border-[#DED7CA]/70 pb-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-600/30 to-cyan-600/30 border border-white/10 flex items-center justify-center text-sm font-bold text-white shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-[#EEE7DC] border border-[#DED7CA] flex items-center justify-center text-sm font-bold text-[#34452F] shrink-0">
                         {userInitial}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <h2 className="font-semibold text-white truncate text-sm">
+                          <h2 className="font-semibold text-[#1F211C] truncate text-sm">
                             {user.name || 'Unnamed User'}
                           </h2>
                           {isSelf && (
-                            <span className="shrink-0 px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 text-[10px] font-bold uppercase tracking-wider">
+                            <span className="shrink-0 px-2 py-0.5 rounded-full bg-[#34452F]/10 border border-[#34452F]/30 text-[#34452F] text-[10px] font-bold uppercase tracking-wider">
                               You
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-neutral-400 truncate font-mono">
+                        <p className="text-xs text-[#5F6057] truncate font-mono">
                           {user.email}
                         </p>
                       </div>
@@ -687,15 +693,15 @@ function AdminUsersPage() {
                       <RoleBadge role={user.role} />
                       <StatusBadge isActive={user.isActive} />
                     </div>
-                    <span className="text-neutral-500">
+                    <span className="text-[#85857A]">
                       Joined {formatDate(user.createdAt)}
                     </span>
                   </div>
 
                   {/* Card Actions */}
-                  <div className="pt-2 border-t border-white/5 flex items-center justify-end gap-2">
+                  <div className="pt-2 border-t border-[#DED7CA]/70 flex items-center justify-end gap-2">
                     {isSelf ? (
-                      <span className="text-xs text-neutral-500 italic py-1">
+                      <span className="text-xs text-[#85857A] italic py-1 font-medium">
                         Active Administrator (Self)
                       </span>
                     ) : (
@@ -705,8 +711,8 @@ function AdminUsersPage() {
                           onClick={() => handleOpenRoleModal(user)}
                           className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-colors cursor-pointer text-center ${
                             isAdmin
-                              ? 'bg-amber-500/10 border-amber-500/20 text-amber-300 hover:bg-amber-500/20'
-                              : 'bg-purple-500/10 border-purple-500/20 text-purple-300 hover:bg-purple-500/20'
+                              ? 'bg-[#A86B2D]/10 border-[#A86B2D]/25 text-[#A86B2D] hover:bg-[#A86B2D]/20'
+                              : 'bg-[#34452F]/10 border-[#34452F]/25 text-[#34452F] hover:bg-[#34452F]/20'
                           }`}
                         >
                           {isAdmin ? 'Demote to Customer' : 'Promote to Admin'}
@@ -716,8 +722,8 @@ function AdminUsersPage() {
                           onClick={() => handleOpenStatusModal(user)}
                           className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-colors cursor-pointer text-center ${
                             isActive
-                              ? 'bg-red-500/10 border-red-500/20 text-red-300 hover:bg-red-500/20'
-                              : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/20'
+                              ? 'bg-[#A65332]/10 border-[#A65332]/25 text-[#A65332] hover:bg-[#A65332]/20'
+                              : 'bg-[#3F6B45]/10 border-[#3F6B45]/25 text-[#3F6B45] hover:bg-[#3F6B45]/20'
                           }`}
                         >
                           {isActive ? 'Disable User' : 'Enable User'}
@@ -736,13 +742,13 @@ function AdminUsersPage() {
            ========================================================================= */}
         {modal && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-150"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1F211C]/60 backdrop-blur-xs animate-in fade-in duration-150"
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-headline"
           >
             <div
-              className="relative w-full max-w-md rounded-2xl bg-neutral-900 border border-white/10 p-6 shadow-2xl space-y-5"
+              className="relative w-full max-w-md rounded-3xl bg-[#FFFDF8] border border-[#DED7CA] p-6 sm:p-7 shadow-2xl space-y-5 text-[#1F211C]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header Icon + Title */}
@@ -750,8 +756,8 @@ function AdminUsersPage() {
                 <div
                   className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
                     modal.isDanger
-                      ? 'bg-red-500/10 border-red-500/20 text-red-400'
-                      : 'bg-purple-500/10 border-purple-500/20 text-purple-400'
+                      ? 'bg-[#A65332]/10 border-[#A65332]/25 text-[#A65332]'
+                      : 'bg-[#34452F]/10 border-[#34452F]/25 text-[#34452F]'
                   }`}
                 >
                   {modal.isDanger ? (
@@ -775,22 +781,22 @@ function AdminUsersPage() {
                   )}
                 </div>
                 <div>
-                  <h2 id="modal-headline" className="text-base font-bold text-white">
+                  <h2 id="modal-headline" className="text-base font-serif font-bold text-[#1F211C]">
                     {modal.title}
                   </h2>
-                  <p className="mt-1 text-xs sm:text-sm text-neutral-300 leading-relaxed">
+                  <p className="mt-1 text-xs sm:text-sm text-[#5F6057] leading-relaxed">
                     {modal.message}
                   </p>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-2 flex items-center justify-end gap-3 border-t border-white/5">
+              <div className="pt-2 flex items-center justify-end gap-3 border-t border-[#DED7CA]/70">
                 <button
                   type="button"
                   onClick={() => setModal(null)}
                   disabled={isSubmittingAction}
-                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 text-xs font-semibold border border-white/10 transition-colors cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#1F211C] text-xs font-semibold border border-[#DED7CA] transition-colors cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -798,10 +804,10 @@ function AdminUsersPage() {
                   type="button"
                   onClick={handleConfirmModalAction}
                   disabled={isSubmittingAction}
-                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-2 active:scale-95 disabled:opacity-50 ${
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-2 active:scale-95 disabled:opacity-50 shadow-sm ${
                     modal.isDanger
-                      ? 'bg-red-600 hover:bg-red-500 text-white'
-                      : 'bg-purple-600 hover:bg-purple-500 text-white'
+                      ? 'bg-[#A65332] hover:bg-[#8D4428] text-[#FFFDF8]'
+                      : 'bg-[#34452F] hover:bg-[#263722] text-[#FFFDF8]'
                   }`}
                 >
                   {isSubmittingAction && (

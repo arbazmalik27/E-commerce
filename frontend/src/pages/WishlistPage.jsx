@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
+import Eyebrow from '../components/Eyebrow'
 import {
   fetchWishlist,
   removeFromWishlist,
@@ -19,6 +20,7 @@ function WishlistPage() {
   const error = useSelector(selectWishlistError)
 
   useEffect(() => {
+    window.scrollTo(0, 0)
     dispatch(fetchWishlist())
   }, [dispatch])
 
@@ -27,29 +29,25 @@ function WishlistPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-neutral-950 text-white pt-28 sm:pt-32 lg:pt-36 pb-24 overflow-hidden">
-      {/* Ambient glow */}
-      <div
-        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-b from-rose-600/10 via-purple-900/5 to-transparent blur-3xl opacity-60 -z-10"
-        aria-hidden="true"
-      />
-
+    <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-24 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* ── Page Header ─────────────────────────────────────────────────── */}
-        <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-              My Wishlist
-            </h1>
-            {initialized && !loading && items.length > 0 && (
-              <p className="mt-1 text-sm text-neutral-400">
-                {items.length} {items.length === 1 ? 'item' : 'items'} saved
-              </p>
-            )}
+
+        {/* ── Breadcrumbs & Back Link ──────────────────────────────────────── */}
+        <nav
+          aria-label="Breadcrumb"
+          className="mb-6 flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm text-[#5F6057]"
+        >
+          <div className="flex items-center gap-2">
+            <Link to="/" className="hover:text-[#1F211C] transition-colors">
+              Home
+            </Link>
+            <span aria-hidden="true" className="text-[#DED7CA]">/</span>
+            <span className="text-[#1F211C] font-semibold">Wishlist</span>
           </div>
+
           <Link
             to="/products"
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-neutral-300 hover:text-white hover:border-white/30 hover:bg-white/10 transition-all"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#34452F] hover:text-[#263722] transition-colors"
           >
             <svg
               className="h-3.5 w-3.5"
@@ -59,14 +57,30 @@ function WishlistPage() {
               strokeWidth="2.5"
               aria-hidden="true"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
             </svg>
-            Continue Shopping
+            <span>Continue Shopping</span>
           </Link>
+        </nav>
+
+        {/* ── Page Header ─────────────────────────────────────────────────── */}
+        <div className="mb-8 sm:mb-10">
+          <Eyebrow variant="terracotta" className="mb-3">CURATED SELECTIONS</Eyebrow>
+          <div className="flex flex-wrap items-baseline justify-between gap-4">
+            <div>
+              <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-[#1F211C] tracking-tight mb-2">
+                My Wishlist
+              </h1>
+              <p className="text-sm sm:text-base text-[#5F6057]">
+                Saved pieces and personal favorites from the TrendVolt collection.
+              </p>
+            </div>
+            {initialized && !loading && items.length > 0 && (
+              <span className="text-xs font-mono uppercase tracking-wider text-[#85857A]">
+                {items.length} {items.length === 1 ? 'piece' : 'pieces'} saved
+              </span>
+            )}
+          </div>
         </div>
 
         {/* ── Loading Skeleton ─────────────────────────────────────────────── */}
@@ -74,18 +88,18 @@ function WishlistPage() {
           <div
             aria-busy="true"
             aria-label="Loading wishlist"
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 animate-pulse"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-pulse"
           >
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="rounded-2xl border border-white/10 bg-neutral-900/70 overflow-hidden"
+                className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] overflow-hidden"
               >
-                <div className="aspect-[4/5] bg-white/5" />
-                <div className="p-4 space-y-2">
-                  <div className="h-4 w-3/4 rounded bg-white/10" />
-                  <div className="h-4 w-1/2 rounded bg-white/5" />
-                  <div className="h-8 w-full rounded-full bg-white/10 mt-3" />
+                <div className="aspect-[4/5] bg-[#EEE7DC]" />
+                <div className="p-4 space-y-2.5">
+                  <div className="h-4 w-3/4 rounded bg-[#EEE7DC]" />
+                  <div className="h-3.5 w-1/2 rounded bg-[#EEE7DC]" />
+                  <div className="h-9 w-full rounded-xl bg-[#EEE7DC] mt-3" />
                 </div>
               </div>
             ))}
@@ -96,9 +110,9 @@ function WishlistPage() {
         {!loading && error && (
           <div
             role="alert"
-            className="rounded-3xl border border-red-500/20 bg-neutral-900/90 p-8 text-center max-w-md mx-auto shadow-2xl"
+            className="rounded-2xl border border-[#A65332]/30 bg-[#FFFDF8] p-8 sm:p-12 text-center max-w-md mx-auto shadow-xs"
           >
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10 text-red-400 mb-4 border border-red-500/30">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#A65332]/10 text-[#A65332] mb-4 border border-[#A65332]/30">
               <svg
                 className="h-7 w-7"
                 fill="none"
@@ -114,14 +128,14 @@ function WishlistPage() {
                 />
               </svg>
             </div>
-            <h2 className="text-xl font-bold text-white mb-2">
+            <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#1F211C] mb-2">
               Unable to Load Wishlist
             </h2>
-            <p className="text-sm text-neutral-400 mb-6">{error}</p>
+            <p className="text-sm text-[#5F6057] mb-6">{error}</p>
             <button
               type="button"
               onClick={() => dispatch(fetchWishlist())}
-              className="min-h-[44px] inline-flex items-center justify-center rounded-full bg-white px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-neutral-950 transition-all hover:bg-neutral-200 active:scale-95 cursor-pointer"
+              className="min-h-[44px] inline-flex items-center justify-center rounded-xl bg-[#34452F] hover:bg-[#263722] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-[#FFFDF8] transition-all active:scale-95 cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
             >
               Retry
             </button>
@@ -130,10 +144,10 @@ function WishlistPage() {
 
         {/* ── Empty State ──────────────────────────────────────────────────── */}
         {!loading && !error && initialized && items.length === 0 && (
-          <div className="flex flex-col items-center justify-center text-center py-24">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-white/10 bg-white/5 text-neutral-500">
+          <div className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-10 sm:p-16 text-center max-w-xl mx-auto shadow-xs my-4">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#A65332]/10 border border-[#A65332]/20 text-[#A65332]">
               <svg
-                className="h-10 w-10"
+                className="h-8 w-8"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -147,15 +161,16 @@ function WishlistPage() {
                 />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">
+            <Eyebrow variant="terracotta" className="mb-3">YOUR WISHLIST</Eyebrow>
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#1F211C] tracking-tight mb-2">
               Your wishlist is empty
             </h2>
-            <p className="text-sm text-neutral-400 max-w-xs mb-8">
-              Save products you love by clicking the heart icon on any product card or product page.
+            <p className="text-sm text-[#5F6057] max-w-sm mx-auto mb-8 leading-relaxed">
+              Save products you love by clicking the heart icon on any product card or editorial collection.
             </p>
             <Link
               to="/products"
-              className="inline-flex items-center justify-center rounded-full bg-white px-8 py-3.5 text-xs font-bold uppercase tracking-wider text-neutral-950 transition-all hover:bg-neutral-200 active:scale-95 shadow-xl"
+              className="min-h-[44px] inline-flex items-center justify-center rounded-xl bg-[#34452F] hover:bg-[#263722] px-8 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FFFDF8] transition-all active:scale-95 shadow-xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
             >
               Explore Products
             </Link>
@@ -164,7 +179,7 @@ function WishlistPage() {
 
         {/* ── Product Grid ─────────────────────────────────────────────────── */}
         {!loading && !error && items.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {items.map((product) => (
               <div key={product._id} className="relative group/wishitem">
                 <ProductCard
@@ -177,7 +192,7 @@ function WishlistPage() {
                   type="button"
                   aria-label={`Remove ${product.name} from wishlist`}
                   onClick={() => handleRemove(product._id)}
-                  className="absolute top-4 right-4 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-neutral-950/80 border border-white/15 text-rose-400 hover:bg-rose-500 hover:text-white hover:border-rose-400 transition-all shadow-lg backdrop-blur-sm opacity-0 group-hover/wishitem:opacity-100 focus:opacity-100 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+                  className="absolute top-4 right-4 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-[#FFFDF8]/90 border border-[#DED7CA] text-[#A65332] hover:bg-[#A65332] hover:text-[#FFFDF8] hover:border-[#A65332] transition-all shadow-xs opacity-0 group-hover/wishitem:opacity-100 focus:opacity-100 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A65332]"
                 >
                   <svg
                     className="h-3.5 w-3.5"

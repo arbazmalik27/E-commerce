@@ -9,6 +9,7 @@ import {
 import api from '../services/api'
 import { loadRazorpayScript } from '../utils/loadRazorpay'
 import Eyebrow from '../components/Eyebrow'
+import { getProductImage } from '../utils/productImageMap'
 
 function CheckoutPage() {
   const dispatch = useDispatch()
@@ -838,7 +839,7 @@ function CheckoutPage() {
   // =========================================================================
   if (cartInitialized && (!items || items.length === 0)) {
     return (
-      <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-24 overflow-hidden">
+      <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-28 sm:pt-32 lg:pt-36 pb-20 overflow-hidden">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-10 sm:p-14 shadow-xs">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#34452F]/10 text-[#34452F] mb-6 border border-[#34452F]/20">
@@ -900,7 +901,7 @@ function CheckoutPage() {
   // MAIN CHECKOUT FORM & SUMMARY
   // =========================================================================
   return (
-    <div className="min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-24">
+    <div className="min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-28 sm:pt-32 lg:pt-36 pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb & Navigation */}
         <nav
@@ -986,10 +987,10 @@ function CheckoutPage() {
           {/* =================================================================
               LEFT COLUMN: SHIPPING FORM
              ================================================================= */}
-          <div className="lg:col-span-7">
+          <div className="lg:col-span-7 min-w-0">
             <section
               aria-labelledby="shipping-heading"
-              className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-6 sm:p-8 shadow-xs"
+              className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-5 sm:p-7 lg:p-8 shadow-xs"
             >
               <div className="flex items-center gap-3 mb-6">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#34452F] text-[#FFFDF8] text-xs font-bold font-mono">
@@ -1031,7 +1032,7 @@ function CheckoutPage() {
                           setErrors({})
                         }
                       }}
-                      className="min-h-[40px] px-3 py-1.5 rounded-xl border border-[#DED7CA] bg-[#FFFDF8] text-xs text-[#1F211C] focus:outline-none focus:border-[#34452F] cursor-pointer"
+                      className="w-full sm:w-auto max-w-full truncate min-h-[40px] px-3 py-1.5 rounded-xl border border-[#DED7CA] bg-[#FFFDF8] text-xs text-[#1F211C] focus:outline-none focus:border-[#34452F] cursor-pointer"
                     >
                       <option value="">Select an address...</option>
                       {savedAddresses.map((addr) => (
@@ -1062,7 +1063,7 @@ function CheckoutPage() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     placeholder="e.g. Rahul Sharma"
-                    className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 ${
+                    className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 scroll-mt-32 ${
                       touched.fullName && errors.fullName
                         ? 'border-[#A65332]/60 focus:border-[#A65332] focus:ring-[#A65332]/20'
                         : 'border-[#DED7CA] focus:border-[#34452F] focus:ring-[#34452F]/20'
@@ -1092,7 +1093,7 @@ function CheckoutPage() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     placeholder="e.g. +91 98765 43210"
-                    className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 ${
+                    className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 scroll-mt-32 ${
                       touched.phone && errors.phone
                         ? 'border-[#A65332]/60 focus:border-[#A65332] focus:ring-[#A65332]/20'
                         : 'border-[#DED7CA] focus:border-[#34452F] focus:ring-[#34452F]/20'
@@ -1122,7 +1123,7 @@ function CheckoutPage() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     placeholder="Apartment, suite, unit, building, floor, street"
-                    className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 ${
+                    className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 scroll-mt-32 ${
                       touched.addressLine && errors.addressLine
                         ? 'border-[#A65332]/60 focus:border-[#A65332] focus:ring-[#A65332]/20'
                         : 'border-[#DED7CA] focus:border-[#34452F] focus:ring-[#34452F]/20'
@@ -1153,7 +1154,7 @@ function CheckoutPage() {
                       onChange={handleChange}
                       onBlur={handleBlur}
                       placeholder="e.g. Mumbai"
-                      className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 ${
+                      className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 scroll-mt-32 ${
                         touched.city && errors.city
                           ? 'border-[#A65332]/60 focus:border-[#A65332] focus:ring-[#A65332]/20'
                           : 'border-[#DED7CA] focus:border-[#34452F] focus:ring-[#34452F]/20'
@@ -1182,7 +1183,7 @@ function CheckoutPage() {
                       onChange={handleChange}
                       onBlur={handleBlur}
                       placeholder="e.g. Maharashtra"
-                      className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 ${
+                      className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 scroll-mt-32 ${
                         touched.state && errors.state
                           ? 'border-[#A65332]/60 focus:border-[#A65332] focus:ring-[#A65332]/20'
                           : 'border-[#DED7CA] focus:border-[#34452F] focus:ring-[#34452F]/20'
@@ -1214,7 +1215,7 @@ function CheckoutPage() {
                       onChange={handleChange}
                       onBlur={handleBlur}
                       placeholder="e.g. 400001"
-                      className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 ${
+                      className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 scroll-mt-32 ${
                         touched.postalCode && errors.postalCode
                           ? 'border-[#A65332]/60 focus:border-[#A65332] focus:ring-[#A65332]/20'
                           : 'border-[#DED7CA] focus:border-[#34452F] focus:ring-[#34452F]/20'
@@ -1243,7 +1244,7 @@ function CheckoutPage() {
                       onChange={handleChange}
                       onBlur={handleBlur}
                       placeholder="e.g. India"
-                      className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 ${
+                      className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 scroll-mt-32 ${
                         touched.country && errors.country
                           ? 'border-[#A65332]/60 focus:border-[#A65332] focus:ring-[#A65332]/20'
                           : 'border-[#DED7CA] focus:border-[#34452F] focus:ring-[#34452F]/20'
@@ -1318,10 +1319,10 @@ function CheckoutPage() {
           {/* =================================================================
               RIGHT COLUMN: ORDER SUMMARY
              ================================================================= */}
-          <div className="lg:col-span-5">
+          <div className="lg:col-span-5 min-w-0">
             <aside
               aria-labelledby="summary-heading"
-              className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-6 sm:p-8 shadow-xs sticky top-28 space-y-6"
+              className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-5 sm:p-7 lg:p-8 shadow-xs lg:sticky lg:top-28 space-y-6"
             >
               <div className="flex items-center justify-between pb-4 border-b border-[#DED7CA]">
                 <h2
@@ -1339,10 +1340,7 @@ function CheckoutPage() {
               <div className="space-y-3.5 max-h-72 overflow-y-auto pr-1">
                 {items.map((item) => {
                   const product = item.product || {}
-                  const imageUrl =
-                    Array.isArray(product.images) && product.images.length > 0
-                      ? product.images[0]
-                      : null
+                  const imageUrl = getProductImage(product || item)
                   const price = typeof product.price === 'number' ? product.price : 0
                   const itemTotal =
                     typeof item.itemTotal === 'number' ? item.itemTotal : price * item.quantity
@@ -1372,8 +1370,8 @@ function CheckoutPage() {
                           Qty: {item.quantity} × ₹{price.toLocaleString('en-IN')}
                         </p>
                       </div>
-                      <div className="text-right shrink-0">
-                        <span className="font-serif text-xs font-bold text-[#1F211C]">
+                      <div className="text-right shrink-0 pl-2">
+                        <span className="font-serif text-xs font-bold text-[#1F211C] whitespace-nowrap">
                           ₹{Number(itemTotal).toLocaleString('en-IN')}
                         </span>
                       </div>

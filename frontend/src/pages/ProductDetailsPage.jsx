@@ -16,6 +16,7 @@ import {
   getDepartmentLabel,
   getSubcategoryLabel,
 } from '../constants/taxonomy'
+import { getProductImage } from '../utils/productImageMap'
 
 function ProductDetailsPage() {
   const { id } = useParams()
@@ -30,9 +31,8 @@ function ProductDetailsPage() {
   const [error, setError] = useState(null)
   const [isNotFound, setIsNotFound] = useState(false)
 
-  // Gallery state
-  const [activeImageIndex, setActiveImageIndex] = useState(0)
-  const [imageErrors, setImageErrors] = useState({})
+  // Image error state
+  const [imageError, setImageError] = useState(false)
 
   // Purchase states
   const [quantity, setQuantity] = useState(1)
@@ -56,7 +56,7 @@ function ProductDetailsPage() {
       setLoading(true)
       setError(null)
       setIsNotFound(false)
-      setActiveImageIndex(0)
+      setImageError(false)
       setQuantity(1)
       setCartSuccessMessage(null)
       setCartErrorMessage(null)
@@ -132,13 +132,8 @@ function ProductDetailsPage() {
     }
   }, [product])
 
-  // Images list sanitization
-  const validImages =
-    product?.images && Array.isArray(product.images)
-      ? product.images.filter((img) => typeof img === 'string' && img.trim().length > 0)
-      : []
-
-  const activeImage = validImages[activeImageIndex] || null
+  // Canonical product image via getProductImage
+  const displayImage = getProductImage(product)
   const isAvailable = (product?.stock ?? 0) > 0
   const maxAllowedQuantity = Math.max(1, product?.stock ?? 1)
 
@@ -278,6 +273,7 @@ function ProductDetailsPage() {
   const handleRetry = async () => {
     setLoading(true)
     setError(null)
+    setImageError(false)
     try {
       const response = await api.get(`/products/${id}`)
       if (response.data?.success && response.data.product) {
@@ -381,14 +377,9 @@ function ProductDetailsPage() {
             className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-6 sm:p-8 lg:p-12 shadow-xs animate-pulse"
           >
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-              {/* Gallery Skeleton */}
-              <div className="lg:col-span-6 flex flex-col gap-4">
-                <div className="aspect-square w-full rounded-xl bg-[#EEE7DC]" />
-                <div className="flex gap-3">
-                  <div className="h-16 w-16 rounded-lg bg-[#EEE7DC]" />
-                  <div className="h-16 w-16 rounded-lg bg-[#EEE7DC]" />
-                  <div className="h-16 w-16 rounded-lg bg-[#EEE7DC]" />
-                </div>
+              {/* Product Image Skeleton */}
+              <div className="lg:col-span-6 flex flex-col">
+                <div className="aspect-[4/5] sm:aspect-square w-full rounded-xl bg-[#EEE7DC]" />
               </div>
 
               {/* Information Skeleton */}
@@ -504,25 +495,16 @@ function ProductDetailsPage() {
             <article className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-6 sm:p-8 lg:p-12 shadow-xs">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
                 {/* -------------------------------------------------------------------
-                    LEFT: PRODUCT GALLERY
+                    LEFT: SINGLE CANONICAL PRODUCT IMAGE
                    ------------------------------------------------------------------- */}
-                <div className="lg:col-span-6 flex flex-col gap-4">
+                <div className="lg:col-span-6 flex flex-col">
                   {/* Main Display Surface */}
                   <div className="relative aspect-[4/5] sm:aspect-square w-full rounded-xl border border-[#DED7CA] bg-[#FAF7F0] overflow-hidden flex items-center justify-center p-6 sm:p-8">
-                    {/* Image Counter Indicator */}
-                    {validImages.length > 1 && (
-                      <div className="absolute top-4 right-4 z-10 rounded-full border border-[#DED7CA] bg-[#FFFDF8]/90 px-3 py-1 text-xs font-semibold text-[#5F6057] backdrop-blur-xs">
-                        {activeImageIndex + 1} / {validImages.length}
-                      </div>
-                    )}
-
-                    {activeImage && !imageErrors[activeImageIndex] ? (
+                    {displayImage && !imageError ? (
                       <img
-                        src={activeImage}
-                        alt={`${product.name} - View ${activeImageIndex + 1}`}
-                        onError={() =>
-                          setImageErrors((prev) => ({ ...prev, [activeImageIndex]: true }))
-                        }
+                        src={displayImage}
+                        alt={product.name}
+                        onError={() => setImageError(true)}
                         className="h-full w-full object-contain select-none transition-transform duration-500 ease-out hover:scale-105"
                       />
                     ) : (
@@ -550,40 +532,6 @@ function ProductDetailsPage() {
                       </div>
                     )}
                   </div>
-
-                  {/* Thumbnail Row */}
-                  {validImages.length > 1 && (
-                    <div
-                      role="tablist"
-                      aria-label="Product image thumbnails"
-                      className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none"
-                    >
-                      {validImages.map((img, idx) => {
-                        const isCurrent = idx === activeImageIndex
-                        return (
-                          <button
-                            key={idx}
-                            type="button"
-                            role="tab"
-                            aria-selected={isCurrent}
-                            aria-label={`Show image ${idx + 1}`}
-                            onClick={() => setActiveImageIndex(idx)}
-                            className={`relative h-20 w-20 flex-shrink-0 rounded-xl overflow-hidden border p-1 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F] ${
-                              isCurrent
-                                ? 'border-[#34452F] ring-2 ring-[#34452F]/30 scale-105 bg-[#FFFDF8]'
-                                : 'border-[#DED7CA] hover:border-[#85857A] opacity-70 hover:opacity-100 bg-[#FAF7F0]'
-                            }`}
-                          >
-                            <img
-                              src={img}
-                              alt=""
-                              className="h-full w-full object-contain rounded-lg"
-                            />
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
                 </div>
 
                 {/* -------------------------------------------------------------------

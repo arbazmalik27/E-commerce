@@ -15,7 +15,11 @@ function AdminRoute({ children }) {
   if (!initialized) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+        <div
+          className="h-8 w-8 animate-spin rounded-full border-4 border-[#34452F] border-t-transparent"
+          role="status"
+          aria-label="Checking administrator credentials"
+        />
       </div>
     )
   }

@@ -5,6 +5,8 @@ import api from '../services/api'
 import { selectUser } from '../features/auth/authSlice'
 import { fetchCart } from '../features/cart/cartSlice'
 import { loadRazorpayScript } from '../utils/loadRazorpay'
+import Eyebrow from '../components/Eyebrow'
+import { getProductImage } from '../utils/productImageMap'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -29,21 +31,21 @@ function formatCurrency(amount) {
   return `₹${Number(amount || 0).toLocaleString('en-IN')}`
 }
 
-// ─── Status Badges ────────────────────────────────────────────────────────────
+// ─── Status Badges (TrendVolt Editorial Palette) ──────────────────────────────
 
 const ORDER_STATUS_STYLES = {
-  pending:    { bg: 'bg-amber-500/15',   border: 'border-amber-500/30',   text: 'text-amber-300',   dot: 'bg-amber-400',   label: 'Pending'    },
-  confirmed:  { bg: 'bg-blue-500/15',    border: 'border-blue-500/30',    text: 'text-blue-300',    dot: 'bg-blue-400',    label: 'Confirmed'  },
-  processing: { bg: 'bg-purple-500/15',  border: 'border-purple-500/30',  text: 'text-purple-300',  dot: 'bg-purple-400',  label: 'Processing' },
-  shipped:    { bg: 'bg-cyan-500/15',    border: 'border-cyan-500/30',    text: 'text-cyan-300',    dot: 'bg-cyan-400',    label: 'Shipped'    },
-  delivered:  { bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', text: 'text-emerald-300', dot: 'bg-emerald-400', label: 'Delivered'  },
-  cancelled:  { bg: 'bg-red-500/15',     border: 'border-red-500/30',     text: 'text-red-300',     dot: 'bg-red-400',     label: 'Cancelled'  },
+  pending:    { bg: 'bg-[#FAF7F0]',       border: 'border-[#DED7CA]',       text: 'text-[#A86B2D]', dot: 'bg-[#A86B2D]', label: 'Pending'    },
+  confirmed:  { bg: 'bg-[#34452F]/10',    border: 'border-[#34452F]/20',    text: 'text-[#34452F]', dot: 'bg-[#34452F]', label: 'Confirmed'  },
+  processing: { bg: 'bg-[#FAF7F0]',       border: 'border-[#DED7CA]',       text: 'text-[#5F6057]', dot: 'bg-[#5F6057]', label: 'Processing' },
+  shipped:    { bg: 'bg-[#34452F]/10',    border: 'border-[#34452F]/25',    text: 'text-[#34452F]', dot: 'bg-[#34452F]', label: 'Shipped'    },
+  delivered:  { bg: 'bg-[#3F6B45]/15',    border: 'border-[#3F6B45]/30',    text: 'text-[#3F6B45]', dot: 'bg-[#3F6B45]', label: 'Delivered'  },
+  cancelled:  { bg: 'bg-[#A65332]/10',    border: 'border-[#A65332]/25',    text: 'text-[#A65332]', dot: 'bg-[#A65332]', label: 'Cancelled'  },
 }
 
 const PAYMENT_STATUS_STYLES = {
-  pending: { bg: 'bg-amber-500/15',   border: 'border-amber-500/30',   text: 'text-amber-300',   dot: 'bg-amber-400',   label: 'Pending' },
-  paid:    { bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', text: 'text-emerald-300', dot: 'bg-emerald-400', label: 'Paid'    },
-  failed:  { bg: 'bg-red-500/15',     border: 'border-red-500/30',     text: 'text-red-300',     dot: 'bg-red-400',     label: 'Failed'  },
+  pending: { bg: 'bg-[#FAF7F0]',       border: 'border-[#DED7CA]',       text: 'text-[#A86B2D]', dot: 'bg-[#A86B2D]', label: 'Pending' },
+  paid:    { bg: 'bg-[#34452F]/10',    border: 'border-[#34452F]/20',    text: 'text-[#34452F]', dot: 'bg-[#34452F]', label: 'Paid'    },
+  failed:  { bg: 'bg-[#A65332]/10',    border: 'border-[#A65332]/20',    text: 'text-[#A65332]', dot: 'bg-[#A65332]', label: 'Failed'  },
 }
 
 function OrderStatusBadge({ status }) {
@@ -70,39 +72,39 @@ function PaymentStatusBadge({ status }) {
 
 function DetailSkeleton() {
   return (
-    <div className="animate-pulse space-y-4">
+    <div className="animate-pulse space-y-4" aria-busy="true" aria-label="Loading order details">
       {/* Header skeleton */}
-      <div className="rounded-2xl border border-white/10 bg-neutral-900/70 p-5 sm:p-6 space-y-3">
+      <div className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-5 sm:p-6 space-y-3">
         <div className="flex justify-between items-start">
           <div className="space-y-2">
-            <div className="h-3 w-24 rounded-full bg-white/10" />
-            <div className="h-5 w-44 rounded-full bg-white/10" />
+            <div className="h-3 w-24 rounded-full bg-[#EEE7DC]" />
+            <div className="h-5 w-44 rounded-full bg-[#EEE7DC]" />
           </div>
           <div className="flex gap-2">
-            <div className="h-6 w-20 rounded-full bg-white/10" />
-            <div className="h-6 w-16 rounded-full bg-white/10" />
+            <div className="h-6 w-20 rounded-full bg-[#EEE7DC]" />
+            <div className="h-6 w-16 rounded-full bg-[#EEE7DC]" />
           </div>
         </div>
-        <div className="h-3 w-36 rounded-full bg-white/5" />
+        <div className="h-3 w-36 rounded-full bg-[#EEE7DC]" />
       </div>
       {/* Items skeleton */}
-      <div className="rounded-2xl border border-white/10 bg-neutral-900/70 p-5 sm:p-6 space-y-4">
-        <div className="h-4 w-20 rounded-full bg-white/10" />
+      <div className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-5 sm:p-6 space-y-4">
+        <div className="h-4 w-20 rounded-full bg-[#EEE7DC]" />
         {[0, 1, 2].map((i) => (
           <div key={i} className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-xl bg-white/10 shrink-0" />
+            <div className="h-16 w-16 rounded-xl bg-[#EEE7DC] shrink-0" />
             <div className="flex-1 space-y-2">
-              <div className="h-3 w-48 rounded-full bg-white/10" />
-              <div className="h-3 w-28 rounded-full bg-white/5" />
+              <div className="h-3.5 w-48 rounded-full bg-[#EEE7DC]" />
+              <div className="h-3 w-28 rounded-full bg-[#EEE7DC]" />
             </div>
-            <div className="h-4 w-20 rounded-full bg-white/10" />
+            <div className="h-4 w-20 rounded-full bg-[#EEE7DC]" />
           </div>
         ))}
       </div>
       {/* Bottom two panels skeleton */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="rounded-2xl border border-white/10 bg-neutral-900/70 p-5 h-32" />
-        <div className="rounded-2xl border border-white/10 bg-neutral-900/70 p-5 h-32" />
+        <div className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-5 h-36" />
+        <div className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-5 h-36" />
       </div>
     </div>
   )
@@ -161,6 +163,7 @@ function OrderDetailsPage() {
   }, [id])
 
   useEffect(() => {
+    window.scrollTo(0, 0)
     fetchOrder()
   }, [fetchOrder])
 
@@ -214,7 +217,7 @@ function OrderDetailsPage() {
           orderNumber: order.orderNumber,
         },
         theme: {
-          color: '#7c3aed',
+          color: '#34452F', // TrendVolt luxury brand olive
         },
         handler: async function (razorpayResponse) {
           setPaymentState('verifying')
@@ -285,31 +288,46 @@ function OrderDetailsPage() {
   const items = order?.items || []
 
   return (
-    <div className="relative min-h-screen bg-neutral-950 text-white pt-28 sm:pt-32 lg:pt-36 pb-24 overflow-hidden">
-      {/* Ambient glow */}
-      <div
-        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-purple-600/15 via-purple-900/5 to-transparent blur-3xl opacity-70 -z-10"
-        aria-hidden="true"
-      />
+    <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-24 overflow-hidden">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Breadcrumb & Navigation */}
+        <nav
+          aria-label="Breadcrumb"
+          className="mb-6 flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm text-[#5F6057]"
+        >
+          <div className="flex items-center gap-2">
+            <Link to="/" className="hover:text-[#1F211C] transition-colors">
+              Home
+            </Link>
+            <span aria-hidden="true" className="text-[#DED7CA]">/</span>
+            <Link to="/orders" className="hover:text-[#1F211C] transition-colors">
+              My Orders
+            </Link>
+            {order && (
+              <>
+                <span aria-hidden="true" className="text-[#DED7CA]">/</span>
+                <span className="text-[#1F211C] font-mono font-semibold truncate max-w-[180px] sm:max-w-none">
+                  {order.orderNumber}
+                </span>
+              </>
+            )}
+          </div>
 
-        {/* Back link */}
-        <div className="mb-6">
           <Link
             to="/orders"
             id="order-details-back-btn"
-            className="inline-flex items-center gap-2 text-sm text-neutral-400 hover:text-white transition-colors cursor-pointer group"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#34452F] hover:text-[#263722] transition-colors group"
           >
             <svg
-              className="h-4 w-4 transition-transform group-hover:-translate-x-0.5"
+              className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5"
               fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
             </svg>
-            Back to Orders
+            <span>Back to Orders</span>
           </Link>
-        </div>
+        </nav>
 
         {/* Loading */}
         {loading && <DetailSkeleton />}
@@ -318,20 +336,21 @@ function OrderDetailsPage() {
         {!loading && notFound && (
           <div
             role="alert"
-            className="rounded-2xl border border-white/10 bg-neutral-900/75 p-10 sm:p-14 text-center"
+            className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-10 sm:p-14 text-center shadow-xs"
           >
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-800 border border-white/10 text-neutral-400">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#FAF7F0] border border-[#DED7CA] text-[#5F6057]">
               <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.182 16.318A4.486 4.486 0 0012.016 15a4.486 4.486 0 00-3.198 1.318M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />
               </svg>
             </div>
-            <h1 className="text-xl font-black text-white mb-2">Order Not Found</h1>
-            <p className="text-sm text-neutral-400 mb-8 max-w-sm mx-auto">
+            <Eyebrow variant="neutral" className="mb-3">STATUS</Eyebrow>
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#1F211C] mb-2">Order Not Found</h1>
+            <p className="text-sm text-[#5F6057] mb-8 max-w-sm mx-auto">
               This order does not exist or you don&apos;t have permission to view it.
             </p>
             <Link
               to="/orders"
-              className="inline-flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/15 border border-white/20 px-6 py-2.5 text-xs font-semibold uppercase tracking-wider text-neutral-300 hover:text-white transition-colors cursor-pointer"
+              className="min-h-[44px] inline-flex items-center gap-2 rounded-xl bg-[#34452F] hover:bg-[#263722] text-[#FFFDF8] px-6 py-2.5 text-xs font-bold uppercase tracking-wider transition-all active:scale-95 shadow-xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
             >
               ← Back to Orders
             </Link>
@@ -340,58 +359,69 @@ function OrderDetailsPage() {
 
         {/* API Error */}
         {!loading && error && (
-          <div role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 sm:p-8 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-500/15 border border-red-500/30 text-red-400">
+          <div role="alert" className="rounded-2xl border border-[#A65332]/30 bg-[#FFFDF8] p-8 sm:p-12 text-center shadow-xs">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#A65332]/10 border border-[#A65332]/30 text-[#A65332]">
               <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
               </svg>
             </div>
-            <h2 className="text-lg font-bold text-white mb-2">Could Not Load Order</h2>
-            <p className="text-sm text-red-300 mb-6 max-w-sm mx-auto">{error}</p>
-            <Link
-              to="/orders"
-              className="inline-flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/15 border border-white/20 px-6 py-2.5 text-xs font-semibold uppercase tracking-wider text-neutral-300 hover:text-white transition-colors cursor-pointer"
-            >
-              ← Back to Orders
-            </Link>
+            <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#1F211C] mb-2">Could Not Load Order</h2>
+            <p className="text-sm text-[#5F6057] mb-6 max-w-sm mx-auto">{error}</p>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={fetchOrder}
+                className="min-h-[44px] inline-flex items-center gap-2 rounded-xl bg-[#34452F] hover:bg-[#263722] text-[#FFFDF8] px-6 py-2.5 text-xs font-bold uppercase tracking-wider transition-all active:scale-95 shadow-xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
+              >
+                Try Again
+              </button>
+              <Link
+                to="/orders"
+                className="min-h-[44px] inline-flex items-center gap-2 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] hover:bg-[#EEE7DC] px-6 py-2.5 text-xs font-semibold uppercase tracking-wider text-[#1F211C] transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
+              >
+                Back to Orders
+              </Link>
+            </div>
           </div>
         )}
 
         {/* Order content */}
         {!loading && !error && !notFound && order && (
-          <div className="space-y-4">
+          <div className="space-y-6">
 
             {/* ── Order Header Card ── */}
-            <div className="rounded-2xl border border-white/10 bg-neutral-900/70 backdrop-blur-sm shadow-xl overflow-hidden">
-              <div className="px-5 sm:px-6 py-5 sm:py-6">
-                {/* Order number + date row */}
-                <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+            <div className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] shadow-xs overflow-hidden">
+              <div className="px-5 sm:px-8 py-6 sm:py-7">
+                <Eyebrow variant="olive" className="mb-3">ORDER DETAILS</Eyebrow>
+
+                {/* Order number + date + total row */}
+                <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
                   <div>
-                    <p className="text-xs text-neutral-500 mb-1">Order Number</p>
-                    <p className="font-mono text-base sm:text-lg font-bold text-purple-300">{order.orderNumber}</p>
-                    <p className="text-xs text-neutral-500 mt-1">
-                      {formatDate(order.createdAt)}
+                    <p className="text-[11px] font-mono uppercase tracking-wider text-[#85857A] mb-1">Order Identifier</p>
+                    <h1 className="font-mono text-lg sm:text-2xl font-bold text-[#34452F]">{order.orderNumber}</h1>
+                    <p className="text-xs sm:text-sm text-[#5F6057] mt-1.5">
+                      Placed on {formatDate(order.createdAt)}
                       {order.createdAt && (
-                        <span className="ml-1 text-neutral-600">at {formatTime(order.createdAt)}</span>
+                        <span className="text-[#85857A]"> at {formatTime(order.createdAt)}</span>
                       )}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-neutral-500 mb-1">Order Total</p>
-                    <p className="text-2xl sm:text-3xl font-black text-white">{formatCurrency(order.totalAmount)}</p>
+                  <div className="text-left sm:text-right">
+                    <p className="text-[11px] font-mono uppercase tracking-wider text-[#85857A] mb-1">Order Total</p>
+                    <p className="font-serif text-2xl sm:text-3xl font-bold text-[#1F211C]">{formatCurrency(order.totalAmount)}</p>
                   </div>
                 </div>
 
                 {/* Status row + Retry Payment */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-white/10">
-                  <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-4 pt-5 border-t border-[#DED7CA]/70">
+                  <div className="flex flex-wrap items-center gap-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-neutral-500">Order Status</span>
+                      <span className="text-xs font-medium text-[#5F6057]">Order:</span>
                       <OrderStatusBadge status={order.orderStatus} />
                     </div>
-                    <div className="hidden sm:block h-4 w-px bg-white/10" aria-hidden="true" />
+                    <div className="hidden sm:block h-4 w-px bg-[#DED7CA]" aria-hidden="true" />
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-neutral-500">Payment</span>
+                      <span className="text-xs font-medium text-[#5F6057]">Payment:</span>
                       <PaymentStatusBadge status={order.paymentStatus} />
                     </div>
                   </div>
@@ -401,7 +431,7 @@ function OrderDetailsPage() {
                       id="retry-payment-btn"
                       onClick={handleRetryPayment}
                       disabled={retryLoading}
-                      className="inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:bg-purple-600/50 disabled:cursor-not-allowed text-white text-xs font-semibold px-4 py-2 transition-all duration-200 shadow-md shadow-purple-900/30 hover:shadow-purple-900/50 cursor-pointer"
+                      className="min-h-[44px] inline-flex items-center gap-2 rounded-xl bg-[#34452F] hover:bg-[#263722] disabled:bg-[#34452F]/60 disabled:cursor-not-allowed text-[#FFFDF8] text-xs font-bold uppercase tracking-wider px-6 py-2.5 transition-all active:scale-95 shadow-xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
                     >
                       {retryLoading ? (
                         <>
@@ -413,7 +443,7 @@ function OrderDetailsPage() {
                         </>
                       ) : (
                         <>
-                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
                           </svg>
                           <span>Retry Payment</span>
@@ -430,41 +460,41 @@ function OrderDetailsPage() {
               <div
                 role="alert"
                 id="payment-status-banner"
-                className={`rounded-xl border p-4 flex items-start gap-3 transition-all ${
+                className={`rounded-xl border p-4 sm:p-5 flex items-start gap-3 transition-all ${
                   paymentState === 'success'
-                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                    ? 'border-[#3F6B45]/30 bg-[#3F6B45]/10 text-[#2B4B2F]'
                     : paymentState === 'verifying'
-                    ? 'border-purple-500/30 bg-purple-500/10 text-purple-300'
+                    ? 'border-[#34452F]/30 bg-[#34452F]/10 text-[#34452F]'
                     : paymentState === 'cancelled'
-                    ? 'border-amber-500/30 bg-amber-500/10 text-amber-300'
-                    : 'border-red-500/30 bg-red-500/10 text-red-300'
+                    ? 'border-[#A86B2D]/30 bg-[#FAF7F0] text-[#85521C]'
+                    : 'border-[#A65332]/30 bg-[#FFFDF8] text-[#A65332]'
                 }`}
               >
                 <div className="shrink-0 mt-0.5">
                   {paymentState === 'success' && (
-                    <svg className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <svg className="h-5 w-5 text-[#3F6B45]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   )}
                   {paymentState === 'verifying' && (
-                    <svg className="animate-spin h-5 w-5 text-purple-400" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-5 w-5 text-[#34452F]" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                     </svg>
                   )}
                   {paymentState === 'cancelled' && (
-                    <svg className="h-5 w-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <svg className="h-5 w-5 text-[#A86B2D]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                     </svg>
                   )}
                   {paymentState === 'failed' && (
-                    <svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <svg className="h-5 w-5 text-[#A65332]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                     </svg>
                   )}
                 </div>
                 <div className="flex-1 text-sm leading-relaxed">
-                  <p className="font-semibold text-white mb-0.5">
+                  <p className="font-serif font-bold text-[#1F211C] mb-0.5">
                     {paymentState === 'success'
                       ? 'Payment Successful'
                       : paymentState === 'verifying'
@@ -473,12 +503,12 @@ function OrderDetailsPage() {
                       ? 'Payment Cancelled'
                       : 'Payment Failed'}
                   </p>
-                  <p>{paymentMessage}</p>
+                  <p className="text-xs sm:text-sm text-[#5F6057]">{paymentMessage}</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setPaymentMessage(null)}
-                  className="text-neutral-400 hover:text-white transition-colors cursor-pointer text-xs"
+                  className="text-[#85857A] hover:text-[#1F211C] transition-colors cursor-pointer text-xs p-1"
                   aria-label="Dismiss notification"
                 >
                   ✕
@@ -487,31 +517,34 @@ function OrderDetailsPage() {
             )}
 
             {/* ── Order Items Card ── */}
-            <div className="rounded-2xl border border-white/10 bg-neutral-900/70 backdrop-blur-sm shadow-xl overflow-hidden">
-              <div className="px-5 sm:px-6 py-4 border-b border-white/10">
-                <h2 className="text-sm font-semibold text-neutral-200">
-                  Items ({items.length})
+            <div className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] shadow-xs overflow-hidden">
+              <div className="px-5 sm:px-6 py-4 border-b border-[#DED7CA]/70 flex items-center justify-between">
+                <h2 className="font-serif text-base font-bold text-[#1F211C]">
+                  Purchased Items ({items.length})
                 </h2>
+                <span className="text-xs font-mono uppercase tracking-wider text-[#85857A]">
+                  Historical Snapshot
+                </span>
               </div>
-              <div className="divide-y divide-white/5">
+              <div className="divide-y divide-[#DED7CA]/50">
                 {items.map((item, idx) => {
-                  const imgSrc = Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : null
+                  const imgSrc = getProductImage(item)
                   return (
                     <div
                       key={item._id || idx}
-                      className="flex items-center gap-4 px-5 sm:px-6 py-4"
+                      className="flex items-center gap-4 px-5 sm:px-6 py-4 transition-colors hover:bg-[#FAF7F0]/50"
                     >
                       {/* Product image */}
-                      <div className="h-16 w-16 shrink-0 rounded-xl overflow-hidden border border-white/10 bg-neutral-800 flex items-center justify-center">
+                      <div className="h-16 w-16 shrink-0 rounded-xl overflow-hidden border border-[#DED7CA] bg-[#FAF7F0] p-1 flex items-center justify-center">
                         {imgSrc ? (
                           <img
                             src={imgSrc}
                             alt={item.name}
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-contain"
                             onError={(e) => { e.currentTarget.style.display = 'none' }}
                           />
                         ) : (
-                          <svg className="h-7 w-7 text-neutral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                          <svg className="h-7 w-7 text-[#85857A]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                           </svg>
                         )}
@@ -519,14 +552,14 @@ function OrderDetailsPage() {
 
                       {/* Product info */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-neutral-100 truncate">{item.name}</p>
-                        <p className="text-xs text-neutral-500 mt-0.5">
+                        <p className="text-sm font-semibold text-[#1F211C] truncate">{item.name}</p>
+                        <p className="text-xs text-[#5F6057] mt-0.5">
                           {formatCurrency(item.price)} × {item.quantity}
                         </p>
                       </div>
 
                       {/* Item subtotal */}
-                      <p className="text-sm font-bold text-white shrink-0">
+                      <p className="font-serif text-sm font-bold text-[#1F211C] shrink-0">
                         {formatCurrency(item.subtotal)}
                       </p>
                     </div>
@@ -536,63 +569,78 @@ function OrderDetailsPage() {
             </div>
 
             {/* ── Bottom: Shipping + Price Breakdown ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
               {/* Shipping Address */}
-              <div className="rounded-2xl border border-white/10 bg-neutral-900/70 backdrop-blur-sm shadow-xl p-5 sm:p-6">
-                <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
-                  Delivery Address
-                </h2>
-                <address className="not-italic text-sm text-neutral-300 leading-relaxed space-y-0.5">
-                  <p className="font-semibold text-neutral-100">{shipping.fullName}</p>
-                  <p className="text-neutral-400">{shipping.phone}</p>
-                  <p>{shipping.addressLine}</p>
+              <div className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] shadow-xs p-5 sm:p-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#34452F]" aria-hidden="true" />
+                  <h2 className="text-[11px] font-mono font-bold text-[#5F6057] uppercase tracking-wider">
+                    Delivery Address
+                  </h2>
+                </div>
+                <address className="not-italic text-sm text-[#5F6057] leading-relaxed space-y-1">
+                  <p className="font-semibold text-[#1F211C]">{shipping.fullName}</p>
+                  <p className="text-xs font-mono text-[#85857A]">{shipping.phone}</p>
+                  <p className="pt-1">{shipping.addressLine}</p>
                   <p>{shipping.city}, {shipping.state} – {shipping.postalCode}</p>
-                  <p>{shipping.country}</p>
+                  <p className="text-xs text-[#85857A]">{shipping.country}</p>
                 </address>
               </div>
 
               {/* Price Breakdown */}
-              <div className="rounded-2xl border border-white/10 bg-neutral-900/70 backdrop-blur-sm shadow-xl p-5 sm:p-6">
-                <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
-                  Price Breakdown
-                </h2>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between text-neutral-400">
+              <div className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] shadow-xs p-5 sm:p-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#34452F]" aria-hidden="true" />
+                  <h2 className="text-[11px] font-mono font-bold text-[#5F6057] uppercase tracking-wider">
+                    Price Breakdown
+                  </h2>
+                </div>
+                <div className="space-y-2.5 text-sm">
+                  <div className="flex justify-between text-[#5F6057]">
                     <span>Subtotal</span>
-                    <span>{formatCurrency(order.subtotal)}</span>
+                    <span className="font-medium text-[#1F211C]">{formatCurrency(order.subtotal)}</span>
                   </div>
                   {Number(order.discount) > 0 && (
-                    <div className="flex justify-between text-emerald-400">
+                    <div className="flex justify-between text-[#3F6B45]">
                       <span>Discount</span>
-                      <span>− {formatCurrency(order.discount)}</span>
+                      <span className="font-medium">− {formatCurrency(order.discount)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-neutral-400">
+                  <div className="flex justify-between text-[#5F6057]">
                     <span>Shipping</span>
-                    <span>{Number(order.shippingFee) === 0 ? 'Free' : formatCurrency(order.shippingFee)}</span>
+                    <span className="font-medium text-[#1F211C]">
+                      {Number(order.shippingFee) === 0 ? 'Free' : formatCurrency(order.shippingFee)}
+                    </span>
                   </div>
-                  <div className="flex justify-between font-bold text-white border-t border-white/10 pt-2 mt-2">
-                    <span>Total</span>
-                    <span>{formatCurrency(order.totalAmount)}</span>
+                  <div className="flex justify-between items-baseline font-bold text-[#1F211C] border-t border-[#DED7CA] pt-3 mt-3">
+                    <span className="text-sm font-semibold">Total</span>
+                    <span className="font-serif text-xl sm:text-2xl text-[#1F211C]">{formatCurrency(order.totalAmount)}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Back to Orders CTA */}
-            <div className="pt-2">
+            <div className="pt-4 flex items-center justify-between">
               <Link
                 to="/orders"
-                className="inline-flex items-center gap-2 text-sm text-neutral-400 hover:text-white transition-colors cursor-pointer group"
+                className="min-h-[44px] inline-flex items-center gap-2 rounded-xl border border-[#DED7CA] bg-[#FFFDF8] hover:bg-[#EEE7DC] px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-[#1F211C] transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F] group"
               >
                 <svg
-                  className="h-4 w-4 transition-transform group-hover:-translate-x-0.5"
+                  className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5"
                   fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
                 </svg>
-                Back to Orders
+                <span>Back to Orders</span>
+              </Link>
+
+              <Link
+                to="/products"
+                className="text-xs font-semibold text-[#34452F] hover:text-[#263722] transition-colors"
+              >
+                Continue Shopping →
               </Link>
             </div>
 

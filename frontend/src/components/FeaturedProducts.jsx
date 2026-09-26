@@ -5,7 +5,7 @@ import { ArrowLeft, ArrowRight, Heart, ShoppingBag, Check, RefreshCw } from 'luc
 import { selectIsAuthenticated } from '../features/auth/authSlice'
 import { addToCart } from '../features/cart/cartSlice'
 import api from '../services/api'
-import { getHomepageProductImage } from '../utils/productImageMap'
+import { getProductImage } from '../utils/productImageMap'
 import { FALLBACK_FEATURED_PRODUCTS } from '../data/fallbackProducts'
 import Eyebrow from './Eyebrow'
 
@@ -30,11 +30,18 @@ function ShowcaseCard({
   const [isAdding, setIsAdding] = useState(false)
   const [addFeedback, setAddFeedback] = useState(null) // 'success' | 'error' | null
 
+  const [prevId, setPrevId] = useState(product?._id)
+  if (product?._id !== prevId) {
+    setPrevId(product?._id)
+    setImageError(false)
+    setAddFeedback(null)
+  }
+
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const isAuthenticated = useSelector(selectIsAuthenticated)
 
-  const displayImage = getHomepageProductImage(product)
+  const displayImage = getProductImage(product)
   const hasImage = Boolean(displayImage) && !imageError
 
   const isAvailable = product.stock > 0
@@ -579,6 +586,7 @@ function FeaturedProducts() {
                     const item = getProductAtOffset(-2)
                     return item ? (
                       <ShowcaseCard
+                        key={`pos-neg-2-${item.product._id}`}
                         product={item.product}
                         isCenter={false}
                         positionOffset={-2}
@@ -598,6 +606,7 @@ function FeaturedProducts() {
                     const item = getProductAtOffset(-1)
                     return item ? (
                       <ShowcaseCard
+                        key={`pos-neg-1-${item.product._id}`}
                         product={item.product}
                         isCenter={false}
                         positionOffset={-1}
@@ -613,6 +622,7 @@ function FeaturedProducts() {
               {/* Position 0 (CENTER HERO CARD) */}
               <div className="shrink-0 z-20">
                 <ShowcaseCard
+                  key={`pos-center-${curatedShowcase[safeCurrentIndex]?._id}`}
                   product={curatedShowcase[safeCurrentIndex]}
                   isCenter={true}
                   positionOffset={0}
@@ -628,6 +638,7 @@ function FeaturedProducts() {
                     const item = getProductAtOffset(1)
                     return item ? (
                       <ShowcaseCard
+                        key={`pos-plus-1-${item.product._id}`}
                         product={item.product}
                         isCenter={false}
                         positionOffset={1}
@@ -647,6 +658,7 @@ function FeaturedProducts() {
                     const item = getProductAtOffset(2)
                     return item ? (
                       <ShowcaseCard
+                        key={`pos-plus-2-${item.product._id}`}
                         product={item.product}
                         isCenter={false}
                         positionOffset={2}
@@ -658,6 +670,7 @@ function FeaturedProducts() {
                   })()}
                 </div>
               )}
+
             </div>
 
             {/* Flanking Circular Navigation Arrow (Right) */}

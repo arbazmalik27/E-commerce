@@ -40,30 +40,52 @@ export const PRODUCT_IMAGE_MAP = {
 }
 
 /**
- * Resolves the presentation image for a product on homepage sections.
- * 1. Checks explicit ID mapping in PRODUCT_IMAGE_MAP
- * 2. Falls back gracefully to backend product image (product.images[0])
+ * Universal product image resolver for TrendVolt.
+ * Checks PRODUCT_IMAGE_MAP first by stable ID, then falls back to backend product images.
  *
- * @param {Object} product - Backend product data
+ * @param {Object|string} productOrItem - Backend product data, order/cart item, or string ID
  * @returns {string|null} Resolved image source (local asset URL or backend URL)
  */
-export function getHomepageProductImage(product) {
-  if (!product || !product._id) return null
+export function getProductImage(productOrItem) {
+  if (!productOrItem) return null
 
-  // 1. Direct map lookup by stable product ID
-  if (PRODUCT_IMAGE_MAP[product._id]) {
-    return PRODUCT_IMAGE_MAP[product._id]
+  // 1. If passed a string ID directly
+  if (typeof productOrItem === 'string') {
+    return PRODUCT_IMAGE_MAP[productOrItem] || null
   }
 
-  // 2. Fallback to existing backend image if available
+  // 2. Extract product ID from product or item wrapper
+  const id =
+    productOrItem._id ||
+    productOrItem.id ||
+    (typeof productOrItem.product === 'string'
+      ? productOrItem.product
+      : productOrItem.product?._id) ||
+    productOrItem.productId
+
+  if (id && PRODUCT_IMAGE_MAP[id]) {
+    return PRODUCT_IMAGE_MAP[id]
+  }
+
+  // 3. Fallback to images array on product or item
+  const images =
+    productOrItem.images ||
+    (productOrItem.product && productOrItem.product.images)
+
   if (
-    Array.isArray(product.images) &&
-    product.images.length > 0 &&
-    typeof product.images[0] === 'string' &&
-    product.images[0].trim().length > 0
+    Array.isArray(images) &&
+    images.length > 0 &&
+    typeof images[0] === 'string' &&
+    images[0].trim().length > 0
   ) {
-    return product.images[0]
+    return images[0]
   }
 
   return null
 }
+
+/**
+ * Backward compatible alias for homepage sections.
+ */
+export const getHomepageProductImage = getProductImage
+

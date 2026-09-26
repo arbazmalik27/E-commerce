@@ -6,6 +6,7 @@ import {
   updateUserProfile,
 } from '../features/auth/authSlice'
 import api from '../services/api'
+import Eyebrow from '../components/Eyebrow'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -39,6 +40,11 @@ const INITIAL_ADDRESS_FORM = {
 function ProfilePage() {
   const dispatch = useDispatch()
   const user = useSelector(selectUser)
+
+  // Auto scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
 
   // ─── Profile Edit State ────────────────────────────────────────────────────
   const [isEditingProfile, setIsEditingProfile] = useState(false)
@@ -277,78 +283,98 @@ function ProfilePage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-neutral-950 text-white pt-28 sm:pt-32 lg:pt-36 pb-24 overflow-hidden">
-      {/* Ambient background glow */}
-      <div
-        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-purple-600/15 via-purple-900/5 to-transparent blur-3xl opacity-70 -z-10"
-        aria-hidden="true"
-      />
-
+    <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-24 overflow-hidden">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+
         {/* Navigation Breadcrumbs */}
-        <nav aria-label="Breadcrumbs" className="mb-4 flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-neutral-400">
-          <Link to="/" className="hover:text-white transition-colors">Home</Link>
-          <span className="text-white/20">/</span>
-          <span className="text-white font-bold">My Profile</span>
+        <nav
+          aria-label="Breadcrumbs"
+          className="mb-6 flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm text-[#5F6057]"
+        >
+          <div className="flex items-center gap-2">
+            <Link to="/" className="hover:text-[#1F211C] transition-colors">
+              Home
+            </Link>
+            <span aria-hidden="true" className="text-[#DED7CA]">/</span>
+            <span className="text-[#1F211C] font-semibold">My Profile</span>
+          </div>
+
+          <Link
+            to="/orders"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#34452F] hover:text-[#263722] transition-colors"
+          >
+            <span>View My Orders</span>
+            <svg
+              className="h-3.5 w-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+          </Link>
         </nav>
 
         {/* Page Header */}
         <header className="mb-8 sm:mb-10">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold tracking-widest text-neutral-300 uppercase backdrop-blur-md mb-3">
-            <span className="h-1.5 w-1.5 rounded-full bg-purple-400" />
-            CUSTOMER ACCOUNT HUB
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-tight">
+          <Eyebrow variant="olive" className="mb-3">CUSTOMER ACCOUNT</Eyebrow>
+          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-[#1F211C] tracking-tight mb-2">
             Account &amp; Addresses
           </h1>
-          <p className="mt-2 text-sm sm:text-base text-neutral-300 max-w-2xl">
-            Manage your personal profile information, account credentials, and saved shipping addresses.
+          <p className="text-sm sm:text-base text-[#5F6057] max-w-2xl">
+            Manage your personal profile information, account credentials, and saved shipping destinations.
           </p>
         </header>
 
         {/* Global Action Feedback Alert */}
         {feedbackMessage && (
-          <div className="mb-6 rounded-2xl border border-purple-500/30 bg-purple-500/10 px-4 py-3 text-sm text-purple-200 flex items-center justify-between shadow-lg animate-in fade-in duration-200">
-            <div className="flex items-center gap-2">
-              <svg className="h-5 w-5 text-purple-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div
+            role="status"
+            className="mb-6 rounded-2xl border border-[#34452F]/30 bg-[#34452F]/10 px-5 py-3.5 text-sm text-[#34452F] flex items-center justify-between shadow-xs animate-in fade-in duration-200"
+          >
+            <div className="flex items-center gap-2.5">
+              <svg className="h-5 w-5 text-[#34452F] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              <span>{feedbackMessage}</span>
+              <span className="font-medium">{feedbackMessage}</span>
             </div>
             <button
               type="button"
               onClick={() => setFeedbackMessage(null)}
-              className="text-purple-300 hover:text-white text-base ml-2 cursor-pointer"
+              className="text-[#5F6057] hover:text-[#1F211C] text-sm ml-2 cursor-pointer p-1"
+              aria-label="Dismiss message"
             >
-              ×
+              ✕
             </button>
           </div>
         )}
 
-        <div className="space-y-10">
+        <div className="space-y-8">
           {/* ===================================================================
               1. PERSONAL PROFILE SECTION
              =================================================================== */}
           <section
             aria-labelledby="profile-heading"
-            className="rounded-3xl border border-white/10 bg-neutral-900/60 backdrop-blur-xl p-6 sm:p-8 shadow-2xl"
+            className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-6 sm:p-8 shadow-xs"
           >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#DED7CA]/70">
               <div className="flex items-center gap-4">
                 {/* Initials Avatar */}
-                <div className="h-16 w-16 rounded-2xl bg-gradient-to-tr from-purple-700 via-indigo-600 to-purple-400 flex items-center justify-center text-white font-black text-xl tracking-wider shadow-lg shrink-0">
+                <div className="h-16 w-16 rounded-2xl bg-[#34452F] flex items-center justify-center text-[#FFFDF8] font-serif font-bold text-xl tracking-wider shadow-xs shrink-0">
                   {getInitials(user?.name)}
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h2 id="profile-heading" className="text-xl font-bold text-white tracking-tight">
+                  <div className="flex items-center gap-2.5">
+                    <h2 id="profile-heading" className="font-serif text-xl sm:text-2xl font-bold text-[#1F211C] tracking-tight">
                       {user?.name || 'Customer'}
                     </h2>
-                    <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-[11px] font-bold text-purple-300 uppercase tracking-wide">
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#FAF7F0] border border-[#DED7CA] text-[11px] font-mono font-bold text-[#5F6057] uppercase tracking-wide">
                       {user?.role || 'Customer'}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-neutral-400 mt-0.5 font-mono">
+                  <p className="text-xs sm:text-sm text-[#85857A] mt-1 font-mono">
                     Member since {formatDate(user?.createdAt)}
                   </p>
                 </div>
@@ -363,7 +389,7 @@ function ProfilePage() {
                     setProfileError(null)
                     setProfileSuccess(null)
                   }}
-                  className="min-h-[44px] px-5 py-2 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 text-white font-semibold text-xs uppercase tracking-wider transition-colors cursor-pointer self-start sm:self-auto"
+                  className="min-h-[44px] px-5 py-2 rounded-xl border border-[#DED7CA] bg-[#FFFDF8] hover:bg-[#EEE7DC] text-[#1F211C] font-semibold text-xs uppercase tracking-wider transition-colors cursor-pointer self-start sm:self-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
                 >
                   Edit Profile
                 </button>
@@ -375,7 +401,7 @@ function ProfilePage() {
               {isEditingProfile ? (
                 <form onSubmit={handleSaveProfile} className="max-w-md space-y-4">
                   <div>
-                    <label htmlFor="profile-name-input" className="block text-xs font-mono uppercase tracking-wider text-neutral-300 mb-1.5">
+                    <label htmlFor="profile-name-input" className="block text-xs font-mono uppercase tracking-wider text-[#5F6057] mb-1.5">
                       Full Name
                     </label>
                     <input
@@ -387,22 +413,22 @@ function ProfilePage() {
                       required
                       minLength={2}
                       maxLength={50}
-                      className="w-full min-h-[44px] rounded-xl border border-white/15 bg-neutral-950 px-4 py-2 text-sm text-white placeholder-neutral-500 focus:outline-hidden focus:border-purple-400 transition-colors"
+                      className="w-full min-h-[44px] rounded-xl border border-[#DED7CA] bg-[#FAF7F0] px-4 py-2 text-sm text-[#1F211C] placeholder-[#85857A] focus:outline-none focus:border-[#34452F] focus:ring-1 focus:ring-[#34452F] transition-colors"
                     />
                   </div>
 
                   {profileError && (
-                    <p className="text-xs text-red-400 font-medium">{profileError}</p>
+                    <p className="text-xs text-[#A65332] font-medium">{profileError}</p>
                   )}
                   {profileSuccess && (
-                    <p className="text-xs text-emerald-400 font-medium">{profileSuccess}</p>
+                    <p className="text-xs text-[#3F6B45] font-medium">{profileSuccess}</p>
                   )}
 
                   <div className="flex items-center gap-3 pt-2">
                     <button
                       type="submit"
                       disabled={profileLoading}
-                      className="min-h-[44px] px-6 py-2 rounded-full bg-white text-neutral-950 font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 transition-colors cursor-pointer disabled:opacity-50"
+                      className="min-h-[44px] px-6 py-2 rounded-xl bg-[#34452F] hover:bg-[#263722] text-[#FFFDF8] font-bold text-xs uppercase tracking-wider transition-all active:scale-95 cursor-pointer disabled:opacity-50 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
                     >
                       {profileLoading ? 'Saving...' : 'Save Changes'}
                     </button>
@@ -413,27 +439,27 @@ function ProfilePage() {
                         setProfileName(user?.name || '')
                         setProfileError(null)
                       }}
-                      className="min-h-[44px] px-5 py-2 rounded-full border border-white/10 text-neutral-400 hover:text-white text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
+                      className="min-h-[44px] px-5 py-2 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#5F6057] hover:text-[#1F211C] text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
                     >
                       Cancel
                     </button>
                   </div>
                 </form>
               ) : (
-                <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                    <dt className="text-xs font-mono uppercase tracking-wider text-neutral-400">Full Name</dt>
-                    <dd className="mt-1 font-semibold text-white">{user?.name || '—'}</dd>
+                <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 text-sm">
+                  <div className="p-4 rounded-xl bg-[#FAF7F0] border border-[#DED7CA]/70">
+                    <dt className="text-[11px] font-mono uppercase tracking-wider text-[#85857A]">Full Name</dt>
+                    <dd className="mt-1 font-semibold text-[#1F211C]">{user?.name || '—'}</dd>
                   </div>
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                    <dt className="text-xs font-mono uppercase tracking-wider text-neutral-400">Email Address</dt>
-                    <dd className="mt-1 font-semibold text-white truncate">{user?.email || '—'}</dd>
-                    <span className="text-[10px] text-neutral-400 block mt-0.5">Primary login identifier</span>
+                  <div className="p-4 rounded-xl bg-[#FAF7F0] border border-[#DED7CA]/70">
+                    <dt className="text-[11px] font-mono uppercase tracking-wider text-[#85857A]">Email Address</dt>
+                    <dd className="mt-1 font-semibold text-[#1F211C] truncate">{user?.email || '—'}</dd>
+                    <span className="text-[11px] text-[#85857A] block mt-0.5 font-mono">Primary login identifier</span>
                   </div>
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                    <dt className="text-xs font-mono uppercase tracking-wider text-neutral-400">Account Status</dt>
-                    <dd className="mt-1 font-semibold text-emerald-400 flex items-center gap-1.5">
-                      <span className="h-2 w-2 rounded-full bg-emerald-400 inline-block" />
+                  <div className="p-4 rounded-xl bg-[#FAF7F0] border border-[#DED7CA]/70">
+                    <dt className="text-[11px] font-mono uppercase tracking-wider text-[#85857A]">Account Status</dt>
+                    <dd className="mt-1 font-semibold text-[#3F6B45] flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-[#3F6B45] inline-block" />
                       Active Customer
                     </dd>
                   </div>
@@ -447,20 +473,20 @@ function ProfilePage() {
              =================================================================== */}
           <section
             aria-labelledby="addresses-heading"
-            className="rounded-3xl border border-white/10 bg-neutral-900/60 backdrop-blur-xl p-6 sm:p-8 shadow-2xl"
+            className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-6 sm:p-8 shadow-xs"
           >
             {/* Section Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#DED7CA]/70">
               <div>
-                <div className="flex items-center gap-2">
-                  <h2 id="addresses-heading" className="text-xl font-bold uppercase tracking-tight text-white">
+                <div className="flex items-center gap-2.5">
+                  <h2 id="addresses-heading" className="font-serif text-xl sm:text-2xl font-bold text-[#1F211C]">
                     Delivery Addresses
                   </h2>
-                  <span className="px-2.5 py-0.5 rounded-full bg-white/10 text-xs font-mono font-bold text-neutral-300">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#FAF7F0] border border-[#DED7CA] text-xs font-mono font-bold text-[#5F6057]">
                     {addresses.length}
                   </span>
                 </div>
-                <p className="mt-1 text-xs sm:text-sm text-neutral-400">
+                <p className="mt-1 text-xs sm:text-sm text-[#5F6057]">
                   Manage multiple shipping destinations for speedy checkout.
                 </p>
               </div>
@@ -468,7 +494,7 @@ function ProfilePage() {
               <button
                 type="button"
                 onClick={openAddModal}
-                className="min-h-[44px] px-5 py-2 rounded-full bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-2 self-start sm:self-auto shadow-md"
+                className="min-h-[44px] px-5 py-2 rounded-xl bg-[#34452F] hover:bg-[#263722] text-[#FFFDF8] font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-2 self-start sm:self-auto shadow-xs active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -482,23 +508,23 @@ function ProfilePage() {
               {addressesLoading && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[0, 1].map((i) => (
-                    <div key={i} className="p-5 rounded-2xl border border-white/10 bg-white/5 space-y-3 animate-pulse">
-                      <div className="h-4 w-32 bg-white/10 rounded-full" />
-                      <div className="h-3 w-48 bg-white/5 rounded-full" />
-                      <div className="h-3 w-28 bg-white/5 rounded-full" />
-                      <div className="h-8 w-full bg-white/5 rounded-xl pt-2" />
+                    <div key={i} className="p-5 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] space-y-3 animate-pulse">
+                      <div className="h-4 w-32 bg-[#EEE7DC] rounded-full" />
+                      <div className="h-3 w-48 bg-[#EEE7DC] rounded-full" />
+                      <div className="h-3 w-28 bg-[#EEE7DC] rounded-full" />
+                      <div className="h-8 w-full bg-[#EEE7DC] rounded-xl pt-2" />
                     </div>
                   ))}
                 </div>
               )}
 
               {!addressesLoading && addressesError && (
-                <div className="p-6 text-center rounded-2xl bg-red-500/10 border border-red-500/20 text-red-300">
+                <div className="p-6 text-center rounded-xl bg-[#A65332]/10 border border-[#A65332]/20 text-[#A65332]">
                   <p className="text-sm">{addressesError}</p>
                   <button
                     type="button"
                     onClick={fetchAddresses}
-                    className="mt-3 text-xs font-bold underline underline-offset-4 hover:text-white"
+                    className="mt-3 text-xs font-bold underline underline-offset-4 hover:text-[#8F452B] cursor-pointer"
                   >
                     Retry
                   </button>
@@ -506,21 +532,21 @@ function ProfilePage() {
               )}
 
               {!addressesLoading && !addressesError && addresses.length === 0 && (
-                <div className="py-12 px-6 text-center max-w-md mx-auto rounded-2xl border border-dashed border-white/15 bg-white/5">
-                  <div className="h-12 w-12 rounded-full bg-purple-500/15 border border-purple-500/30 flex items-center justify-center mx-auto text-purple-400 mb-3">
+                <div className="py-12 px-6 text-center max-w-md mx-auto rounded-2xl border border-dashed border-[#DED7CA] bg-[#FAF7F0]">
+                  <div className="h-12 w-12 rounded-full bg-[#34452F]/10 border border-[#34452F]/20 flex items-center justify-center mx-auto text-[#34452F] mb-3">
                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
                     </svg>
                   </div>
-                  <h3 className="text-base font-bold text-white">No Saved Addresses Yet</h3>
-                  <p className="mt-1 text-xs text-neutral-400 leading-relaxed">
+                  <h3 className="font-serif text-lg font-bold text-[#1F211C]">No Saved Addresses Yet</h3>
+                  <p className="mt-1 text-xs text-[#5F6057] leading-relaxed">
                     You haven&apos;t saved any shipping destinations. Add an address now to accelerate your checkout process.
                   </p>
                   <button
                     type="button"
                     onClick={openAddModal}
-                    className="mt-5 min-h-[44px] px-6 py-2 rounded-full bg-white text-neutral-950 font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 transition-colors cursor-pointer"
+                    className="mt-5 min-h-[44px] px-6 py-2 rounded-xl bg-[#34452F] hover:bg-[#263722] text-[#FFFDF8] font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
                   >
                     Add Delivery Address
                   </button>
@@ -528,52 +554,52 @@ function ProfilePage() {
               )}
 
               {!addressesLoading && !addressesError && addresses.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {addresses.map((addr) => (
                     <div
                       key={addr._id}
                       className={`relative p-5 sm:p-6 rounded-2xl border transition-all flex flex-col justify-between ${
                         addr.isDefault
-                          ? 'border-purple-500/40 bg-purple-950/20 shadow-md ring-1 ring-purple-500/20'
-                          : 'border-white/10 bg-white/5 hover:border-white/20'
+                          ? 'border-2 border-[#34452F] bg-[#FAF7F0] shadow-xs'
+                          : 'border border-[#DED7CA] bg-[#FFFDF8] hover:border-[#85857A]'
                       }`}
                     >
                       {/* Top Row: Name + Default Badge */}
                       <div>
                         <div className="flex items-start justify-between gap-2 mb-2">
-                          <h3 className="font-bold text-base text-white">{addr.fullName}</h3>
+                          <h3 className="font-serif font-bold text-base sm:text-lg text-[#1F211C]">{addr.fullName}</h3>
                           {addr.isDefault && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/20 border border-purple-500/40 px-2.5 py-0.5 text-[11px] font-bold text-purple-300 uppercase tracking-wide shrink-0">
-                              <span className="h-1.5 w-1.5 rounded-full bg-purple-400" />
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[#34452F]/10 border border-[#34452F]/20 px-2.5 py-0.5 text-[11px] font-mono font-bold text-[#34452F] uppercase tracking-wide shrink-0">
+                              <span className="h-1.5 w-1.5 rounded-full bg-[#34452F]" />
                               Default
                             </span>
                           )}
                         </div>
 
                         {/* Address Details */}
-                        <div className="space-y-1 text-xs sm:text-sm text-neutral-300">
-                          <p className="leading-relaxed">{addr.addressLine}</p>
+                        <div className="space-y-1 text-xs sm:text-sm text-[#5F6057]">
+                          <p className="leading-relaxed text-[#1F211C]">{addr.addressLine}</p>
                           <p className="leading-relaxed">
-                            {addr.city}, {addr.state} — <span className="font-mono text-white">{addr.postalCode}</span>
+                            {addr.city}, {addr.state} — <span className="font-mono font-semibold text-[#1F211C]">{addr.postalCode}</span>
                           </p>
-                          <p className="text-neutral-400 font-medium">{addr.country}</p>
-                          <p className="pt-1.5 text-xs text-neutral-400 flex items-center gap-1.5">
-                            <svg className="h-3.5 w-3.5 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <p className="text-[#85857A]">{addr.country}</p>
+                          <p className="pt-2 text-xs text-[#85857A] flex items-center gap-1.5">
+                            <svg className="h-3.5 w-3.5 text-[#5F6057]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                             </svg>
-                            <span className="font-mono">{addr.phone}</span>
+                            <span className="font-mono text-[#5F6057]">{addr.phone}</span>
                           </p>
                         </div>
                       </div>
 
                       {/* Card Action Buttons */}
-                      <div className="mt-5 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+                      <div className="mt-5 pt-4 border-t border-[#DED7CA]/70 flex flex-wrap items-center justify-between gap-2">
                         <div>
                           {!addr.isDefault && (
                             <button
                               type="button"
                               onClick={() => handleSetDefault(addr._id)}
-                              className="text-xs text-purple-400 hover:text-purple-300 font-semibold cursor-pointer transition-colors"
+                              className="text-xs text-[#34452F] hover:text-[#263722] font-semibold cursor-pointer transition-colors"
                             >
                               Set as Default
                             </button>
@@ -583,14 +609,14 @@ function ProfilePage() {
                           <button
                             type="button"
                             onClick={() => openEditModal(addr)}
-                            className="min-h-[36px] px-3.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-semibold text-neutral-200 hover:text-white transition-colors cursor-pointer"
+                            className="min-h-[36px] px-3.5 rounded-lg border border-[#DED7CA] bg-[#FAF7F0] hover:bg-[#EEE7DC] text-xs font-semibold text-[#1F211C] transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
                           >
                             Edit
                           </button>
                           <button
                             type="button"
                             onClick={() => setDeletingAddressId(addr._id)}
-                            className="min-h-[36px] px-3.5 rounded-lg border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-xs font-semibold text-red-400 hover:text-red-300 transition-colors cursor-pointer"
+                            className="min-h-[36px] px-3.5 rounded-lg border border-[#A65332]/30 bg-[#A65332]/10 hover:bg-[#A65332]/20 text-xs font-semibold text-[#A65332] hover:text-[#8F452B] transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A65332]"
                           >
                             Delete
                           </button>
@@ -613,36 +639,36 @@ function ProfilePage() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-sm overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-[#1F211C]/60 backdrop-blur-sm overflow-y-auto"
         >
-          <div className="relative w-full max-w-lg rounded-3xl border border-white/15 bg-neutral-900 p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-lg rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-white/10">
-              <h3 id="modal-title" className="text-lg font-bold text-white uppercase tracking-tight">
+            <div className="flex items-center justify-between pb-4 border-b border-[#DED7CA]/70">
+              <h3 id="modal-title" className="font-serif text-xl font-bold text-[#1F211C]">
                 {modalMode === 'add' ? 'Add New Address' : 'Edit Delivery Address'}
               </h3>
               <button
                 type="button"
                 onClick={closeModal}
                 aria-label="Close dialog"
-                className="h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer text-base"
+                className="h-8 w-8 rounded-full border border-[#DED7CA] flex items-center justify-center text-[#5F6057] hover:text-[#1F211C] hover:bg-[#FAF7F0] transition-colors cursor-pointer text-base"
               >
-                ×
+                ✕
               </button>
             </div>
 
             {/* Error message */}
             {formServerError && (
-              <div className="mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-300">
+              <div className="mt-4 p-3.5 rounded-xl bg-[#A65332]/10 border border-[#A65332]/30 text-xs text-[#A65332]">
                 {formServerError}
               </div>
             )}
 
             {/* Address Form */}
-            <form onSubmit={handleAddressSubmit} className="mt-4 space-y-4">
+            <form onSubmit={handleAddressSubmit} className="mt-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="addr-fullName" className="block text-xs font-mono uppercase tracking-wider text-neutral-300 mb-1">
+                  <label htmlFor="addr-fullName" className="block text-xs font-mono uppercase tracking-wider text-[#5F6057] mb-1">
                     Full Name *
                   </label>
                   <input
@@ -653,15 +679,15 @@ function ProfilePage() {
                     value={addressForm.fullName}
                     onChange={handleAddressInputChange}
                     placeholder="Recipient's Name"
-                    className={`w-full min-h-[44px] rounded-xl border bg-neutral-950 px-3.5 py-2 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-hidden focus:border-purple-400 transition-colors ${
-                      formErrors.fullName ? 'border-red-500' : 'border-white/15'
+                    className={`w-full min-h-[44px] rounded-xl border bg-[#FAF7F0] px-3.5 py-2 text-xs sm:text-sm text-[#1F211C] placeholder-[#85857A] focus:outline-none focus:border-[#34452F] focus:ring-1 focus:ring-[#34452F] transition-colors ${
+                      formErrors.fullName ? 'border-[#A65332]' : 'border-[#DED7CA]'
                     }`}
                   />
-                  {formErrors.fullName && <p className="text-[11px] text-red-400 mt-1">{formErrors.fullName}</p>}
+                  {formErrors.fullName && <p className="text-[11px] text-[#A65332] mt-1">{formErrors.fullName}</p>}
                 </div>
 
                 <div>
-                  <label htmlFor="addr-phone" className="block text-xs font-mono uppercase tracking-wider text-neutral-300 mb-1">
+                  <label htmlFor="addr-phone" className="block text-xs font-mono uppercase tracking-wider text-[#5F6057] mb-1">
                     Phone Number *
                   </label>
                   <input
@@ -672,16 +698,16 @@ function ProfilePage() {
                     value={addressForm.phone}
                     onChange={handleAddressInputChange}
                     placeholder="10-digit mobile number"
-                    className={`w-full min-h-[44px] rounded-xl border bg-neutral-950 px-3.5 py-2 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-hidden focus:border-purple-400 transition-colors font-mono ${
-                      formErrors.phone ? 'border-red-500' : 'border-white/15'
+                    className={`w-full min-h-[44px] rounded-xl border bg-[#FAF7F0] px-3.5 py-2 text-xs sm:text-sm text-[#1F211C] placeholder-[#85857A] focus:outline-none focus:border-[#34452F] focus:ring-1 focus:ring-[#34452F] transition-colors font-mono ${
+                      formErrors.phone ? 'border-[#A65332]' : 'border-[#DED7CA]'
                     }`}
                   />
-                  {formErrors.phone && <p className="text-[11px] text-red-400 mt-1">{formErrors.phone}</p>}
+                  {formErrors.phone && <p className="text-[11px] text-[#A65332] mt-1">{formErrors.phone}</p>}
                 </div>
               </div>
 
               <div>
-                <label htmlFor="addr-addressLine" className="block text-xs font-mono uppercase tracking-wider text-neutral-300 mb-1">
+                <label htmlFor="addr-addressLine" className="block text-xs font-mono uppercase tracking-wider text-[#5F6057] mb-1">
                   Street Address &amp; House/Flat No. *
                 </label>
                 <input
@@ -692,16 +718,16 @@ function ProfilePage() {
                   value={addressForm.addressLine}
                   onChange={handleAddressInputChange}
                   placeholder="e.g. 42 MG Road, Indiranagar"
-                  className={`w-full min-h-[44px] rounded-xl border bg-neutral-950 px-3.5 py-2 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-hidden focus:border-purple-400 transition-colors ${
-                    formErrors.addressLine ? 'border-red-500' : 'border-white/15'
+                  className={`w-full min-h-[44px] rounded-xl border bg-[#FAF7F0] px-3.5 py-2 text-xs sm:text-sm text-[#1F211C] placeholder-[#85857A] focus:outline-none focus:border-[#34452F] focus:ring-1 focus:ring-[#34452F] transition-colors ${
+                    formErrors.addressLine ? 'border-[#A65332]' : 'border-[#DED7CA]'
                   }`}
                 />
-                {formErrors.addressLine && <p className="text-[11px] text-red-400 mt-1">{formErrors.addressLine}</p>}
+                {formErrors.addressLine && <p className="text-[11px] text-[#A65332] mt-1">{formErrors.addressLine}</p>}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label htmlFor="addr-city" className="block text-xs font-mono uppercase tracking-wider text-neutral-300 mb-1">
+                  <label htmlFor="addr-city" className="block text-xs font-mono uppercase tracking-wider text-[#5F6057] mb-1">
                     City *
                   </label>
                   <input
@@ -712,15 +738,15 @@ function ProfilePage() {
                     value={addressForm.city}
                     onChange={handleAddressInputChange}
                     placeholder="City"
-                    className={`w-full min-h-[44px] rounded-xl border bg-neutral-950 px-3 py-2 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-hidden focus:border-purple-400 transition-colors ${
-                      formErrors.city ? 'border-red-500' : 'border-white/15'
+                    className={`w-full min-h-[44px] rounded-xl border bg-[#FAF7F0] px-3 py-2 text-xs sm:text-sm text-[#1F211C] placeholder-[#85857A] focus:outline-none focus:border-[#34452F] focus:ring-1 focus:ring-[#34452F] transition-colors ${
+                      formErrors.city ? 'border-[#A65332]' : 'border-[#DED7CA]'
                     }`}
                   />
-                  {formErrors.city && <p className="text-[11px] text-red-400 mt-1">{formErrors.city}</p>}
+                  {formErrors.city && <p className="text-[11px] text-[#A65332] mt-1">{formErrors.city}</p>}
                 </div>
 
                 <div>
-                  <label htmlFor="addr-state" className="block text-xs font-mono uppercase tracking-wider text-neutral-300 mb-1">
+                  <label htmlFor="addr-state" className="block text-xs font-mono uppercase tracking-wider text-[#5F6057] mb-1">
                     State *
                   </label>
                   <input
@@ -731,15 +757,15 @@ function ProfilePage() {
                     value={addressForm.state}
                     onChange={handleAddressInputChange}
                     placeholder="State"
-                    className={`w-full min-h-[44px] rounded-xl border bg-neutral-950 px-3 py-2 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-hidden focus:border-purple-400 transition-colors ${
-                      formErrors.state ? 'border-red-500' : 'border-white/15'
+                    className={`w-full min-h-[44px] rounded-xl border bg-[#FAF7F0] px-3 py-2 text-xs sm:text-sm text-[#1F211C] placeholder-[#85857A] focus:outline-none focus:border-[#34452F] focus:ring-1 focus:ring-[#34452F] transition-colors ${
+                      formErrors.state ? 'border-[#A65332]' : 'border-[#DED7CA]'
                     }`}
                   />
-                  {formErrors.state && <p className="text-[11px] text-red-400 mt-1">{formErrors.state}</p>}
+                  {formErrors.state && <p className="text-[11px] text-[#A65332] mt-1">{formErrors.state}</p>}
                 </div>
 
                 <div>
-                  <label htmlFor="addr-postalCode" className="block text-xs font-mono uppercase tracking-wider text-neutral-300 mb-1">
+                  <label htmlFor="addr-postalCode" className="block text-xs font-mono uppercase tracking-wider text-[#5F6057] mb-1">
                     PIN Code *
                   </label>
                   <input
@@ -750,16 +776,16 @@ function ProfilePage() {
                     value={addressForm.postalCode}
                     onChange={handleAddressInputChange}
                     placeholder="PIN Code"
-                    className={`w-full min-h-[44px] rounded-xl border bg-neutral-950 px-3 py-2 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-hidden focus:border-purple-400 transition-colors font-mono ${
-                      formErrors.postalCode ? 'border-red-500' : 'border-white/15'
+                    className={`w-full min-h-[44px] rounded-xl border bg-[#FAF7F0] px-3 py-2 text-xs sm:text-sm text-[#1F211C] placeholder-[#85857A] focus:outline-none focus:border-[#34452F] focus:ring-1 focus:ring-[#34452F] transition-colors font-mono ${
+                      formErrors.postalCode ? 'border-[#A65332]' : 'border-[#DED7CA]'
                     }`}
                   />
-                  {formErrors.postalCode && <p className="text-[11px] text-red-400 mt-1">{formErrors.postalCode}</p>}
+                  {formErrors.postalCode && <p className="text-[11px] text-[#A65332] mt-1">{formErrors.postalCode}</p>}
                 </div>
               </div>
 
               <div>
-                <label htmlFor="addr-country" className="block text-xs font-mono uppercase tracking-wider text-neutral-300 mb-1">
+                <label htmlFor="addr-country" className="block text-xs font-mono uppercase tracking-wider text-[#5F6057] mb-1">
                   Country *
                 </label>
                 <input
@@ -770,11 +796,11 @@ function ProfilePage() {
                   value={addressForm.country}
                   onChange={handleAddressInputChange}
                   placeholder="Country"
-                  className={`w-full min-h-[44px] rounded-xl border bg-neutral-950 px-3.5 py-2 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-hidden focus:border-purple-400 transition-colors ${
-                    formErrors.country ? 'border-red-500' : 'border-white/15'
+                  className={`w-full min-h-[44px] rounded-xl border bg-[#FAF7F0] px-3.5 py-2 text-xs sm:text-sm text-[#1F211C] placeholder-[#85857A] focus:outline-none focus:border-[#34452F] focus:ring-1 focus:ring-[#34452F] transition-colors ${
+                    formErrors.country ? 'border-[#A65332]' : 'border-[#DED7CA]'
                   }`}
                 />
-                {formErrors.country && <p className="text-[11px] text-red-400 mt-1">{formErrors.country}</p>}
+                {formErrors.country && <p className="text-[11px] text-[#A65332] mt-1">{formErrors.country}</p>}
               </div>
 
               {/* Set As Default Checkbox */}
@@ -786,25 +812,25 @@ function ProfilePage() {
                     checked={addressForm.isDefault}
                     onChange={handleAddressInputChange}
                     disabled={modalMode === 'edit' && addressForm.isDefault && addresses.length === 1}
-                    className="h-4 w-4 rounded-sm border-white/20 bg-neutral-950 text-purple-600 focus:ring-purple-500"
+                    className="h-4 w-4 rounded-sm border-[#DED7CA] bg-[#FAF7F0] text-[#34452F] focus:ring-[#34452F]"
                   />
-                  <span className="text-xs text-neutral-300">Set as my default shipping address</span>
+                  <span className="text-xs text-[#5F6057]">Set as my default shipping address</span>
                 </label>
               </div>
 
               {/* Form Actions */}
-              <div className="pt-4 border-t border-white/10 flex items-center justify-end gap-3">
+              <div className="pt-4 border-t border-[#DED7CA]/70 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="min-h-[44px] px-5 py-2 rounded-full border border-white/10 hover:border-white/20 text-neutral-400 hover:text-white text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
+                  className="min-h-[44px] px-5 py-2 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#5F6057] hover:text-[#1F211C] text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={formSubmitting}
-                  className="min-h-[44px] px-6 py-2 rounded-full bg-white text-neutral-950 hover:bg-neutral-200 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                  className="min-h-[44px] px-6 py-2 rounded-xl bg-[#34452F] hover:bg-[#263722] text-[#FFFDF8] font-bold text-xs uppercase tracking-wider transition-all active:scale-95 cursor-pointer disabled:opacity-50 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
                 >
                   {formSubmitting
                     ? 'Saving...'
@@ -826,25 +852,25 @@ function ProfilePage() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-dialog-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1F211C]/60 backdrop-blur-sm"
         >
-          <div className="w-full max-w-sm rounded-3xl border border-white/15 bg-neutral-900 p-6 shadow-2xl text-center animate-in fade-in zoom-in-95 duration-200">
-            <div className="h-12 w-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-red-400 mb-4">
+          <div className="w-full max-w-sm rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-6 shadow-2xl text-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="h-12 w-12 rounded-full bg-[#A65332]/10 border border-[#A65332]/20 flex items-center justify-center mx-auto text-[#A65332] mb-4">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </div>
-            <h3 id="delete-dialog-title" className="text-base font-bold text-white uppercase tracking-tight">
+            <h3 id="delete-dialog-title" className="font-serif text-lg font-bold text-[#1F211C]">
               Delete Address
             </h3>
-            <p className="mt-2 text-xs text-neutral-400 leading-relaxed">
+            <p className="mt-2 text-xs text-[#5F6057] leading-relaxed">
               Are you sure you want to remove this delivery address? This action cannot be undone.
             </p>
             <div className="mt-6 flex items-center justify-center gap-3">
               <button
                 type="button"
                 onClick={() => setDeletingAddressId(null)}
-                className="min-h-[44px] px-5 py-2 rounded-full border border-white/10 hover:border-white/20 text-xs font-semibold uppercase tracking-wider text-neutral-300 hover:text-white transition-colors cursor-pointer"
+                className="min-h-[44px] px-5 py-2 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] hover:bg-[#EEE7DC] text-xs font-semibold uppercase tracking-wider text-[#5F6057] hover:text-[#1F211C] transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -852,7 +878,7 @@ function ProfilePage() {
                 type="button"
                 onClick={handleDeleteAddress}
                 disabled={deleteSubmitting}
-                className="min-h-[44px] px-5 py-2 rounded-full bg-red-600 hover:bg-red-500 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                className="min-h-[44px] px-5 py-2 rounded-xl bg-[#A65332] hover:bg-[#8F452B] text-[#FFFDF8] text-xs font-bold uppercase tracking-wider transition-all active:scale-95 cursor-pointer disabled:opacity-50 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A65332]"
               >
                 {deleteSubmitting ? 'Deleting...' : 'Delete'}
               </button>

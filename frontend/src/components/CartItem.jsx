@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { getProductImage } from '../utils/productImageMap'
 
 function CartItem({
   item,
@@ -19,10 +20,15 @@ function CartItem({
   const quantity = item.quantity || 1
   const itemTotal =
     typeof item.itemTotal === 'number' ? item.itemTotal : price * quantity
-  const imageUrl =
-    !imageError && Array.isArray(product.images) && product.images.length > 0
-      ? product.images[0]
-      : null
+
+  const [prevId, setPrevId] = useState(productId)
+  if (productId !== prevId) {
+    setPrevId(productId)
+    setImageError(false)
+  }
+
+  const imageUrl = !imageError ? getProductImage(product) : null
+
 
   const handleDecrement = () => {
     if (quantity > 1 && !isUpdating) {

@@ -9,7 +9,7 @@ import {
   removeFromWishlist,
   selectIsInWishlist,
 } from '../features/wishlist/wishlistSlice'
-import { getHomepageProductImage } from '../utils/productImageMap'
+import { getProductImage } from '../utils/productImageMap'
 
 function ProductCard({
   product,
@@ -18,11 +18,17 @@ function ProductCard({
   showDescription = false,
   variant = 'default',
   className = '',
-  useHomepageImageMapping = false,
+  _useHomepageImageMapping = true,
 }) {
   const [imageError, setImageError] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
   const [addFeedback, setAddFeedback] = useState(null) // 'success' | 'error' | null
+
+  const [prevId, setPrevId] = useState(product?._id)
+  if (product?._id !== prevId) {
+    setPrevId(product?._id)
+    setImageError(false)
+  }
 
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -30,9 +36,8 @@ function ProductCard({
   const isInWishlist = useSelector(selectIsInWishlist(product._id))
   const [wishlistBusy, setWishlistBusy] = useState(false)
 
-  const displayImage = useHomepageImageMapping
-    ? getHomepageProductImage(product)
-    : (Array.isArray(product.images) && product.images.length > 0 && typeof product.images[0] === 'string' && product.images[0].trim().length > 0 ? product.images[0] : null)
+  const displayImage = getProductImage(product)
+
 
   const hasImage = Boolean(displayImage) && !imageError
 
