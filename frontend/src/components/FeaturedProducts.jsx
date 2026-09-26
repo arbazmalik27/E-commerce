@@ -1,18 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
+import { ArrowLeft, ArrowRight, Heart, ShoppingBag, Check, RefreshCw } from 'lucide-react'
 import { selectIsAuthenticated } from '../features/auth/authSlice'
 import { addToCart } from '../features/cart/cartSlice'
 import api from '../services/api'
+import { getHomepageProductImage } from '../utils/productImageMap'
+import { FALLBACK_FEATURED_PRODUCTS } from '../data/fallbackProducts'
 import Eyebrow from './Eyebrow'
 
 // Editorial position labels — purely decorative UI convention, not fake product metadata
 const POSITION_CONFIG = {
-  '-2': { badge: 'EDIT', badgeColor: 'bg-white/8 text-neutral-300 border-white/15' },
-  '-1': { badge: 'LOOK', badgeColor: 'bg-purple-500/15 text-purple-300 border-purple-500/30' },
-  '0': { badge: 'FEATURED', badgeColor: 'bg-purple-500/20 text-purple-200 border-purple-500/40' },
-  '1': { badge: 'LOOK', badgeColor: 'bg-purple-500/15 text-purple-300 border-purple-500/30' },
-  '2': { badge: 'EDIT', badgeColor: 'bg-white/8 text-neutral-300 border-white/15' },
+  '-2': { badge: 'EDIT', badgeColor: 'bg-[#EEE7DC] text-[#5F6057] border-[#DED7CA]' },
+  '-1': { badge: 'LOOK', badgeColor: 'bg-[#34452F]/10 text-[#34452F] border-[#34452F]/20' },
+  '0': { badge: 'FEATURED', badgeColor: 'bg-[#34452F] text-[#FFFDF8] border-[#34452F]' },
+  '1': { badge: 'LOOK', badgeColor: 'bg-[#34452F]/10 text-[#34452F] border-[#34452F]/20' },
+  '2': { badge: 'EDIT', badgeColor: 'bg-[#EEE7DC] text-[#5F6057] border-[#DED7CA]' },
 }
 
 function ShowcaseCard({
@@ -31,18 +34,13 @@ function ShowcaseCard({
   const navigate = useNavigate()
   const isAuthenticated = useSelector(selectIsAuthenticated)
 
-  const hasImage =
-    product.images &&
-    Array.isArray(product.images) &&
-    product.images.length > 0 &&
-    typeof product.images[0] === 'string' &&
-    product.images[0].trim().length > 0 &&
-    !imageError
+  const displayImage = getHomepageProductImage(product)
+  const hasImage = Boolean(displayImage) && !imageError
 
   const isAvailable = product.stock > 0
   const badgeInfo = POSITION_CONFIG[positionOffset] || {
     badge: 'FEATURED',
-    badgeColor: 'bg-white/10 text-white border-white/20',
+    badgeColor: 'bg-[#34452F] text-[#FFFDF8] border-[#34452F]',
   }
 
   const handleAddToCart = async (e) => {
@@ -104,8 +102,8 @@ function ShowcaseCard({
       aria-label={`${isCenter ? 'Featured hero' : 'View'} ${product.name}`}
       className={`group relative flex flex-col justify-between overflow-hidden rounded-[2rem] border transition-all duration-500 select-none ${
         isCenter
-          ? 'w-[280px] sm:w-[295px] 2xl:w-[320px] bg-neutral-900/95 border-white/20 p-5 sm:p-6 shadow-2xl shadow-black/90 ring-1 ring-white/15 scale-105 z-20 cursor-default'
-          : 'bg-neutral-900/70 border-white/10 p-4 sm:p-5 shadow-xl backdrop-blur-md cursor-pointer hover:border-white/25 hover:bg-neutral-900/85 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ' +
+          ? 'w-[280px] sm:w-[295px] 2xl:w-[320px] bg-[#FFFDF8] border-[#34452F] p-5 sm:p-6 shadow-[0_15px_35px_-10px_rgba(52,69,47,0.15)] ring-1 ring-[#34452F]/20 scale-105 z-20 cursor-default'
+          : 'bg-[#FAF7F0] border-[#DED7CA] p-4 sm:p-5 shadow-xs cursor-pointer hover:border-[#34452F] hover:bg-[#FFFDF8] hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F] ' +
             (Math.abs(positionOffset) === 1
               ? 'w-[215px] 2xl:w-[245px] scale-98 z-10 opacity-85'
               : 'w-[185px] 2xl:w-[215px] scale-92 z-0 opacity-65')
@@ -115,7 +113,7 @@ function ShowcaseCard({
         {/* Top Bar: Editorial Badge (Left) + Wishlist Heart (Right) */}
         <div className="flex items-center justify-between gap-2 pb-2">
           <span
-            className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md ${badgeInfo.badgeColor}`}
+            className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider ${badgeInfo.badgeColor}`}
           >
             {badgeInfo.badge}
           </span>
@@ -128,71 +126,51 @@ function ShowcaseCard({
               onToggleWishlist(product._id)
             }}
             aria-label={isWishlisted ? 'Remove from wishlist' : 'Save to wishlist'}
-            className="h-8 w-8 rounded-full bg-white/5 hover:bg-white/15 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="h-8 w-8 rounded-full bg-[#FFFDF8] border border-[#DED7CA] text-[#5F6057] hover:text-[#A65332] flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
           >
-            <svg
+            <Heart
               className={`h-4 w-4 transition-colors ${
-                isWishlisted ? 'fill-red-500 text-red-500' : 'fill-none stroke-current'
+                isWishlisted ? 'fill-[#A65332] text-[#A65332]' : 'stroke-current'
               }`}
-              strokeWidth="1.75"
-              viewBox="0 0 24 24"
+              strokeWidth={1.75}
               aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-              />
-            </svg>
+            />
           </button>
         </div>
 
-        {/* Product Image — Full-bleed portrait frame with cinematic gradient edge */}
+        {/* Product Image */}
         <Link
           to={`/products/${product._id}`}
           onClick={(e) => !isCenter && e.preventDefault()}
           tabIndex={!isCenter ? -1 : 0}
           aria-label={`View details for ${product.name}`}
-          className="relative w-full my-2 overflow-hidden rounded-2xl bg-neutral-900 block border border-white/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          className="relative w-full my-2 overflow-hidden rounded-2xl bg-[#EEE7DC] block border border-[#DED7CA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
           style={{ aspectRatio: '3/4' }}
         >
           {hasImage ? (
-            <>
-              <img
-                src={product.images[0]}
-                alt={product.name}
-                loading="lazy"
-                onError={() => setImageError(true)}
-                className="h-full w-full object-cover object-top transition-transform duration-600 ease-out group-hover:scale-[1.04] select-none"
-              />
-              {/* Subtle cinematic bottom gradient for text legibility if image bleeds */}
-              <div
-                className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-neutral-950/60 to-transparent"
-                aria-hidden="true"
-              />
-            </>
+            <img
+              src={displayImage}
+              alt={product.name}
+              loading="lazy"
+              decoding="async"
+              width={320}
+              height={427}
+              onError={() => setImageError(true)}
+              className="h-full w-full object-cover object-top transition-transform duration-600 ease-out group-hover:scale-[1.03] select-none"
+            />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-neutral-600 text-xs uppercase font-semibold tracking-wider">
-              <svg className="h-8 w-8 text-neutral-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-              </svg>
+            <div className="flex h-full w-full items-center justify-center text-[#85857A] text-xs uppercase font-mono font-semibold tracking-wider">
+              No Image
             </div>
           )}
         </Link>
 
-        {/* 3 Micro-Dots Below Image (Reference Signature) */}
-        <div className="flex items-center justify-center gap-1.5 my-2" aria-hidden="true">
-          <span className={`h-1.5 w-1.5 rounded-full ${isCenter ? 'bg-purple-400' : 'bg-neutral-600'}`} />
-          <span className="h-1.5 w-1.5 rounded-full bg-white/15" />
-          <span className="h-1.5 w-1.5 rounded-full bg-white/15" />
-        </div>
-
         {/* Product Title */}
         <h3
-          className={`font-bold text-white tracking-tight leading-snug line-clamp-2 transition-colors ${
+          className={`font-bold text-[#1F211C] tracking-tight leading-snug line-clamp-2 transition-colors mt-2 ${
             isCenter
-              ? 'text-base sm:text-lg group-hover:text-purple-200'
-              : 'text-sm group-hover:text-neutral-100'
+              ? 'text-base sm:text-lg group-hover:text-[#34452F]'
+              : 'text-sm group-hover:text-[#34452F]'
           }`}
         >
           <Link
@@ -205,9 +183,9 @@ function ShowcaseCard({
           </Link>
         </h3>
 
-        {/* Short Product Description — only shown if real content exists */}
+        {/* Short Product Description */}
         {product.description && (
-          <p className="mt-1 text-xs text-neutral-500 line-clamp-2 leading-relaxed">
+          <p className="mt-1 text-xs text-[#5F6057] line-clamp-2 leading-relaxed">
             {product.description}
           </p>
         )}
@@ -215,12 +193,12 @@ function ShowcaseCard({
         {/* Stock Status Indicator */}
         <div className="mt-2 flex items-center gap-1.5">
           {isAvailable ? (
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#3F6B45]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#3F6B45]" />
               In Stock
             </span>
           ) : (
-            <span className="text-[11px] font-medium text-red-400">
+            <span className="text-[11px] font-medium text-[#B7473A]">
               Sold Out
             </span>
           )}
@@ -228,51 +206,42 @@ function ShowcaseCard({
       </div>
 
       {/* Price & Action Row */}
-      <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between gap-2">
+      <div className="mt-3 pt-3 border-t border-[#DED7CA] flex items-center justify-between gap-2">
         <span
-          className={`font-black text-white tracking-tight ${
+          className={`font-black text-[#1F211C] tracking-tight ${
             isCenter ? 'text-xl sm:text-2xl' : 'text-base sm:text-lg'
           }`}
         >
           ₹{Number(product.price).toLocaleString('en-IN')}
         </span>
 
-        {/* Action Button: Full Pill for Center Card; Circular Icon for Flanking Cards */}
+        {/* Action Button */}
         {isCenter ? (
           <button
             type="button"
             onClick={handleAddToCart}
             disabled={!isAvailable || isAdding}
             aria-label={`Add ${product.name} to cart`}
-            className={`min-h-[44px] inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold tracking-wider uppercase transition-all duration-200 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-40 shadow-lg ${
+            className={`min-h-[44px] inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold tracking-wider uppercase transition-all duration-200 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F] disabled:cursor-not-allowed disabled:opacity-40 shadow-xs ${
               addFeedback === 'success'
-                ? 'bg-emerald-500 text-white border border-emerald-400'
+                ? 'bg-[#3F6B45] text-[#FFFDF8]'
                 : addFeedback === 'error'
-                  ? 'bg-red-500/20 text-red-300 border border-red-500/40'
-                  : 'bg-white hover:bg-neutral-200 text-neutral-950 hover:shadow-xl'
+                  ? 'bg-red-500/10 text-[#B7473A] border border-red-500/25'
+                  : 'bg-[#34452F] hover:bg-[#263722] text-[#FFFDF8]'
             }`}
           >
             {isAdding ? (
-              <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
+              <span className="inline-flex items-center gap-1">Loading...</span>
             ) : addFeedback === 'success' ? (
               <span className="inline-flex items-center gap-1.5">
-                <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
+                <Check className="h-4 w-4" />
                 <span>Added</span>
               </span>
-            ) : addFeedback === 'error' ? (
-              <span>Failed</span>
             ) : !isAvailable ? (
               <span>Sold Out</span>
             ) : (
               <>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                </svg>
+                <ShoppingBag className="h-4 w-4" />
                 <span>Add to Cart</span>
               </>
             )}
@@ -284,27 +253,18 @@ function ShowcaseCard({
             disabled={!isAvailable || isAdding}
             title={`Add ${product.name} to cart`}
             aria-label={`Add ${product.name} to cart`}
-            className={`min-h-[40px] min-w-[40px] rounded-full inline-flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-40 ${
+            className={`min-h-[40px] min-w-[40px] rounded-full inline-flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F] disabled:cursor-not-allowed disabled:opacity-40 ${
               addFeedback === 'success'
-                ? 'bg-emerald-500 text-white'
+                ? 'bg-[#3F6B45] text-[#FFFDF8]'
                 : addFeedback === 'error'
-                  ? 'bg-red-500/30 text-red-300'
-                  : 'bg-white/10 hover:bg-white text-white hover:text-neutral-950 border border-white/15'
+                  ? 'bg-red-500/20 text-[#B7473A]'
+                  : 'bg-[#FAF7F0] hover:bg-[#34452F] text-[#34452F] hover:text-[#FFFDF8] border border-[#DED7CA]'
             }`}
           >
-            {isAdding ? (
-              <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-            ) : addFeedback === 'success' ? (
-              <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
+            {addFeedback === 'success' ? (
+              <Check className="h-4 w-4 text-[#FFFDF8]" />
             ) : (
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-              </svg>
+              <ShoppingBag className="h-4 w-4" />
             )}
           </button>
         )}
@@ -314,12 +274,11 @@ function ShowcaseCard({
 }
 
 function FeaturedProducts() {
-  const [allProducts, setAllProducts] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [allProducts, setAllProducts] = useState(FALLBACK_FEATURED_PRODUCTS)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [currentIndex, setCurrentIndex] = useState(2) // Default to Flagship Headphones in the center
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [wishlist, setWishlist] = useState({})
-
   const touchStartX = useRef(null)
 
   const toggleWishlist = (productId) => {
@@ -329,105 +288,100 @@ function FeaturedProducts() {
     }))
   }
 
-  // Load products on initial mount
   useEffect(() => {
     let isMounted = true
 
-    const loadProducts = async () => {
+    const fetchFeatured = async (retryCount = 0) => {
       try {
-        // Fashion-only fetch — backend now returns only fashion products,
-        // but we explicitly filter as a defensive measure.
-        const response = await api.get('/products', { params: { category: 'fashion' } })
+        const response = await api.get('/products', {
+          params: { category: 'fashion', limit: 20 },
+        })
         const rawProducts = Array.isArray(response.data?.products)
           ? response.data.products
           : Array.isArray(response.data)
           ? response.data
           : []
+
         if (isMounted) {
-          const activeList = rawProducts.filter((p) => p && p.isActive !== false)
-          setAllProducts(activeList)
+          const activeFashion = rawProducts.filter(
+            (p) => p && p.isActive !== false && p.category === 'fashion'
+          )
+          if (activeFashion.length > 0) {
+            setAllProducts(activeFashion)
+          }
+          setError(null)
+          setLoading(false)
         }
       } catch (err) {
-        if (isMounted) {
-          console.error('FeaturedProducts failed to load products:', err?.message || err)
-          setError('Unable to load featured products.')
+        if (retryCount < 1 && isMounted) {
+          setTimeout(() => {
+            if (isMounted) fetchFeatured(retryCount + 1)
+          }, 1200)
+          return
         }
-      } finally {
         if (isMounted) {
+          console.warn('FeaturedProducts: Backend API offline or unreachable, continuing with curated showcase:', err?.message || err)
           setLoading(false)
+          // Keep FALLBACK_FEATURED_PRODUCTS active so the showcase renders flawlessly
         }
       }
     }
 
-    loadProducts()
+    fetchFeatured()
 
     return () => {
       isMounted = false
     }
   }, [])
 
-  // Manual retry handler
-  const handleRetry = async () => {
+  const handleRetry = () => {
     setLoading(true)
     setError(null)
-    try {
-      const response = await api.get('/products', { params: { category: 'fashion' } })
-      const rawProducts = Array.isArray(response.data?.products)
-        ? response.data.products
-        : Array.isArray(response.data)
-        ? response.data
-        : []
-      const activeList = rawProducts.filter((p) => p && p.isActive !== false)
-      setAllProducts(activeList)
-    } catch (err) {
-      console.error('FeaturedProducts retry failed:', err?.message || err)
-      setError('Unable to load featured products.')
-    } finally {
-      setLoading(false)
-    }
+    api
+      .get('/products', { params: { category: 'fashion', limit: 20 } })
+      .then((res) => {
+        const raw = Array.isArray(res.data?.products)
+          ? res.data.products
+          : Array.isArray(res.data)
+          ? res.data
+          : []
+        const activeFashion = raw.filter(
+          (p) => p && p.isActive !== false && p.category === 'fashion'
+        )
+        if (activeFashion.length > 0) {
+          setAllProducts(activeFashion)
+        }
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.warn('Retry failed:', err?.message || err)
+        setError('Unable to load live featured items.')
+        setLoading(false)
+      })
   }
 
-  // Curate 5 distinct flagship items across Fashion departments
   const curatedShowcase = useMemo(() => {
-    if (allProducts.length === 0) return []
+    if (!allProducts || allProducts.length === 0) return []
 
-    // 1. Timepiece / Accessories
-    const accessory =
-      allProducts.find((p) => /watch|sunglass|wallet|belt/i.test(p.name)) ||
-      allProducts.find((p) => p.department === 'accessories')
+    const prioritizedIds = [
+      '6aae361ba139bd5a38bf90f0',
+      '6aae361ba139bd5a38bf90ef',
+      '6aae361ba139bd5a38bf90f4',
+      '6aae361ba139bd5a38bf90ee',
+      '6aae361aa139bd5a38bf90ed',
+    ]
 
-    // 2. Footwear / Sneakers
-    const footwear =
-      allProducts.find((p) => /sneaker|shoe|boot|heel/i.test(p.name)) ||
-      allProducts.find((p) => p.department === 'footwear' && p._id !== accessory?._id)
-
-    // 3. Flagship Apparel / Shirts / Tops (CENTER HERO DEFAULT)
-    const apparel =
-      allProducts.find((p) => /shirt|top|hoodie|jacket/i.test(p.name)) ||
-      allProducts[0]
-
-    // 4. Contemporary Women / Kids / Editorial
-    const editorial =
-      allProducts.find((p) => /dress|kurti|saree|skirt|blazer/i.test(p.name)) ||
-      allProducts.find((p) => (p.department === 'women' || p.department === 'kids') && p._id !== apparel?._id)
-
-    // 5. Commute / Leather Goods / Outerwear
-    const bag =
-      allProducts.find((p) => /backpack|bag|coat/i.test(p.name)) ||
-      allProducts.find((p) => p.department === 'accessories' && p._id !== accessory?._id)
-
-    const rawCandidates = [accessory, footwear, apparel, editorial, bag]
-    const selectedIds = new Set()
     const result = []
+    const selectedIds = new Set()
 
-    for (const item of rawCandidates) {
+    for (const targetId of prioritizedIds) {
+      const item = allProducts.find((p) => p._id === targetId)
       if (item && !selectedIds.has(item._id)) {
         selectedIds.add(item._id)
         result.push(item)
       }
     }
 
-    // If any slots are missing, fill from other distinct active items
     if (result.length < 5) {
       for (const p of allProducts) {
         if (result.length >= 5) break
@@ -483,7 +437,6 @@ function FeaturedProducts() {
     touchStartX.current = null
   }
 
-  // Helper to get product at relative offset from center
   const getProductAtOffset = (offset) => {
     if (totalProducts === 0) return null
     const targetIdx = (safeCurrentIndex + offset + totalProducts * 10) % totalProducts
@@ -497,32 +450,26 @@ function FeaturedProducts() {
     <section
       id="featured-products"
       aria-labelledby="featured-products-heading"
-      className="relative w-full bg-neutral-950 py-16 sm:py-20 lg:py-24 text-white border-t border-white/5 overflow-hidden scroll-mt-32"
+      className="relative w-full bg-[#F5F0E8] py-16 sm:py-20 lg:py-24 text-[#1F211C] border-b border-[#DED7CA] overflow-hidden scroll-mt-32"
     >
-      {/* Subtle Warm Luxury Ambient Backlight */}
-      <div
-        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[500px] bg-gradient-to-b from-purple-900/10 via-purple-950/5 to-transparent blur-3xl opacity-30 -z-10"
-        aria-hidden="true"
-      />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* =========================================================================
-            1. SECTION HEADER — Editorial, Fashion-Forward
+            1. SECTION HEADER: Label: FEATURED PRODUCTS | Heading: BEST SELLERS
            ========================================================================= */}
         <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-12 sm:mb-16">
           <div className="mb-4">
-            <Eyebrow>TRENDVOLT EDIT</Eyebrow>
+            <Eyebrow variant="olive">FEATURED PRODUCTS</Eyebrow>
           </div>
 
           <h2
             id="featured-products-heading"
-            className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight text-white leading-tight"
+            className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight text-[#1F211C] leading-tight"
           >
-            FEATURED PRODUCTS
+            BEST SELLERS
           </h2>
 
-          <p className="mt-4 text-sm sm:text-base text-neutral-400 font-normal leading-relaxed max-w-lg">
-            Curated pieces selected for the modern wardrobe.
+          <p className="mt-4 text-sm sm:text-base text-[#5F6057] font-normal leading-relaxed max-w-lg">
+            Signature wardrobe essentials celebrated for their refined silhouette and lasting appeal.
           </p>
         </div>
 
@@ -535,27 +482,27 @@ function FeaturedProducts() {
             aria-label="Loading featured collection"
             className="flex items-center justify-center gap-3 sm:gap-4 overflow-hidden py-8 max-w-6xl mx-auto"
           >
-            <div className="hidden min-[1180px]:block w-[185px] rounded-[2rem] border border-white/10 bg-neutral-900/40 p-4 animate-pulse opacity-40">
-              <div className="aspect-[4/3] w-full rounded-2xl bg-white/5 mb-3" />
-              <div className="h-4 w-3/4 rounded bg-white/10" />
+            <div className="hidden min-[1180px]:block w-[185px] rounded-[2rem] border border-[#DED7CA] bg-[#EEE7DC] p-4 animate-pulse opacity-40">
+              <div className="aspect-[4/3] w-full rounded-2xl bg-[#DED7CA] mb-3" />
+              <div className="h-4 w-3/4 rounded bg-[#DED7CA]" />
             </div>
-            <div className="hidden md:block w-[215px] rounded-[2rem] border border-white/10 bg-neutral-900/40 p-4 animate-pulse opacity-60">
-              <div className="aspect-[4/3] w-full rounded-2xl bg-white/5 mb-3" />
-              <div className="h-4 w-3/4 rounded bg-white/10" />
+            <div className="hidden md:block w-[215px] rounded-[2rem] border border-[#DED7CA] bg-[#EEE7DC] p-4 animate-pulse opacity-60">
+              <div className="aspect-[4/3] w-full rounded-2xl bg-[#DED7CA] mb-3" />
+              <div className="h-4 w-3/4 rounded bg-[#DED7CA]" />
             </div>
-            <div className="w-[280px] sm:w-[295px] rounded-[2rem] border border-white/15 bg-neutral-900/80 p-6 animate-pulse shadow-2xl">
-              <div className="h-4 w-1/3 rounded bg-white/10 mb-3" />
-              <div className="aspect-[4/3] w-full rounded-2xl bg-white/5 mb-3" />
-              <div className="h-5 w-2/3 rounded bg-white/10 mb-4" />
-              <div className="h-10 w-full rounded-full bg-white/10" />
+            <div className="w-[280px] sm:w-[295px] rounded-[2rem] border border-[#DED7CA] bg-[#FFFDF8] p-6 animate-pulse shadow-md">
+              <div className="h-4 w-1/3 rounded bg-[#DED7CA] mb-3" />
+              <div className="aspect-[4/3] w-full rounded-2xl bg-[#EEE7DC] mb-3" />
+              <div className="h-5 w-2/3 rounded bg-[#DED7CA] mb-4" />
+              <div className="h-10 w-full rounded-full bg-[#EEE7DC]" />
             </div>
-            <div className="hidden md:block w-[215px] rounded-[2rem] border border-white/10 bg-neutral-900/40 p-4 animate-pulse opacity-60">
-              <div className="aspect-[4/3] w-full rounded-2xl bg-white/5 mb-3" />
-              <div className="h-4 w-3/4 rounded bg-white/10" />
+            <div className="hidden md:block w-[215px] rounded-[2rem] border border-[#DED7CA] bg-[#EEE7DC] p-4 animate-pulse opacity-60">
+              <div className="aspect-[4/3] w-full rounded-2xl bg-[#DED7CA] mb-3" />
+              <div className="h-4 w-3/4 rounded bg-[#DED7CA]" />
             </div>
-            <div className="hidden min-[1180px]:block w-[185px] rounded-[2rem] border border-white/10 bg-neutral-900/40 p-4 animate-pulse opacity-40">
-              <div className="aspect-[4/3] w-full rounded-2xl bg-white/5 mb-3" />
-              <div className="h-4 w-3/4 rounded bg-white/10" />
+            <div className="hidden min-[1180px]:block w-[185px] rounded-[2rem] border border-[#DED7CA] bg-[#EEE7DC] p-4 animate-pulse opacity-40">
+              <div className="aspect-[4/3] w-full rounded-2xl bg-[#DED7CA] mb-3" />
+              <div className="h-4 w-3/4 rounded bg-[#DED7CA]" />
             </div>
           </div>
         )}
@@ -563,24 +510,20 @@ function FeaturedProducts() {
         {/* =========================================================================
             3. ERROR STATE
            ========================================================================= */}
-        {!loading && error && (
+        {!loading && error && totalProducts === 0 && (
           <div
             role="alert"
-            className="rounded-3xl border border-red-500/20 bg-neutral-900/80 p-8 sm:p-12 text-center max-w-xl mx-auto my-8 shadow-2xl backdrop-blur-md"
+            className="rounded-3xl border border-red-500/20 bg-[#FFFDF8] p-8 sm:p-12 text-center max-w-xl mx-auto my-8 shadow-xs"
           >
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10 text-red-400 mb-4 border border-red-500/30">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2">Unable to load featured collection.</h3>
-            <p className="text-sm text-neutral-400 mb-6">Please check your connection and try again.</p>
+            <h3 className="text-xl font-bold text-[#1F211C] mb-2">Unable to load featured collection.</h3>
+            <p className="text-sm text-[#5F6057] mb-6">Please check your connection and try again.</p>
             <button
               type="button"
               onClick={handleRetry}
-              className="min-h-[44px] inline-flex items-center justify-center rounded-full bg-white px-7 py-2.5 text-xs font-bold uppercase tracking-wider text-neutral-950 transition-all hover:bg-neutral-200 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="min-h-[44px] inline-flex items-center justify-center gap-2 rounded-full bg-[#34452F] px-7 py-2.5 text-xs font-bold uppercase tracking-wider text-[#FFFDF8] transition-all hover:bg-[#263722] active:scale-95 cursor-pointer"
             >
-              Retry
+              <RefreshCw className="h-4 w-4" />
+              <span>Retry</span>
             </button>
           </div>
         )}
@@ -589,12 +532,12 @@ function FeaturedProducts() {
             4. EMPTY STATE
            ========================================================================= */}
         {!loading && !error && totalProducts === 0 && (
-          <div className="rounded-3xl border border-white/10 bg-neutral-900/60 p-8 sm:p-14 text-center max-w-xl mx-auto my-8 shadow-2xl backdrop-blur-md">
-            <h3 className="text-xl font-bold text-white mb-2">Featured collection is coming soon.</h3>
-            <p className="text-sm text-neutral-400 mb-6">Explore our full catalog of luxury fashion apparel in the shop.</p>
+          <div className="rounded-3xl border border-[#DED7CA] bg-[#FFFDF8] p-8 sm:p-14 text-center max-w-xl mx-auto my-8 shadow-xs">
+            <h3 className="text-xl font-bold text-[#1F211C] mb-2">Featured collection is coming soon.</h3>
+            <p className="text-sm text-[#5F6057] mb-6">Explore our full catalog of fashion apparel in the shop.</p>
             <Link
               to="/products"
-              className="min-h-[44px] inline-flex items-center justify-center rounded-full bg-white px-7 py-2.5 text-xs font-bold uppercase tracking-wider text-neutral-950 transition-all hover:bg-neutral-200 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="min-h-[44px] inline-flex items-center justify-center rounded-full bg-[#34452F] px-7 py-2.5 text-xs font-bold uppercase tracking-wider text-[#FFFDF8] transition-all hover:bg-[#263722] active:scale-95 cursor-pointer"
             >
               Explore Shop
             </Link>
@@ -621,17 +564,15 @@ function FeaturedProducts() {
                 type="button"
                 onClick={handlePrev}
                 aria-label="Previous product"
-                className="hidden sm:flex absolute left-0 xl:-left-6 top-1/2 -translate-y-1/2 z-30 min-h-[48px] min-w-[48px] items-center justify-center rounded-full border border-white/15 bg-neutral-900/90 text-white backdrop-blur-xl transition-all duration-200 hover:bg-white hover:text-neutral-950 hover:border-white hover:scale-105 active:scale-95 cursor-pointer shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="hidden sm:flex absolute left-0 xl:-left-6 top-1/2 -translate-y-1/2 z-30 min-h-[48px] min-w-[48px] items-center justify-center rounded-full border border-[#DED7CA] bg-[#FFFDF8] text-[#1F211C] transition-all duration-200 hover:bg-[#34452F] hover:text-[#FFFDF8] hover:border-[#34452F] hover:scale-105 active:scale-95 cursor-pointer shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
               >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                </svg>
+                <ArrowLeft className="h-5 w-5" />
               </button>
             )}
 
-            {/* Stage: 5-Card Fan Layout on Desktop (min-[1180px]:), 3-Card on Tablet/Laptop (md:), 1-Card on Mobile */}
+            {/* Stage: 5-Card Fan Layout */}
             <div className="flex items-center justify-center gap-3 sm:gap-3.5 xl:gap-4 w-full mx-auto py-4">
-              {/* Position -2 (Outer Left, visible on screens >= 1180px) */}
+              {/* Position -2 */}
               {totalProducts >= 5 && (
                 <div className="hidden min-[1180px]:block shrink-0">
                   {(() => {
@@ -650,7 +591,7 @@ function FeaturedProducts() {
                 </div>
               )}
 
-              {/* Position -1 (Inner Left, visible on md: and up) */}
+              {/* Position -1 */}
               {totalProducts >= 3 && (
                 <div className="hidden md:block shrink-0">
                   {(() => {
@@ -669,7 +610,7 @@ function FeaturedProducts() {
                 </div>
               )}
 
-              {/* Position 0 (CENTER HERO CARD, always visible) */}
+              {/* Position 0 (CENTER HERO CARD) */}
               <div className="shrink-0 z-20">
                 <ShowcaseCard
                   product={curatedShowcase[safeCurrentIndex]}
@@ -680,7 +621,7 @@ function FeaturedProducts() {
                 />
               </div>
 
-              {/* Position +1 (Inner Right, visible on md: and up) */}
+              {/* Position +1 */}
               {totalProducts >= 3 && (
                 <div className="hidden md:block shrink-0">
                   {(() => {
@@ -699,7 +640,7 @@ function FeaturedProducts() {
                 </div>
               )}
 
-              {/* Position +2 (Outer Right, visible on screens >= 1180px) */}
+              {/* Position +2 */}
               {totalProducts >= 5 && (
                 <div className="hidden min-[1180px]:block shrink-0">
                   {(() => {
@@ -725,41 +666,35 @@ function FeaturedProducts() {
                 type="button"
                 onClick={handleNext}
                 aria-label="Next product"
-                className="hidden sm:flex absolute right-0 xl:-right-6 top-1/2 -translate-y-1/2 z-30 min-h-[48px] min-w-[48px] items-center justify-center rounded-full border border-white/15 bg-neutral-900/90 text-white backdrop-blur-xl transition-all duration-200 hover:bg-white hover:text-neutral-950 hover:border-white hover:scale-105 active:scale-95 cursor-pointer shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="hidden sm:flex absolute right-0 xl:-right-6 top-1/2 -translate-y-1/2 z-30 min-h-[48px] min-w-[48px] items-center justify-center rounded-full border border-[#DED7CA] bg-[#FFFDF8] text-[#1F211C] transition-all duration-200 hover:bg-[#34452F] hover:text-[#FFFDF8] hover:border-[#34452F] hover:scale-105 active:scale-95 cursor-pointer shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
               >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                </svg>
+                <ArrowRight className="h-5 w-5" />
               </button>
             )}
 
-            {/* Mobile-Only Arrow Buttons */}
+            {/* Mobile Navigation Arrows */}
             {totalProducts > 1 && (
               <div className="flex sm:hidden items-center justify-center gap-4 mt-6">
                 <button
                   type="button"
                   onClick={handlePrev}
                   aria-label="Previous product"
-                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full border border-white/15 bg-neutral-900/90 text-white active:scale-95 transition-all shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white hover:bg-neutral-800"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full border border-[#DED7CA] bg-[#FFFDF8] text-[#1F211C] active:scale-95 transition-all shadow-xs"
                 >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                  </svg>
+                  <ArrowLeft className="h-4 w-4" />
                 </button>
                 <button
                   type="button"
                   onClick={handleNext}
                   aria-label="Next product"
-                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full border border-white/15 bg-neutral-900/90 text-white active:scale-95 transition-all shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white hover:bg-neutral-800"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full border border-[#DED7CA] bg-[#FFFDF8] text-[#1F211C] active:scale-95 transition-all shadow-xs"
                 >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                  </svg>
+                  <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
             )}
 
-            {/* Reference-Matching 5 Pagination Dots */}
+            {/* Pagination Dots */}
             {totalProducts > 1 && (
               <div className="mt-8 sm:mt-10 flex items-center justify-center gap-2">
                 {curatedShowcase.map((p, idx) => {
@@ -772,13 +707,13 @@ function FeaturedProducts() {
                       aria-selected={isActive}
                       aria-label={`Select product ${idx + 1}: ${p.name}`}
                       onClick={() => setCurrentIndex(idx)}
-                      className="min-h-[44px] min-w-[28px] flex items-center justify-center cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-full"
+                      className="min-h-[44px] min-w-[28px] flex items-center justify-center cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F] rounded-full"
                     >
                       <span
                         className={`block rounded-full transition-all duration-300 ${
                           isActive
-                            ? 'h-2.5 w-2.5 bg-purple-400 ring-4 ring-purple-400/20'
-                            : 'h-2 w-2 bg-white/25 hover:bg-white/50'
+                            ? 'h-2.5 w-2.5 bg-[#34452F] ring-4 ring-[#34452F]/20'
+                            : 'h-2 w-2 bg-[#DED7CA] hover:bg-[#85857A]'
                         }`}
                       />
                     </button>
@@ -788,22 +723,13 @@ function FeaturedProducts() {
             )}
 
             {/* Section Footer: Editorial "Explore All" Discovery Link */}
-            <div className="mt-8 flex items-center justify-center border-t border-white/5 pt-6 sm:pt-8">
+            <div className="mt-8 flex items-center justify-center border-t border-[#DED7CA] pt-6 sm:pt-8">
               <Link
                 to="/products?category=fashion"
-                className="group inline-flex items-center gap-2.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-neutral-300 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-sm"
+                className="group inline-flex items-center gap-2.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#34452F] hover:text-[#A65332] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F] rounded-sm"
               >
                 <span>Explore the Full Fashion Collection</span>
-                <svg
-                  className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  aria-hidden="true"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                </svg>
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
             </div>
           </div>

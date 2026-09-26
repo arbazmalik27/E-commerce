@@ -4,17 +4,28 @@ import { Link } from 'react-router-dom'
 import { selectUser } from '../features/auth/authSlice'
 import {
   fetchCart,
-  resetCart,
   selectCart,
 } from '../features/cart/cartSlice'
 import api from '../services/api'
 import { loadRazorpayScript } from '../utils/loadRazorpay'
+import Eyebrow from '../components/Eyebrow'
 
 function CheckoutPage() {
   const dispatch = useDispatch()
   const user = useSelector(selectUser)
-  const { items, totalItems, totalAmount, loading: cartLoading, initialized: cartInitialized } =
-    useSelector(selectCart)
+  const {
+    items,
+    totalItems,
+    totalAmount,
+    loading: cartLoading,
+    initialized: cartInitialized,
+    error: cartError,
+  } = useSelector(selectCart)
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
 
   // Controlled form state
   const [formData, setFormData] = useState(() => ({
@@ -37,6 +48,13 @@ function CheckoutPage() {
   const [serverError, setServerError] = useState(null)
   const [createdOrder, setCreatedOrder] = useState(null)
   const [verifiedOrder, setVerifiedOrder] = useState(null)
+
+  // Auto scroll to top on state transitions so headers and alerts are always visible
+  useEffect(() => {
+    if (createdOrder || paymentState === 'payment_cancelled' || paymentState === 'payment_failed') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }, [createdOrder, paymentState])
 
   const isSubmitting =
     paymentState === 'creating_order' ||
@@ -204,6 +222,7 @@ function CheckoutPage() {
       if (response.data?.success && response.data.order) {
         setVerifiedOrder(response.data.order)
         setPaymentState('payment_success')
+        dispatch(fetchCart())
       } else {
         throw new Error(response.data?.message || 'Payment signature verification failed.')
       }
@@ -268,7 +287,7 @@ function CheckoutPage() {
           orderNumber: targetOrder.orderNumber,
         },
         theme: {
-          color: '#7c3aed',
+          color: '#34452F',
         },
         handler: async function (razorpayResponse) {
           await handleVerifyPayment(targetOrder, razorpayResponse)
@@ -276,9 +295,11 @@ function CheckoutPage() {
         modal: {
           ondismiss: function () {
             setPaymentState('payment_cancelled')
-            setServerError(
-              'Payment was cancelled. Your order has been saved and you can complete payment whenever you are ready.'
-            )
+            const msg =
+              resolvedKeyId === 'rzp_test_placeholder_key'
+                ? 'Razorpay was unable to initialize live transactions with placeholder credentials (rzp_test_placeholder_key). Please set valid Razorpay test keys in backend/.env to complete test payments.'
+                : 'Payment was cancelled. Your order has been saved and you can complete payment whenever you are ready.'
+            setServerError(msg)
           },
           escape: true,
           backdropclose: false,
@@ -288,10 +309,14 @@ function CheckoutPage() {
       const rzpInstance = new window.Razorpay(options)
 
       rzpInstance.on('payment.failed', function (failureResponse) {
-        const errorDesc =
+        let errorDesc =
           failureResponse?.error?.description ||
           failureResponse?.error?.reason ||
           'Payment processing failed. Please try again or use another payment method.'
+        if (resolvedKeyId === 'rzp_test_placeholder_key') {
+          errorDesc =
+            'Razorpay test credentials are not configured (using placeholder key). To test real payment transactions, please set valid Razorpay credentials in backend/.env.'
+        }
         setServerError(errorDesc)
         setPaymentState('payment_failed')
       })
@@ -338,8 +363,6 @@ function CheckoutPage() {
       })
 
       if (response.data?.success && response.data.order) {
-        // Synchronize Redux cart state (backend empties cart on order creation)
-        dispatch(resetCart())
         const newOrder = response.data.order
         setCreatedOrder(newOrder)
         await initiateRazorpayPayment(newOrder)
@@ -372,20 +395,16 @@ function CheckoutPage() {
   // =========================================================================
   if (paymentState === 'verifying_payment') {
     return (
-      <div className="relative min-h-screen bg-neutral-950 text-white pt-28 sm:pt-32 lg:pt-36 pb-24 overflow-hidden flex items-center justify-center">
-        <div
-          className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[550px] bg-gradient-to-b from-purple-600/20 via-purple-900/10 to-transparent blur-3xl opacity-75 -z-10"
-          aria-hidden="true"
-        />
+      <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-24 overflow-hidden flex items-center justify-center">
         <div className="max-w-md mx-auto px-4 sm:px-6 w-full">
-          <div className="rounded-3xl border border-purple-500/30 bg-neutral-900/90 p-8 sm:p-10 shadow-2xl backdrop-blur-xl text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-purple-500/15 text-purple-400 mb-6 border border-purple-500/30">
-              <div className="h-8 w-8 animate-spin rounded-full border-3 border-purple-400 border-t-transparent" />
+          <div className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-8 sm:p-10 shadow-xs text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#34452F]/10 text-[#34452F] mb-6 border border-[#34452F]/20">
+              <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#34452F] border-t-transparent" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-2">
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#1F211C] tracking-tight mb-2">
               Verifying Payment
             </h1>
-            <p className="text-sm text-neutral-300 leading-relaxed max-w-sm mx-auto">
+            <p className="text-sm text-[#5F6057] leading-relaxed max-w-sm mx-auto">
               Please wait while we confirm your transaction with Razorpay. Do not refresh or close this window.
             </p>
           </div>
@@ -402,17 +421,11 @@ function CheckoutPage() {
     const shipping = activeOrder.shippingAddress || {}
 
     return (
-      <div className="relative min-h-screen bg-neutral-950 text-white pt-28 sm:pt-32 lg:pt-36 pb-24 overflow-hidden">
-        {/* Ambient Glow */}
-        <div
-          className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[550px] bg-gradient-to-b from-emerald-600/20 via-purple-900/10 to-transparent blur-3xl opacity-75 -z-10"
-          aria-hidden="true"
-        />
-
+      <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-24 overflow-hidden">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-3xl border border-white/15 bg-neutral-900/85 p-6 sm:p-10 lg:p-12 shadow-2xl backdrop-blur-xl text-center">
+          <div className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-6 sm:p-10 lg:p-12 shadow-xs text-center">
             {/* Payment Verified Success Icon */}
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 mb-6 border border-emerald-500/30">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#3F6B45]/10 text-[#3F6B45] mb-6 border border-[#3F6B45]/30">
               <svg
                 className="h-10 w-10"
                 fill="none"
@@ -425,48 +438,48 @@ function CheckoutPage() {
               </svg>
             </div>
 
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-semibold text-emerald-300 uppercase tracking-widest mb-3">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#3F6B45]/10 border border-[#3F6B45]/30 px-3 py-1 text-xs font-semibold text-[#3F6B45] uppercase tracking-widest mb-3">
               Payment Verified
             </span>
 
-            <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-2">
+            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#1F211C] tracking-tight mb-2">
               Payment Successful!
             </h1>
-            <p className="text-sm sm:text-base text-neutral-300 mb-8 max-w-lg mx-auto">
+            <p className="text-sm sm:text-base text-[#5F6057] mb-8 max-w-lg mx-auto">
               Thank you for your purchase. Your payment has been verified and your order is confirmed.
             </p>
 
             {/* Order Details Card */}
-            <div className="rounded-2xl border border-white/10 bg-neutral-950/70 p-5 sm:p-6 text-left space-y-4 mb-8">
+            <div className="rounded-xl border border-[#DED7CA] bg-[#FAF7F0] p-5 sm:p-6 text-left space-y-4 mb-8">
               {/* Order Number & Total */}
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-white/10">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-[#DED7CA]">
                 <div>
-                  <span className="text-xs text-neutral-400 block mb-0.5">Order Number</span>
-                  <span className="text-sm sm:text-base font-mono font-bold text-purple-300">
+                  <span className="text-xs text-[#5F6057] block mb-0.5">Order Number</span>
+                  <span className="text-sm sm:text-base font-mono font-bold text-[#A65332]">
                     {activeOrder.orderNumber}
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs text-neutral-400 block mb-0.5">Total Paid</span>
-                  <span className="text-xl sm:text-2xl font-black text-white">
+                  <span className="text-xs text-[#5F6057] block mb-0.5">Total Paid</span>
+                  <span className="font-serif text-xl sm:text-2xl font-black text-[#1F211C]">
                     ₹{Number(activeOrder.totalAmount).toLocaleString('en-IN')}
                   </span>
                 </div>
               </div>
 
               {/* Status and Items Summary */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-white/10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-[#DED7CA]">
                 <div>
-                  <span className="text-xs text-neutral-400 block mb-1">Payment Status</span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-xs font-semibold text-emerald-300">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+                  <span className="text-xs text-[#5F6057] block mb-1">Payment Status</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#3F6B45]/10 border border-[#3F6B45]/30 px-2.5 py-0.5 text-xs font-semibold text-[#3F6B45]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#3F6B45]" aria-hidden="true" />
                     Paid
                   </span>
                 </div>
 
                 <div>
-                  <span className="text-xs text-neutral-400 block mb-1">Order Status</span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/15 border border-purple-500/30 px-2.5 py-0.5 text-xs font-semibold text-purple-300">
+                  <span className="text-xs text-[#5F6057] block mb-1">Order Status</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#34452F]/10 border border-[#34452F]/30 px-2.5 py-0.5 text-xs font-semibold text-[#34452F]">
                     Confirmed
                   </span>
                 </div>
@@ -474,8 +487,8 @@ function CheckoutPage() {
 
               {/* Shipping Destination */}
               <div>
-                <span className="text-xs text-neutral-400 block mb-1">Delivery Address</span>
-                <p className="text-xs sm:text-sm text-neutral-200 font-medium leading-relaxed">
+                <span className="text-xs text-[#5F6057] block mb-1">Delivery Address</span>
+                <p className="text-xs sm:text-sm text-[#1F211C] font-medium leading-relaxed">
                   {shipping.fullName} • {shipping.phone}
                   <br />
                   {shipping.addressLine}
@@ -486,20 +499,20 @@ function CheckoutPage() {
 
               {/* Items List */}
               {Array.isArray(activeOrder.items) && activeOrder.items.length > 0 && (
-                <div className="pt-3 border-t border-white/10">
-                  <span className="text-xs text-neutral-400 block mb-2">
+                <div className="pt-3 border-t border-[#DED7CA]">
+                  <span className="text-xs text-[#5F6057] block mb-2">
                     Items ({activeOrder.items.length})
                   </span>
                   <div className="space-y-2">
                     {activeOrder.items.map((item, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center justify-between text-xs text-neutral-300"
+                        className="flex items-center justify-between text-xs text-[#5F6057]"
                       >
-                        <span className="truncate max-w-[240px] sm:max-w-sm">
-                          {item.name} <span className="text-neutral-500">× {item.quantity}</span>
+                        <span className="truncate max-w-[240px] sm:max-w-sm text-[#1F211C]">
+                          {item.name} <span className="text-[#85857A]">× {item.quantity}</span>
                         </span>
-                        <span className="font-semibold text-white">
+                        <span className="font-serif font-bold text-[#1F211C]">
                           ₹{Number(item.subtotal).toLocaleString('en-IN')}
                         </span>
                       </div>
@@ -513,7 +526,7 @@ function CheckoutPage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 to="/orders"
-                className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider text-neutral-950 hover:bg-neutral-200 active:scale-95 transition-all shadow-xl cursor-pointer"
+                className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 rounded-xl bg-[#34452F] hover:bg-[#263722] px-8 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FFFDF8] active:scale-95 transition-all shadow-xs cursor-pointer"
               >
                 <span>View My Orders</span>
                 <svg
@@ -529,7 +542,7 @@ function CheckoutPage() {
               </Link>
               <Link
                 to="/products"
-                className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white px-6 py-3 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
+                className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center rounded-xl border border-[#DED7CA] bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#1F211C] px-6 py-3 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
               >
                 Continue Shopping
               </Link>
@@ -549,21 +562,15 @@ function CheckoutPage() {
     const isFailed = paymentState === 'payment_failed'
 
     return (
-      <div className="relative min-h-screen bg-neutral-950 text-white pt-28 sm:pt-32 lg:pt-36 pb-24 overflow-hidden">
-        {/* Ambient Glow */}
-        <div
-          className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[550px] bg-gradient-to-b from-amber-600/20 via-purple-900/10 to-transparent blur-3xl opacity-75 -z-10"
-          aria-hidden="true"
-        />
-
+      <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-24 overflow-hidden">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-3xl border border-white/15 bg-neutral-900/85 p-6 sm:p-10 lg:p-12 shadow-2xl backdrop-blur-xl text-center">
+          <div className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-6 sm:p-10 lg:p-12 shadow-xs text-center">
             {/* Status Icon */}
             <div
               className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full mb-6 border ${
                 isFailed
-                  ? 'bg-red-500/15 text-red-400 border-red-500/30'
-                  : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                  ? 'bg-[#A65332]/10 text-[#A65332] border-[#A65332]/30'
+                  : 'bg-[#A86B2D]/10 text-[#A86B2D] border-[#A86B2D]/30'
               }`}
             >
               {isFailed ? (
@@ -580,17 +587,17 @@ function CheckoutPage() {
             <span
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest mb-3 border ${
                 isFailed
-                  ? 'bg-red-500/15 border-red-500/30 text-red-300'
-                  : 'bg-amber-500/15 border-amber-500/30 text-amber-300'
+                  ? 'bg-[#A65332]/10 border-[#A65332]/30 text-[#A65332]'
+                  : 'bg-[#A86B2D]/10 border-[#A86B2D]/30 text-[#A86B2D]'
               }`}
             >
               {isCancelled ? 'Payment Cancelled' : isFailed ? 'Payment Failed' : 'Payment Pending'}
             </span>
 
-            <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-2">
+            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#1F211C] tracking-tight mb-2">
               {isCancelled ? 'Payment Window Closed' : isFailed ? 'Payment Not Completed' : 'Ready for Payment'}
             </h1>
-            <p className="text-sm sm:text-base text-neutral-300 mb-6 max-w-lg mx-auto">
+            <p className="text-sm sm:text-base text-[#5F6057] mb-6 max-w-lg mx-auto">
               {isCancelled
                 ? 'You closed the Razorpay payment window. Your order has been saved and is ready for payment.'
                 : isFailed
@@ -602,10 +609,10 @@ function CheckoutPage() {
             {serverError && (
               <div
                 role="alert"
-                className="mb-8 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-xs sm:text-sm font-medium text-red-300 flex items-center justify-between gap-4 text-left"
+                className="mb-8 rounded-xl border border-[#A65332]/30 bg-[#A65332]/10 p-4 text-xs sm:text-sm font-medium text-[#A65332] flex items-center justify-between gap-4 text-left"
               >
                 <div className="flex items-center gap-3">
-                  <svg className="h-5 w-5 shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <svg className="h-5 w-5 shrink-0 text-[#A65332]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                   </svg>
                   <span>{serverError}</span>
@@ -614,36 +621,36 @@ function CheckoutPage() {
             )}
 
             {/* Order Details Card */}
-            <div className="rounded-2xl border border-white/10 bg-neutral-950/70 p-5 sm:p-6 text-left space-y-4 mb-8">
+            <div className="rounded-xl border border-[#DED7CA] bg-[#FAF7F0] p-5 sm:p-6 text-left space-y-4 mb-8">
               {/* Order Number & Total */}
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-white/10">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-[#DED7CA]">
                 <div>
-                  <span className="text-xs text-neutral-400 block mb-0.5">Order Number</span>
-                  <span className="text-sm sm:text-base font-mono font-bold text-purple-300">
+                  <span className="text-xs text-[#5F6057] block mb-0.5">Order Number</span>
+                  <span className="text-sm sm:text-base font-mono font-bold text-[#A65332]">
                     {createdOrder.orderNumber}
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs text-neutral-400 block mb-0.5">Total Amount</span>
-                  <span className="text-xl sm:text-2xl font-black text-white">
+                  <span className="text-xs text-[#5F6057] block mb-0.5">Total Amount</span>
+                  <span className="font-serif text-xl sm:text-2xl font-black text-[#1F211C]">
                     ₹{Number(createdOrder.totalAmount).toLocaleString('en-IN')}
                   </span>
                 </div>
               </div>
 
               {/* Status and Items Summary */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-white/10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-[#DED7CA]">
                 <div>
-                  <span className="text-xs text-neutral-400 block mb-1">Payment Status</span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-xs font-semibold text-amber-300">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden="true" />
+                  <span className="text-xs text-[#5F6057] block mb-1">Payment Status</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#A86B2D]/10 border border-[#A86B2D]/30 px-2.5 py-0.5 text-xs font-semibold text-[#A86B2D]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#A86B2D]" aria-hidden="true" />
                     Pending Payment
                   </span>
                 </div>
 
                 <div>
-                  <span className="text-xs text-neutral-400 block mb-1">Order Status</span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/15 border border-purple-500/30 px-2.5 py-0.5 text-xs font-semibold text-purple-300">
+                  <span className="text-xs text-[#5F6057] block mb-1">Order Status</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#34452F]/10 border border-[#34452F]/30 px-2.5 py-0.5 text-xs font-semibold text-[#34452F]">
                     Pending Processing
                   </span>
                 </div>
@@ -651,8 +658,8 @@ function CheckoutPage() {
 
               {/* Shipping Destination */}
               <div>
-                <span className="text-xs text-neutral-400 block mb-1">Delivery Address</span>
-                <p className="text-xs sm:text-sm text-neutral-200 font-medium leading-relaxed">
+                <span className="text-xs text-[#5F6057] block mb-1">Delivery Address</span>
+                <p className="text-xs sm:text-sm text-[#1F211C] font-medium leading-relaxed">
                   {shipping.fullName} • {shipping.phone}
                   <br />
                   {shipping.addressLine}
@@ -663,20 +670,20 @@ function CheckoutPage() {
 
               {/* Items List */}
               {Array.isArray(createdOrder.items) && createdOrder.items.length > 0 && (
-                <div className="pt-3 border-t border-white/10">
-                  <span className="text-xs text-neutral-400 block mb-2">
+                <div className="pt-3 border-t border-[#DED7CA]">
+                  <span className="text-xs text-[#5F6057] block mb-2">
                     Items ({createdOrder.items.length})
                   </span>
                   <div className="space-y-2">
                     {createdOrder.items.map((item, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center justify-between text-xs text-neutral-300"
+                        className="flex items-center justify-between text-xs text-[#5F6057]"
                       >
-                        <span className="truncate max-w-[240px] sm:max-w-sm">
-                          {item.name} <span className="text-neutral-500">× {item.quantity}</span>
+                        <span className="truncate max-w-[240px] sm:max-w-sm text-[#1F211C]">
+                          {item.name} <span className="text-[#85857A]">× {item.quantity}</span>
                         </span>
-                        <span className="font-semibold text-white">
+                        <span className="font-serif font-bold text-[#1F211C]">
                           ₹{Number(item.subtotal).toLocaleString('en-IN')}
                         </span>
                       </div>
@@ -686,13 +693,23 @@ function CheckoutPage() {
               )}
             </div>
 
+            {/* Prominent Bottom Alert if Payment Error Occurred */}
+            {serverError && (
+              <div
+                role="alert"
+                className="mb-6 p-4 rounded-xl border border-[#A65332]/30 bg-[#A65332]/10 text-xs sm:text-sm text-[#A65332] text-center font-medium max-w-lg mx-auto"
+              >
+                {serverError}
+              </div>
+            )}
+
             {/* Action CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex flex-wrap items-center justify-center gap-3.5">
               <button
                 type="button"
                 onClick={handleRetryPayment}
                 disabled={isSubmitting}
-                className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 rounded-full bg-purple-600 hover:bg-purple-500 active:scale-95 text-white px-8 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all shadow-xl shadow-purple-900/40 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 rounded-xl bg-[#34452F] hover:bg-[#263722] active:scale-95 text-[#FFFDF8] px-8 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all shadow-xs disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
@@ -715,17 +732,29 @@ function CheckoutPage() {
                   </>
                 )}
               </button>
-              <Link
-                to="/orders"
-                className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white px-6 py-3 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
+              <button
+                type="button"
+                onClick={() => {
+                  setCreatedOrder(null)
+                  setPaymentState('idle')
+                  setServerError(null)
+                  window.scrollTo({ top: 0, behavior: 'smooth' })
+                }}
+                className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#1F211C] px-6 py-3 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
               >
-                View My Orders
+                Edit Shipping Address
+              </button>
+              <Link
+                to="/cart"
+                className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#1F211C] px-6 py-3 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
+              >
+                Back to Cart
               </Link>
               <Link
-                to="/products"
-                className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white px-6 py-3 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
+                to="/orders"
+                className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#1F211C] px-6 py-3 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
               >
-                Continue Shopping
+                View My Orders
               </Link>
             </div>
           </div>
@@ -734,19 +763,69 @@ function CheckoutPage() {
     )
   }
 
-
   // =========================================================================
   // LOADING CART STATE
   // =========================================================================
-  if (cartLoading && !cartInitialized) {
+  if (!cartInitialized || (cartLoading && (!items || items.length === 0))) {
     return (
-      <div className="relative min-h-screen bg-neutral-950 text-white pt-28 sm:pt-32 lg:pt-36 pb-24 overflow-hidden">
+      <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-24 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="animate-pulse space-y-8">
-            <div className="h-10 w-48 rounded-xl bg-white/10" />
+            <div className="h-10 w-48 rounded-xl bg-[#EEE7DC]" />
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-              <div className="lg:col-span-7 h-96 rounded-3xl bg-white/5 border border-white/10" />
-              <div className="lg:col-span-5 h-80 rounded-3xl bg-white/5 border border-white/10" />
+              <div className="lg:col-span-7 h-96 rounded-2xl bg-[#FFFDF8] border border-[#DED7CA]" />
+              <div className="lg:col-span-5 h-80 rounded-2xl bg-[#FFFDF8] border border-[#DED7CA]" />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // =========================================================================
+  // CART ERROR STATE
+  // =========================================================================
+  if (!cartLoading && cartError && (!items || items.length === 0)) {
+    return (
+      <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-24 overflow-hidden">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="rounded-2xl border border-[#A65332]/30 bg-[#FFFDF8] p-8 sm:p-14 shadow-xs">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#A65332]/10 text-[#A65332] mb-4 border border-[#A65332]/30">
+              <svg
+                className="h-8 w-8"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+                />
+              </svg>
+            </div>
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#1F211C] tracking-tight mb-2">
+              Unable to Load Cart
+            </h1>
+            <p className="text-sm text-[#5F6057] mb-8 max-w-sm mx-auto">
+              {cartError}
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => dispatch(fetchCart())}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#34452F] hover:bg-[#263722] px-8 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FFFDF8] transition-all active:scale-95 shadow-xs cursor-pointer"
+              >
+                <span>Retry</span>
+              </button>
+              <Link
+                to="/cart"
+                className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl border border-[#DED7CA] bg-[#FAF7F0] hover:bg-[#EEE7DC] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-[#1F211C] transition-colors cursor-pointer"
+              >
+                Return to Cart
+              </Link>
             </div>
           </div>
         </div>
@@ -759,14 +838,10 @@ function CheckoutPage() {
   // =========================================================================
   if (cartInitialized && (!items || items.length === 0)) {
     return (
-      <div className="relative min-h-screen bg-neutral-950 text-white pt-28 sm:pt-32 lg:pt-36 pb-24 overflow-hidden">
-        <div
-          className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[550px] bg-gradient-to-b from-purple-600/15 via-purple-900/5 to-transparent blur-3xl opacity-70 -z-10"
-          aria-hidden="true"
-        />
+      <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-24 overflow-hidden">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="rounded-3xl border border-white/10 bg-neutral-900/75 p-10 sm:p-14 shadow-2xl backdrop-blur-xl">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-purple-500/10 text-purple-400 mb-6 border border-purple-500/20">
+          <div className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-10 sm:p-14 shadow-xs">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#34452F]/10 text-[#34452F] mb-6 border border-[#34452F]/20">
               <svg
                 className="h-10 w-10"
                 fill="none"
@@ -782,16 +857,19 @@ function CheckoutPage() {
                 />
               </svg>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-3">
+            <div className="flex justify-center mb-3">
+              <Eyebrow variant="olive">CHECKOUT</Eyebrow>
+            </div>
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#1F211C] tracking-tight mb-3">
               Your Cart is Empty
             </h1>
-            <p className="text-sm text-neutral-400 mb-8 max-w-sm mx-auto leading-relaxed">
+            <p className="text-sm text-[#5F6057] mb-8 max-w-sm mx-auto leading-relaxed">
               You need to add items to your shopping cart before you can proceed with checkout.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 to="/products"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-neutral-950 transition-all hover:bg-neutral-200 active:scale-95 shadow-xl cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#34452F] hover:bg-[#263722] px-8 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FFFDF8] transition-all active:scale-95 shadow-xs cursor-pointer"
               >
                 <span>Browse Catalog</span>
                 <svg
@@ -807,7 +885,7 @@ function CheckoutPage() {
               </Link>
               <Link
                 to="/cart"
-                className="w-full sm:w-auto inline-flex items-center justify-center rounded-full border border-white/20 bg-white/5 hover:bg-white/10 px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-neutral-300 hover:text-white transition-colors cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl border border-[#DED7CA] bg-[#FAF7F0] hover:bg-[#EEE7DC] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-[#1F211C] transition-colors cursor-pointer"
               >
                 View Cart
               </Link>
@@ -822,34 +900,28 @@ function CheckoutPage() {
   // MAIN CHECKOUT FORM & SUMMARY
   // =========================================================================
   return (
-    <div className="relative min-h-screen bg-neutral-950 text-white pt-28 sm:pt-32 lg:pt-36 pb-24 overflow-hidden">
-      {/* Ambient Atmosphere Glow */}
-      <div
-        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[550px] bg-gradient-to-b from-purple-600/15 via-purple-900/5 to-transparent blur-3xl opacity-70 -z-10"
-        aria-hidden="true"
-      />
-
+    <div className="min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb & Navigation */}
         <nav
           aria-label="Breadcrumb"
-          className="mb-8 flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm text-neutral-400"
+          className="mb-8 flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm text-[#5F6057]"
         >
           <div className="flex items-center gap-2">
-            <Link to="/" className="hover:text-white transition-colors">
+            <Link to="/" className="hover:text-[#34452F] transition-colors">
               Home
             </Link>
-            <span aria-hidden="true">/</span>
-            <Link to="/cart" className="hover:text-white transition-colors">
+            <span aria-hidden="true" className="text-[#DED7CA]">/</span>
+            <Link to="/cart" className="hover:text-[#34452F] transition-colors">
               Cart
             </Link>
-            <span aria-hidden="true">/</span>
-            <span className="text-neutral-200 font-medium">Checkout</span>
+            <span aria-hidden="true" className="text-[#DED7CA]">/</span>
+            <span className="text-[#1F211C] font-semibold">Checkout</span>
           </div>
 
           <Link
             to="/cart"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-300 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#34452F] hover:text-[#263722] transition-colors"
           >
             <svg
               className="h-3.5 w-3.5"
@@ -866,12 +938,13 @@ function CheckoutPage() {
         </nav>
 
         {/* Header */}
-        <div className="mb-10 pb-6 border-b border-white/10">
-          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-            Checkout
+        <div className="mb-10 pb-6 border-b border-[#DED7CA]">
+          <Eyebrow variant="olive">CHECKOUT</Eyebrow>
+          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#1F211C] tracking-tight mt-1">
+            Complete Your Order
           </h1>
-          <p className="mt-1.5 text-xs sm:text-sm text-neutral-400">
-            Complete your shipping details to place your order.
+          <p className="mt-1.5 text-xs sm:text-sm text-[#5F6057]">
+            Review your shopping bag and enter your delivery details below.
           </p>
         </div>
 
@@ -879,11 +952,11 @@ function CheckoutPage() {
         {serverError && (
           <div
             role="alert"
-            className="mb-8 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-xs sm:text-sm font-medium text-red-300 flex items-center justify-between gap-4"
+            className="mb-8 rounded-2xl border border-[#A65332]/30 bg-[#A65332]/10 p-4 text-xs sm:text-sm font-medium text-[#A65332] flex items-center justify-between gap-4"
           >
             <div className="flex items-center gap-3">
               <svg
-                className="h-5 w-5 shrink-0 text-red-400"
+                className="h-5 w-5 shrink-0 text-[#A65332]"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -901,7 +974,7 @@ function CheckoutPage() {
             <button
               type="button"
               onClick={() => setServerError(null)}
-              className="text-xs text-red-400 hover:text-white uppercase font-bold shrink-0 cursor-pointer"
+              className="text-xs text-[#A65332] hover:text-[#78361E] uppercase font-bold shrink-0 cursor-pointer"
             >
               Dismiss
             </button>
@@ -916,28 +989,28 @@ function CheckoutPage() {
           <div className="lg:col-span-7">
             <section
               aria-labelledby="shipping-heading"
-              className="rounded-3xl border border-white/12 bg-neutral-900/80 p-6 sm:p-8 backdrop-blur-xl shadow-2xl"
+              className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-6 sm:p-8 shadow-xs"
             >
               <div className="flex items-center gap-3 mb-6">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-bold">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#34452F] text-[#FFFDF8] text-xs font-bold font-mono">
                   1
                 </div>
                 <h2
                   id="shipping-heading"
-                  className="text-lg sm:text-xl font-bold uppercase tracking-wider text-white"
+                  className="font-serif text-lg sm:text-xl font-bold uppercase tracking-wider text-[#1F211C]"
                 >
                   Shipping Information
                 </h2>
               </div>
 
               {savedAddresses.length > 0 && (
-                <div className="mb-6 p-4 rounded-2xl border border-purple-500/25 bg-purple-950/20">
+                <div className="mb-6 p-4 rounded-xl border border-[#DED7CA] bg-[#FAF7F0]">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                      <span className="text-xs font-bold text-purple-300 uppercase tracking-wider block">
+                      <span className="text-xs font-bold text-[#34452F] uppercase tracking-wider block">
                         Saved Delivery Addresses
                       </span>
-                      <span className="text-[11px] text-neutral-400">
+                      <span className="text-[11px] text-[#5F6057]">
                         Choose a saved destination to quickly prefill your shipping fields.
                       </span>
                     </div>
@@ -958,7 +1031,7 @@ function CheckoutPage() {
                           setErrors({})
                         }
                       }}
-                      className="min-h-[40px] px-3 py-1.5 rounded-xl border border-white/15 bg-neutral-950 text-xs text-white focus:outline-hidden focus:border-purple-400 cursor-pointer"
+                      className="min-h-[40px] px-3 py-1.5 rounded-xl border border-[#DED7CA] bg-[#FFFDF8] text-xs text-[#1F211C] focus:outline-none focus:border-[#34452F] cursor-pointer"
                     >
                       <option value="">Select an address...</option>
                       {savedAddresses.map((addr) => (
@@ -976,9 +1049,9 @@ function CheckoutPage() {
                 <div>
                   <label
                     htmlFor="fullName"
-                    className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5"
+                    className="block text-xs font-bold uppercase tracking-wider text-[#5F6057] mb-1.5"
                   >
-                    Full Name <span className="text-red-400">*</span>
+                    Full Name <span className="text-[#A65332]">*</span>
                   </label>
                   <input
                     type="text"
@@ -989,14 +1062,14 @@ function CheckoutPage() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     placeholder="e.g. Rahul Sharma"
-                    className={`w-full rounded-xl border bg-neutral-950/80 px-4 py-3 text-sm text-white placeholder-neutral-500 transition-colors focus:outline-none focus:ring-2 ${
+                    className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 ${
                       touched.fullName && errors.fullName
-                        ? 'border-red-500/60 focus:border-red-500 focus:ring-red-500/30'
-                        : 'border-white/15 focus:border-purple-400 focus:ring-purple-500/30'
+                        ? 'border-[#A65332]/60 focus:border-[#A65332] focus:ring-[#A65332]/20'
+                        : 'border-[#DED7CA] focus:border-[#34452F] focus:ring-[#34452F]/20'
                     }`}
                   />
                   {touched.fullName && errors.fullName && (
-                    <p className="mt-1.5 text-xs text-red-400 font-medium" role="alert">
+                    <p className="mt-1.5 text-xs text-[#A65332] font-medium" role="alert">
                       {errors.fullName}
                     </p>
                   )}
@@ -1006,9 +1079,9 @@ function CheckoutPage() {
                 <div>
                   <label
                     htmlFor="phone"
-                    className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5"
+                    className="block text-xs font-bold uppercase tracking-wider text-[#5F6057] mb-1.5"
                   >
-                    Phone Number <span className="text-red-400">*</span>
+                    Phone Number <span className="text-[#A65332]">*</span>
                   </label>
                   <input
                     type="tel"
@@ -1019,14 +1092,14 @@ function CheckoutPage() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     placeholder="e.g. +91 98765 43210"
-                    className={`w-full rounded-xl border bg-neutral-950/80 px-4 py-3 text-sm text-white placeholder-neutral-500 transition-colors focus:outline-none focus:ring-2 ${
+                    className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 ${
                       touched.phone && errors.phone
-                        ? 'border-red-500/60 focus:border-red-500 focus:ring-red-500/30'
-                        : 'border-white/15 focus:border-purple-400 focus:ring-purple-500/30'
+                        ? 'border-[#A65332]/60 focus:border-[#A65332] focus:ring-[#A65332]/20'
+                        : 'border-[#DED7CA] focus:border-[#34452F] focus:ring-[#34452F]/20'
                     }`}
                   />
                   {touched.phone && errors.phone && (
-                    <p className="mt-1.5 text-xs text-red-400 font-medium" role="alert">
+                    <p className="mt-1.5 text-xs text-[#A65332] font-medium" role="alert">
                       {errors.phone}
                     </p>
                   )}
@@ -1036,9 +1109,9 @@ function CheckoutPage() {
                 <div>
                   <label
                     htmlFor="addressLine"
-                    className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5"
+                    className="block text-xs font-bold uppercase tracking-wider text-[#5F6057] mb-1.5"
                   >
-                    Street Address <span className="text-red-400">*</span>
+                    Street Address <span className="text-[#A65332]">*</span>
                   </label>
                   <input
                     type="text"
@@ -1049,14 +1122,14 @@ function CheckoutPage() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     placeholder="Apartment, suite, unit, building, floor, street"
-                    className={`w-full rounded-xl border bg-neutral-950/80 px-4 py-3 text-sm text-white placeholder-neutral-500 transition-colors focus:outline-none focus:ring-2 ${
+                    className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 ${
                       touched.addressLine && errors.addressLine
-                        ? 'border-red-500/60 focus:border-red-500 focus:ring-red-500/30'
-                        : 'border-white/15 focus:border-purple-400 focus:ring-purple-500/30'
+                        ? 'border-[#A65332]/60 focus:border-[#A65332] focus:ring-[#A65332]/20'
+                        : 'border-[#DED7CA] focus:border-[#34452F] focus:ring-[#34452F]/20'
                     }`}
                   />
                   {touched.addressLine && errors.addressLine && (
-                    <p className="mt-1.5 text-xs text-red-400 font-medium" role="alert">
+                    <p className="mt-1.5 text-xs text-[#A65332] font-medium" role="alert">
                       {errors.addressLine}
                     </p>
                   )}
@@ -1067,9 +1140,9 @@ function CheckoutPage() {
                   <div>
                     <label
                       htmlFor="city"
-                      className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5"
+                      className="block text-xs font-bold uppercase tracking-wider text-[#5F6057] mb-1.5"
                     >
-                      City <span className="text-red-400">*</span>
+                      City <span className="text-[#A65332]">*</span>
                     </label>
                     <input
                       type="text"
@@ -1080,14 +1153,14 @@ function CheckoutPage() {
                       onChange={handleChange}
                       onBlur={handleBlur}
                       placeholder="e.g. Mumbai"
-                      className={`w-full rounded-xl border bg-neutral-950/80 px-4 py-3 text-sm text-white placeholder-neutral-500 transition-colors focus:outline-none focus:ring-2 ${
+                      className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 ${
                         touched.city && errors.city
-                          ? 'border-red-500/60 focus:border-red-500 focus:ring-red-500/30'
-                          : 'border-white/15 focus:border-purple-400 focus:ring-purple-500/30'
+                          ? 'border-[#A65332]/60 focus:border-[#A65332] focus:ring-[#A65332]/20'
+                          : 'border-[#DED7CA] focus:border-[#34452F] focus:ring-[#34452F]/20'
                       }`}
                     />
                     {touched.city && errors.city && (
-                      <p className="mt-1.5 text-xs text-red-400 font-medium" role="alert">
+                      <p className="mt-1.5 text-xs text-[#A65332] font-medium" role="alert">
                         {errors.city}
                       </p>
                     )}
@@ -1096,9 +1169,9 @@ function CheckoutPage() {
                   <div>
                     <label
                       htmlFor="state"
-                      className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5"
+                      className="block text-xs font-bold uppercase tracking-wider text-[#5F6057] mb-1.5"
                     >
-                      State <span className="text-red-400">*</span>
+                      State <span className="text-[#A65332]">*</span>
                     </label>
                     <input
                       type="text"
@@ -1109,14 +1182,14 @@ function CheckoutPage() {
                       onChange={handleChange}
                       onBlur={handleBlur}
                       placeholder="e.g. Maharashtra"
-                      className={`w-full rounded-xl border bg-neutral-950/80 px-4 py-3 text-sm text-white placeholder-neutral-500 transition-colors focus:outline-none focus:ring-2 ${
+                      className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 ${
                         touched.state && errors.state
-                          ? 'border-red-500/60 focus:border-red-500 focus:ring-red-500/30'
-                          : 'border-white/15 focus:border-purple-400 focus:ring-purple-500/30'
+                          ? 'border-[#A65332]/60 focus:border-[#A65332] focus:ring-[#A65332]/20'
+                          : 'border-[#DED7CA] focus:border-[#34452F] focus:ring-[#34452F]/20'
                       }`}
                     />
                     {touched.state && errors.state && (
-                      <p className="mt-1.5 text-xs text-red-400 font-medium" role="alert">
+                      <p className="mt-1.5 text-xs text-[#A65332] font-medium" role="alert">
                         {errors.state}
                       </p>
                     )}
@@ -1128,9 +1201,9 @@ function CheckoutPage() {
                   <div>
                     <label
                       htmlFor="postalCode"
-                      className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5"
+                      className="block text-xs font-bold uppercase tracking-wider text-[#5F6057] mb-1.5"
                     >
-                      Postal Code / PIN <span className="text-red-400">*</span>
+                      Postal Code / PIN <span className="text-[#A65332]">*</span>
                     </label>
                     <input
                       type="text"
@@ -1141,14 +1214,14 @@ function CheckoutPage() {
                       onChange={handleChange}
                       onBlur={handleBlur}
                       placeholder="e.g. 400001"
-                      className={`w-full rounded-xl border bg-neutral-950/80 px-4 py-3 text-sm text-white placeholder-neutral-500 transition-colors focus:outline-none focus:ring-2 ${
+                      className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 ${
                         touched.postalCode && errors.postalCode
-                          ? 'border-red-500/60 focus:border-red-500 focus:ring-red-500/30'
-                          : 'border-white/15 focus:border-purple-400 focus:ring-purple-500/30'
+                          ? 'border-[#A65332]/60 focus:border-[#A65332] focus:ring-[#A65332]/20'
+                          : 'border-[#DED7CA] focus:border-[#34452F] focus:ring-[#34452F]/20'
                       }`}
                     />
                     {touched.postalCode && errors.postalCode && (
-                      <p className="mt-1.5 text-xs text-red-400 font-medium" role="alert">
+                      <p className="mt-1.5 text-xs text-[#A65332] font-medium" role="alert">
                         {errors.postalCode}
                       </p>
                     )}
@@ -1157,9 +1230,9 @@ function CheckoutPage() {
                   <div>
                     <label
                       htmlFor="country"
-                      className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5"
+                      className="block text-xs font-bold uppercase tracking-wider text-[#5F6057] mb-1.5"
                     >
-                      Country <span className="text-red-400">*</span>
+                      Country <span className="text-[#A65332]">*</span>
                     </label>
                     <input
                       type="text"
@@ -1170,14 +1243,14 @@ function CheckoutPage() {
                       onChange={handleChange}
                       onBlur={handleBlur}
                       placeholder="e.g. India"
-                      className={`w-full rounded-xl border bg-neutral-950/80 px-4 py-3 text-sm text-white placeholder-neutral-500 transition-colors focus:outline-none focus:ring-2 ${
+                      className={`w-full rounded-xl border bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] transition-colors focus:outline-none focus:ring-2 ${
                         touched.country && errors.country
-                          ? 'border-red-500/60 focus:border-red-500 focus:ring-red-500/30'
-                          : 'border-white/15 focus:border-purple-400 focus:ring-purple-500/30'
+                          ? 'border-[#A65332]/60 focus:border-[#A65332] focus:ring-[#A65332]/20'
+                          : 'border-[#DED7CA] focus:border-[#34452F] focus:ring-[#34452F]/20'
                       }`}
                     />
                     {touched.country && errors.country && (
-                      <p className="mt-1.5 text-xs text-red-400 font-medium" role="alert">
+                      <p className="mt-1.5 text-xs text-[#A65332] font-medium" role="alert">
                         {errors.country}
                       </p>
                     )}
@@ -1189,12 +1262,12 @@ function CheckoutPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full min-h-[48px] inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-neutral-950 transition-all duration-300 hover:bg-neutral-200 active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed shadow-xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    className="w-full min-h-[48px] inline-flex items-center justify-center gap-2 rounded-xl bg-[#34452F] px-7 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FFFDF8] transition-all duration-200 hover:bg-[#263722] active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed shadow-xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
                   >
                     {isSubmitting ? (
                       <>
                         <svg
-                          className="h-4 w-4 animate-spin text-neutral-950"
+                          className="h-4 w-4 animate-spin text-[#FFFDF8]"
                           fill="none"
                           viewBox="0 0 24 24"
                         >
@@ -1234,7 +1307,7 @@ function CheckoutPage() {
                       </>
                     )}
                   </button>
-                  <p className="mt-2.5 text-[11px] text-center text-neutral-400">
+                  <p className="mt-2.5 text-[11px] text-center text-[#5F6057]">
                     By placing your order, you agree to TrendVolt terms of service.
                   </p>
                 </div>
@@ -1248,57 +1321,60 @@ function CheckoutPage() {
           <div className="lg:col-span-5">
             <aside
               aria-labelledby="summary-heading"
-              className="rounded-3xl border border-white/12 bg-neutral-900/80 p-6 sm:p-8 backdrop-blur-xl shadow-2xl sticky top-28 space-y-6"
+              className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-6 sm:p-8 shadow-xs sticky top-28 space-y-6"
             >
-              <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <div className="flex items-center justify-between pb-4 border-b border-[#DED7CA]">
                 <h2
                   id="summary-heading"
-                  className="text-base sm:text-lg font-bold uppercase tracking-wider text-white"
+                  className="font-serif text-base sm:text-lg font-bold uppercase tracking-wider text-[#1F211C]"
                 >
                   Order Summary
                 </h2>
-                <span className="text-xs font-semibold text-purple-300">
+                <span className="text-xs font-mono font-bold text-[#A65332]">
                   {totalItems} {totalItems === 1 ? 'item' : 'items'}
                 </span>
               </div>
 
               {/* Items List Preview */}
-              <div className="space-y-3.5 max-h-72 overflow-y-auto pr-1 scrollbar-thin">
+              <div className="space-y-3.5 max-h-72 overflow-y-auto pr-1">
                 {items.map((item) => {
                   const product = item.product || {}
                   const imageUrl =
                     Array.isArray(product.images) && product.images.length > 0
                       ? product.images[0]
                       : null
+                  const price = typeof product.price === 'number' ? product.price : 0
+                  const itemTotal =
+                    typeof item.itemTotal === 'number' ? item.itemTotal : price * item.quantity
                   return (
                     <div
                       key={item._id || product._id}
-                      className="flex items-center gap-3.5 p-2 rounded-xl bg-neutral-950/50 border border-white/5"
+                      className="flex items-center gap-3.5 p-2 rounded-xl bg-[#FAF7F0] border border-[#DED7CA]"
                     >
-                      <div className="h-14 w-14 shrink-0 rounded-lg border border-white/10 bg-neutral-950 overflow-hidden flex items-center justify-center p-1">
+                      <div className="h-14 w-14 shrink-0 rounded-lg border border-[#DED7CA] bg-[#FFFDF8] overflow-hidden flex items-center justify-center p-1">
                         {imageUrl ? (
                           <img
                             src={imageUrl}
-                            alt=""
-                            className="h-full w-full object-contain"
+                            alt={product.name || 'Product'}
+                            className="h-full w-full object-cover"
                           />
                         ) : (
-                          <span className="text-[9px] uppercase font-bold text-neutral-600">
+                          <span className="text-[9px] uppercase font-bold text-[#85857A]">
                             Item
                           </span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-white truncate">
+                        <p className="font-serif text-xs font-bold text-[#1F211C] truncate">
                           {product.name || 'Product'}
                         </p>
-                        <p className="text-[11px] text-neutral-400 mt-0.5">
-                          Qty: {item.quantity} × ₹{Number(product.price).toLocaleString('en-IN')}
+                        <p className="text-[11px] text-[#5F6057] mt-0.5">
+                          Qty: {item.quantity} × ₹{price.toLocaleString('en-IN')}
                         </p>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="text-xs font-bold text-white">
-                          ₹{Number(item.itemTotal).toLocaleString('en-IN')}
+                        <span className="font-serif text-xs font-bold text-[#1F211C]">
+                          ₹{Number(itemTotal).toLocaleString('en-IN')}
                         </span>
                       </div>
                     </div>
@@ -1307,43 +1383,43 @@ function CheckoutPage() {
               </div>
 
               {/* Totals Breakdown */}
-              <div className="space-y-3 pt-4 border-t border-white/10 text-xs sm:text-sm text-neutral-300">
+              <div className="space-y-3 pt-4 border-t border-[#DED7CA] text-xs sm:text-sm text-[#5F6057]">
                 <div className="flex items-center justify-between">
-                  <span className="text-neutral-400">Cart Subtotal</span>
-                  <span className="font-semibold text-white">
+                  <span>Cart Subtotal</span>
+                  <span className="font-semibold text-[#1F211C]">
                     ₹{Number(totalAmount).toLocaleString('en-IN')}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-neutral-400">Delivery / Shipping</span>
-                  <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">
+                  <span>Delivery / Shipping</span>
+                  <span className="text-xs font-semibold text-[#3F6B45] uppercase tracking-wider">
                     Free
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-neutral-400">Estimated Taxes</span>
-                  <span className="text-xs text-neutral-500">Included</span>
+                  <span>Estimated Taxes</span>
+                  <span className="text-xs text-[#85857A]">Included</span>
                 </div>
 
-                <hr className="my-4 border-t border-white/10" />
+                <hr className="my-4 border-t border-[#DED7CA]" />
 
                 <div className="flex items-baseline justify-between pt-1">
                   <div>
-                    <span className="text-base font-bold text-white block">Order Total</span>
-                    <span className="text-[11px] text-neutral-400">All taxes included</span>
+                    <span className="font-serif text-base font-bold text-[#1F211C] block">Order Total</span>
+                    <span className="text-[11px] text-[#5F6057]">All taxes included</span>
                   </div>
-                  <span className="text-2xl font-black text-white tracking-tight">
+                  <span className="font-serif text-2xl font-black text-[#1F211C] tracking-tight">
                     ₹{Number(totalAmount).toLocaleString('en-IN')}
                   </span>
                 </div>
               </div>
 
               {/* Security Badge */}
-              <div className="pt-4 border-t border-white/10 flex items-center justify-center gap-2 text-neutral-500 text-xs">
+              <div className="pt-4 border-t border-[#DED7CA] flex items-center justify-center gap-2 text-[#5F6057] text-xs">
                 <svg
-                  className="h-3.5 w-3.5 text-purple-400 shrink-0"
+                  className="h-3.5 w-3.5 text-[#34452F] shrink-0"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"

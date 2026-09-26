@@ -6,6 +6,9 @@
  */
 
 const http = require('http')
+const path = require('path')
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') })
+const mongoose = require('mongoose')
 
 const BASE_URL = 'http://localhost:5000'
 
@@ -59,6 +62,12 @@ function getCookie(res) {
 
 async function run() {
   console.log('=== TEST SUITE: CUSTOMER WISHLIST API QA ===\n')
+
+  if (process.env.MONGODB_URI) {
+    try {
+      await mongoose.connect(process.env.MONGODB_URI)
+    } catch {}
+  }
 
   const ts = Date.now()
   const userAEmail = `wishlist_a_${ts}@example.com`
@@ -244,7 +253,11 @@ async function run() {
       assert(foundInactive && foundInactive.isActive === false, 'Deactivated product appears safely with isActive: false')
 
       // 3. Delete product from DB (stale reference)
-      await request('DELETE', `/api/products/${inactiveId}`, null, adminCookie)
+      if (mongoose.connection?.readyState === 1) {
+        await mongoose.connection.collection('products').deleteOne({ _id: new mongoose.Types.ObjectId(inactiveId) })
+      } else {
+        await request('DELETE', `/api/products/${inactiveId}`, null, adminCookie)
+      }
 
       // Reload wishlist: populate returns null for deleted ID, filter(Boolean) safely excludes it
       const getWithDeleted = await request('GET', '/api/users/wishlist', null, cookieA)
@@ -323,6 +336,9 @@ async function run() {
     console.log('ALL TESTS PASSED ✓')
   }
   console.log('='.repeat(60))
+  if (mongoose.connection?.readyState === 1) {
+    await mongoose.disconnect()
+  }
   process.exit(failed > 0 ? 1 : 0)
 }
 

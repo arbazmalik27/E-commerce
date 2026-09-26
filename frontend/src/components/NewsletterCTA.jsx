@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react'
 import Eyebrow from './Eyebrow'
 import api from '../services/api'
 
@@ -64,136 +65,97 @@ function NewsletterCTA() {
     <section
       id="newsletter"
       aria-labelledby="newsletter-heading"
-      className="relative w-full bg-neutral-950 py-16 sm:py-20 lg:py-24 text-white border-t border-white/5 overflow-hidden scroll-mt-32"
+      className="relative w-full bg-[#EEE7DC] py-16 sm:py-20 lg:py-24 text-[#1F211C] border-b border-[#DED7CA] overflow-hidden scroll-mt-32"
     >
-      {/* Subtle lilac atmospheric ambient glow */}
-      <div
-        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[400px] bg-gradient-to-r from-purple-900/10 via-purple-950/5 to-transparent blur-3xl opacity-30 -z-10"
-        aria-hidden="true"
-      />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Contained Luxury Editorial Billboard Card (Matching Reference Layout) */}
-        <div className="relative w-full overflow-hidden rounded-3xl border border-white/10 bg-neutral-900/80 p-8 sm:p-12 lg:p-14 shadow-2xl shadow-black/80 backdrop-blur-md">
+        <div className="relative w-full overflow-hidden rounded-3xl border border-[#DED7CA] bg-[#FFFDF8] p-8 sm:p-12 lg:p-16 shadow-xs">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            {/* Left Content Area (lg: 7 cols) */}
+            {/* Left Content Area */}
             <div className="lg:col-span-7 flex flex-col items-start text-left">
-              <div className="mb-3">
-                <Eyebrow>STAY IN THE LOOP</Eyebrow>
+              <div className="mb-4">
+                <Eyebrow variant="olive">STAY IN THE LOOP</Eyebrow>
               </div>
 
               <h2
                 id="newsletter-heading"
-                className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight text-white leading-tight"
+                className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight text-[#1F211C] leading-tight"
               >
                 Curated for your inbox.
               </h2>
 
-              <p className="mt-3 sm:mt-4 text-base sm:text-lg text-neutral-300 font-normal leading-relaxed max-w-xl">
-                Get occasional updates on new arrivals, fresh collections, and what&apos;s new at TrendVolt.
+              <p className="mt-3 sm:mt-4 text-base sm:text-lg text-[#5F6057] font-normal leading-relaxed max-w-xl">
+                Get occasional updates on new arrivals, fresh seasonal collections, and what&apos;s new at the TrendVolt atelier.
               </p>
 
-              <p className="mt-3 text-xs font-mono tracking-wider text-neutral-400 uppercase">
-                No spam. Just the latest from TrendVolt.
+              <p className="mt-3 text-xs font-mono tracking-wider text-[#85857A] uppercase">
+                No spam. Unsubscribe anytime with one click.
               </p>
             </div>
 
-            {/* Right Interactive Form Area (lg: 5 cols) */}
+            {/* Right Form Area */}
             <div className="lg:col-span-5 w-full">
               {status === 'success' ? (
                 <div
                   role="status"
                   aria-live="polite"
-                  className="w-full rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6 sm:p-8 text-center backdrop-blur-md"
+                  className="rounded-2xl border border-[#3F6B45]/25 bg-[#3F6B45]/8 p-6 text-left"
                 >
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 mb-3.5 border border-emerald-500/30">
-                    <svg
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M4.5 12.75l6 6 9-13.5"
-                      />
-                    </svg>
+                  <div className="flex items-center gap-2.5 text-[#3F6B45] mb-2">
+                    <CheckCircle2 className="h-5 w-5" />
+                    <span className="text-xs font-mono font-bold tracking-widest uppercase">
+                      CONFIRMED
+                    </span>
                   </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-white">
+                  <h3 className="text-lg font-bold text-[#1F211C] mb-1">
                     {successHeading}
                   </h3>
-                  <p className="mt-1.5 text-xs sm:text-sm text-neutral-300">
+                  <p className="text-xs text-[#5F6057] mb-4">
                     {successSub}
                   </p>
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="mt-4 text-xs font-semibold text-neutral-400 hover:text-white underline underline-offset-4 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white rounded"
+                    className="text-xs font-semibold text-[#34452F] hover:underline cursor-pointer"
                   >
-                    Subscribe with another email
+                    Subscribe another email
                   </button>
                 </div>
               ) : (
-                <form
-                  onSubmit={handleSubmit}
-                  noValidate
-                  className="w-full"
-                >
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 rounded-2xl sm:rounded-full border border-white/20 bg-neutral-950/80 p-2 sm:p-1.5 focus-within:border-purple-400/50 focus-within:ring-2 focus-within:ring-purple-400/20 transition-all shadow-xl">
-                    <label htmlFor="newsletter-email" className="sr-only">
-                      Email address
-                    </label>
+                <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
                     <input
-                      id="newsletter-email"
                       type="email"
-                      autoComplete="email"
-                      disabled={status === 'submitting'}
+                      required
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value)
-                        if (status === 'error') {
-                          setErrorMsg('')
-                          setStatus('idle')
-                        }
+                        if (status === 'error') setStatus('idle')
                       }}
                       placeholder="Enter your email address"
+                      aria-label="Email address"
                       aria-invalid={status === 'error'}
-                      aria-describedby={status === 'error' ? 'newsletter-error' : undefined}
-                      className="flex-1 bg-transparent px-4 py-3 text-sm text-white placeholder-neutral-400 focus:outline-none min-w-0 disabled:opacity-60"
+                      className="flex-1 min-h-[48px] px-4 py-3 rounded-full bg-[#FAF7F0] border border-[#DED7CA] text-sm text-[#1F211C] placeholder-[#85857A] focus:outline-none focus:border-[#34452F] focus:ring-1 focus:ring-[#34452F] transition-all"
                     />
+
                     <button
                       type="submit"
                       disabled={status === 'submitting'}
-                      className="min-h-[44px] shrink-0 rounded-full bg-white px-7 py-3 text-xs font-bold uppercase tracking-wider text-neutral-950 transition-all hover:bg-neutral-200 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="min-h-[48px] inline-flex items-center justify-center gap-2 rounded-full bg-[#34452F] hover:bg-[#263722] text-[#FFFDF8] px-7 py-3 text-xs sm:text-sm font-bold tracking-wider uppercase transition-all duration-200 active:scale-95 disabled:opacity-50 cursor-pointer shadow-xs"
                     >
-                      {status === 'submitting' ? 'Subscribing...' : 'Subscribe'}
+                      {status === 'submitting' ? (
+                        <span>Joining...</span>
+                      ) : (
+                        <>
+                          <span>Join List</span>
+                          <ArrowRight className="h-4 w-4" />
+                        </>
+                      )}
                     </button>
                   </div>
 
-                  {/* Validation Error Message */}
                   {status === 'error' && (
-                    <div
-                      id="newsletter-error"
-                      role="alert"
-                      className="mt-3 flex items-center gap-1.5 text-xs text-red-400"
-                    >
-                      <svg
-                        className="h-4 w-4 shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
-                        />
-                      </svg>
+                    <div className="flex items-center gap-1.5 text-xs text-[#B7473A] mt-1">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
                       <span>{errorMsg}</span>
                     </div>
                   )}

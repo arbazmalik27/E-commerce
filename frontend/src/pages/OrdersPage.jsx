@@ -136,18 +136,28 @@ function OrderCard({ order }) {
         <p className="text-xs text-neutral-600 hidden sm:block">
           {allItems.length} item{allItems.length !== 1 ? 's' : ''}
         </p>
-        <Link
-          to={`/orders/${order._id}`}
-          className="text-xs font-medium text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer flex items-center gap-1"
-        >
-          View details
-          <svg
-            className="h-3.5 w-3.5"
-            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"
+        <div className="flex items-center gap-3">
+          {order.paymentStatus !== 'paid' && !['cancelled', 'delivered', 'shipped'].includes(order.orderStatus) && (
+            <Link
+              to={`/orders/${order._id}`}
+              className="text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors cursor-pointer flex items-center gap-1"
+            >
+              Pay Now →
+            </Link>
+          )}
+          <Link
+            to={`/orders/${order._id}`}
+            className="text-xs font-medium text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer flex items-center gap-1"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-          </svg>
-        </Link>
+            View details
+            <svg
+              className="h-3.5 w-3.5"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+          </Link>
+        </div>
       </div>
     </div>
   )

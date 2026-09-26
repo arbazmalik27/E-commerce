@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import CartItem from '../components/CartItem'
 import CartSummary from '../components/CartSummary'
+import Eyebrow from '../components/Eyebrow'
 import {
   clearCart,
   fetchCart,
@@ -20,6 +21,11 @@ function CartPage() {
   const [itemErrors, setItemErrors] = useState({})
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [clearingCart, setClearingCart] = useState(false)
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
 
   // Fetch cart if not initialized
   useEffect(() => {
@@ -115,36 +121,30 @@ function CartPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-neutral-950 text-white pt-28 sm:pt-32 lg:pt-36 pb-24 overflow-hidden">
-      {/* Soft Purple/Lilac Ambient Atmosphere Glow */}
-      <div
-        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[550px] bg-gradient-to-b from-purple-600/15 via-purple-900/5 to-transparent blur-3xl opacity-70 -z-10"
-        aria-hidden="true"
-      />
-
+    <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-28 sm:pt-32 lg:pt-36 pb-24 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* =========================================================================
             BREADCRUMBS & BACK TO SHOP
            ========================================================================= */}
         <nav
           aria-label="Breadcrumb"
-          className="mb-8 flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm text-neutral-400"
+          className="mb-8 flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm text-[#5F6057]"
         >
           <div className="flex items-center gap-2">
-            <Link to="/" className="hover:text-white transition-colors">
+            <Link to="/" className="hover:text-[#1F211C] transition-colors">
               Home
             </Link>
-            <span aria-hidden="true">/</span>
-            <Link to="/products" className="hover:text-white transition-colors">
+            <span aria-hidden="true" className="text-[#DED7CA]">/</span>
+            <Link to="/products" className="hover:text-[#1F211C] transition-colors">
               Shop
             </Link>
-            <span aria-hidden="true">/</span>
-            <span className="text-neutral-200 font-medium">Cart</span>
+            <span aria-hidden="true" className="text-[#DED7CA]">/</span>
+            <span className="text-[#1F211C] font-semibold">Cart</span>
           </div>
 
           <Link
             to="/products"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-300 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#34452F] hover:text-[#263722] transition-colors"
           >
             <svg
               className="h-3.5 w-3.5"
@@ -169,14 +169,14 @@ function CartPage() {
             aria-label="Loading cart"
             className="space-y-8 animate-pulse"
           >
-            <div className="h-10 w-48 rounded-xl bg-white/10" />
+            <div className="h-10 w-48 rounded-xl bg-[#EEE7DC]" />
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
               <div className="lg:col-span-8 space-y-4">
-                <div className="h-32 rounded-2xl bg-white/5 border border-white/10" />
-                <div className="h-32 rounded-2xl bg-white/5 border border-white/10" />
+                <div className="h-32 rounded-2xl bg-[#FFFDF8] border border-[#DED7CA]" />
+                <div className="h-32 rounded-2xl bg-[#FFFDF8] border border-[#DED7CA]" />
               </div>
               <div className="lg:col-span-4">
-                <div className="h-72 rounded-3xl bg-white/5 border border-white/10" />
+                <div className="h-72 rounded-2xl bg-[#FFFDF8] border border-[#DED7CA]" />
               </div>
             </div>
           </div>
@@ -188,9 +188,9 @@ function CartPage() {
         {!loading && error && (
           <div
             role="alert"
-            className="rounded-3xl border border-red-500/20 bg-neutral-900/90 p-8 sm:p-14 text-center max-w-xl mx-auto my-12 shadow-2xl backdrop-blur-xl"
+            className="rounded-2xl border border-[#A65332]/30 bg-[#FFFDF8] p-8 sm:p-14 text-center max-w-xl mx-auto my-12 shadow-xs"
           >
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-400 mb-4 border border-red-500/30">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#A65332]/10 text-[#A65332] mb-4 border border-[#A65332]/30">
               <svg
                 className="h-8 w-8"
                 fill="none"
@@ -206,19 +206,19 @@ function CartPage() {
                 />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">Unable to Load Cart</h1>
-            <p className="text-sm text-neutral-400 mb-8">{error}</p>
+            <h1 className="font-serif text-2xl font-bold text-[#1F211C] mb-2">Unable to Load Cart</h1>
+            <p className="text-sm text-[#5F6057] mb-8">{error}</p>
             <div className="flex items-center justify-center gap-4">
               <button
                 type="button"
                 onClick={handleRetry}
-                className="min-h-[44px] inline-flex items-center justify-center rounded-full bg-white px-7 py-2.5 text-xs font-bold uppercase tracking-wider text-neutral-950 transition-all hover:bg-neutral-200 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="min-h-[44px] inline-flex items-center justify-center rounded-xl bg-[#34452F] hover:bg-[#263722] px-7 py-2.5 text-xs font-bold uppercase tracking-wider text-[#FFFDF8] transition-all active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F] shadow-xs"
               >
                 Retry
               </button>
               <Link
                 to="/products"
-                className="min-h-[44px] inline-flex items-center justify-center rounded-full border border-white/20 bg-white/5 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition-all hover:bg-white/10"
+                className="min-h-[44px] inline-flex items-center justify-center rounded-xl border border-[#DED7CA] bg-[#FAF7F0] hover:bg-[#EEE7DC] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-[#1F211C] transition-all"
               >
                 Continue Shopping
               </Link>
@@ -230,8 +230,8 @@ function CartPage() {
             EMPTY CART STATE
            ========================================================================= */}
         {!loading && !error && items.length === 0 && (
-          <div className="rounded-3xl border border-white/10 bg-neutral-900/70 p-10 sm:p-16 text-center max-w-2xl mx-auto my-8 shadow-2xl backdrop-blur-xl">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-purple-500/10 text-purple-400 mb-6 border border-purple-500/20">
+          <div className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-10 sm:p-16 text-center max-w-2xl mx-auto my-8 shadow-xs">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#34452F]/10 text-[#34452F] mb-6 border border-[#34452F]/20">
               <svg
                 className="h-10 w-10"
                 fill="none"
@@ -247,16 +247,19 @@ function CartPage() {
                 />
               </svg>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-3">
+            <div className="flex justify-center mb-3">
+              <Eyebrow variant="olive">YOUR EDIT</Eyebrow>
+            </div>
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#1F211C] tracking-tight mb-3">
               Your Cart is Empty
             </h1>
-            <p className="text-sm sm:text-base text-neutral-400 mb-8 max-w-md mx-auto leading-relaxed">
-              Looks like you haven&apos;t added anything to your cart yet. Discover our latest
-              collection of curated luxury fashion apparel.
+            <p className="text-sm sm:text-base text-[#5F6057] mb-8 max-w-md mx-auto leading-relaxed">
+              Looks like you haven&apos;t added anything to your cart yet. Discover our curated
+              collection of everyday luxury fashion apparel.
             </p>
             <Link
               to="/products"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-neutral-950 transition-all hover:bg-neutral-200 active:scale-95 shadow-xl cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#34452F] hover:bg-[#263722] px-8 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FFFDF8] transition-all active:scale-95 shadow-xs cursor-pointer"
             >
               <span>Explore Products</span>
               <svg
@@ -279,17 +282,18 @@ function CartPage() {
         {!loading && !error && items.length > 0 && (
           <div className="space-y-8">
             {/* Header with Title and Clear Cart */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-white/10">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-[#DED7CA]">
               <div>
-                <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                  Your Cart
+                <Eyebrow variant="olive">YOUR EDIT</Eyebrow>
+                <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#1F211C] tracking-tight mt-1">
+                  Shopping Bag
                 </h1>
-                <p className="mt-1.5 text-xs sm:text-sm text-neutral-400">
+                <p className="mt-1.5 text-xs sm:text-sm text-[#5F6057]">
                   You have{' '}
-                  <span className="font-semibold text-purple-300">
+                  <span className="font-semibold text-[#A65332]">
                     {totalItems} {totalItems === 1 ? 'item' : 'items'}
                   </span>{' '}
-                  in your shopping cart
+                  in your shopping bag
                 </p>
               </div>
 
@@ -299,26 +303,26 @@ function CartPage() {
                   <button
                     type="button"
                     onClick={() => setShowClearConfirm(true)}
-                    className="text-xs font-semibold text-neutral-400 hover:text-red-400 transition-colors cursor-pointer py-1 px-2 rounded-md hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                    className="text-xs font-semibold text-[#5F6057] hover:text-[#A65332] transition-colors cursor-pointer py-1.5 px-3 rounded-lg hover:bg-[#FAF7F0] border border-transparent hover:border-[#DED7CA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A65332]"
                   >
                     Clear Cart
                   </button>
                 ) : (
-                  <div className="inline-flex items-center gap-2 bg-neutral-900 border border-red-500/30 rounded-full px-3 py-1.5 text-xs">
-                    <span className="text-neutral-300">Clear all items?</span>
+                  <div className="inline-flex items-center gap-2 bg-[#FAF7F0] border border-[#DED7CA] rounded-xl px-3 py-1.5 text-xs">
+                    <span className="text-[#5F6057]">Clear all items?</span>
                     <button
                       type="button"
                       disabled={clearingCart}
                       onClick={handleClearCart}
-                      className="font-bold text-red-400 hover:text-red-300 transition-colors disabled:opacity-40 cursor-pointer"
+                      className="font-bold text-[#A65332] hover:text-[#8b4226] transition-colors disabled:opacity-40 cursor-pointer"
                     >
                       {clearingCart ? 'Clearing...' : 'Yes, Clear'}
                     </button>
-                    <span className="text-neutral-600">|</span>
+                    <span className="text-[#DED7CA]">|</span>
                     <button
                       type="button"
                       onClick={() => setShowClearConfirm(false)}
-                      className="text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                      className="text-[#5F6057] hover:text-[#1F211C] transition-colors cursor-pointer"
                     >
                       Cancel
                     </button>

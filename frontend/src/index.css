@@ -1,1 +1,249 @@
 @import "tailwindcss";
+
+/* ==========================================================================
+   TRENDVOLT — WARM EARTHY LUXURY EDITORIAL DESIGN SYSTEM
+   ========================================================================== */
+
+:root {
+  /* Warm Earthy Canvas & Surfaces */
+  --tv-bg: #F5F0E8;
+  --tv-bg-warm: #EEE7DC;
+  --tv-surface: #FFFDF8;
+  --tv-surface-elevated: #FAF7F0;
+
+  /* Typography */
+  --tv-text-primary: #1F211C;
+  --tv-text-secondary: #5F6057;
+  --tv-text-muted: #85857A;
+
+  /* Borders & Dividers */
+  --tv-border: #DED7CA;
+
+  /* Brand Primary: Deep Olive Green */
+  --tv-olive: #34452F;
+  --tv-olive-hover: #263722;
+  --tv-olive-soft: #66745B;
+
+  /* Brand Accent: Muted Terracotta */
+  --tv-terracotta: #A65332;
+  --tv-terracotta-hover: #8F452B;
+  --tv-terracotta-soft: #C47A5C;
+
+  /* Semantic Feedback */
+  --tv-success: #3F6B45;
+  --tv-error: #B7473A;
+  --tv-warning: #A86B2D;
+
+  /* Editorial Timing & Curves */
+  --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 350ms;
+}
+
+@theme {
+  --color-tv-bg: #F5F0E8;
+  --color-tv-bg-warm: #EEE7DC;
+  --color-tv-surface: #FFFDF8;
+  --color-tv-surface-elevated: #FAF7F0;
+  --color-tv-text: #1F211C;
+  --color-tv-secondary: #5F6057;
+  --color-tv-muted: #85857A;
+  --color-tv-border: #DED7CA;
+
+  --color-tv-olive: #34452F;
+  --color-tv-olive-hover: #263722;
+  --color-tv-olive-soft: #66745B;
+
+  --color-tv-terracotta: #A65332;
+  --color-tv-terracotta-hover: #8F452B;
+  --color-tv-terracotta-soft: #C47A5C;
+
+  --color-tv-success: #3F6B45;
+  --color-tv-error: #B7473A;
+  --color-tv-warning: #A86B2D;
+
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-script: 'Caveat', cursive;
+}
+
+/* Base Document Styles */
+html {
+  background-color: var(--tv-bg);
+  color: var(--tv-text-primary);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+  background-color: var(--tv-bg);
+  color: var(--tv-text-primary);
+  overflow-x: hidden;
+}
+
+::selection {
+  background-color: rgba(52, 69, 47, 0.2);
+  color: #1F211C;
+}
+
+/* ==========================================================================
+   TYPOGRAPHY SYSTEM
+   ========================================================================== */
+
+.tv-display {
+  font-size: clamp(2.5rem, 5vw + 1rem, 4.75rem); /* 40px to 76px */
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+.tv-h1 {
+  font-size: clamp(2rem, 3.5vw + 0.5rem, 3.5rem); /* 32px to 56px */
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  font-weight: 800;
+}
+
+.tv-h2 {
+  font-size: clamp(1.5rem, 2.5vw + 0.5rem, 2.35rem); /* 24px to 38px */
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.tv-h3 {
+  font-size: clamp(1.2rem, 1.5vw + 0.5rem, 1.65rem); /* 20px to 26px */
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  font-weight: 600;
+}
+
+.tv-body-lg {
+  font-size: 1.125rem; /* 18px */
+  line-height: 1.6;
+}
+
+.tv-body {
+  font-size: 1rem; /* 16px */
+  line-height: 1.55;
+}
+
+.tv-small {
+  font-size: 0.84375rem; /* 13.5px */
+  line-height: 1.5;
+}
+
+.tv-micro {
+  font-size: 0.6875rem; /* 11px */
+  line-height: 1.4;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   CONTAINER & LAYOUT SYSTEM
+   ========================================================================== */
+
+.tv-container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  max-width: 80rem; /* 1280px */
+}
+
+@media (min-width: 640px) {
+  .tv-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .tv-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+.tv-container-wide {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  max-width: 90rem; /* 1440px */
+}
+
+@media (min-width: 640px) {
+  .tv-container-wide {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .tv-container-wide {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+.tv-container-narrow {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  max-width: 48rem; /* 768px */
+}
+
+/* ==========================================================================
+   SECTION SPACING SYSTEM
+   ========================================================================== */
+
+.tv-section {
+  padding-top: clamp(3rem, 6vw, 6rem);
+  padding-bottom: clamp(3rem, 6vw, 6rem);
+}
+
+.tv-section-sm {
+  padding-top: clamp(2rem, 4vw, 3.5rem);
+  padding-bottom: clamp(2rem, 4vw, 3.5rem);
+}
+
+.tv-section-lg {
+  padding-top: clamp(4rem, 8vw, 7.5rem);
+  padding-bottom: clamp(4rem, 8vw, 7.5rem);
+}
+
+/* ==========================================================================
+   ACCESSIBILITY & FOCUS
+   ========================================================================== */
+
+.tv-focus {
+  outline: none;
+}
+
+.tv-focus:focus-visible {
+  outline: 2px solid var(--tv-olive);
+  outline-offset: 2px;
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

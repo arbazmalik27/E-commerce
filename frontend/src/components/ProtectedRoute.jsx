@@ -12,8 +12,8 @@ function ProtectedRoute({ children }) {
 
   if (!initialized) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+      <div className="flex min-h-screen bg-[#F5F0E8] items-center justify-center">
+        <div className="h-9 w-9 animate-spin rounded-full border-3 border-[#34452F] border-t-transparent" />
       </div>
     )
   }

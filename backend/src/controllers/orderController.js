@@ -86,9 +86,6 @@ const createOrder = async (req, res) => {
       paymentStatus: 'pending',
     })
 
-    cart.items = []
-    await cart.save()
-
     return res.status(201).json({
       success: true,
       order,

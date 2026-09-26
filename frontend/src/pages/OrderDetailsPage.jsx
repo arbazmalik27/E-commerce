@@ -1,6 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
 import api from '../services/api'
+import { selectUser } from '../features/auth/authSlice'
+import { fetchCart } from '../features/cart/cartSlice'
+import { loadRazorpayScript } from '../utils/loadRazorpay'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -106,16 +110,28 @@ function DetailSkeleton() {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+const isPaymentEligible = (order) => {
+  if (!order) return false
+  if (order.paymentStatus === 'paid') return false
+  if (['cancelled', 'delivered', 'shipped'].includes(order.orderStatus)) return false
+  return true
+}
+
 function OrderDetailsPage() {
   const { id } = useParams()
+  const dispatch = useDispatch()
+  const user = useSelector(selectUser)
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [notFound, setNotFound] = useState(false)
+  const [retryLoading, setRetryLoading] = useState(false)
+  const [paymentState, setPaymentState] = useState('idle')
+  // 'idle' | 'opening_razorpay' | 'verifying' | 'success' | 'failed' | 'cancelled'
+  const [paymentMessage, setPaymentMessage] = useState(null)
 
-  useEffect(() => {
+  const fetchOrder = useCallback(() => {
     if (!id) return
-
     setLoading(true)
     setError(null)
     setNotFound(false)
@@ -130,9 +146,7 @@ function OrderDetailsPage() {
       })
       .catch((err) => {
         const status = err.response?.status
-        if (status === 404) {
-          setNotFound(true)
-        } else if (status === 401 || status === 403) {
+        if (status === 404 || status === 401 || status === 403) {
           setNotFound(true)
         } else {
           setError(
@@ -145,6 +159,127 @@ function OrderDetailsPage() {
         setLoading(false)
       })
   }, [id])
+
+  useEffect(() => {
+    fetchOrder()
+  }, [fetchOrder])
+
+  // Handle Razorpay Payment Retry for Existing Pending Order
+  const handleRetryPayment = async () => {
+    if (!order || retryLoading) return
+    if (!isPaymentEligible(order)) return
+
+    setRetryLoading(true)
+    setPaymentState('opening_razorpay')
+    setPaymentMessage(null)
+
+    try {
+      // 1. Create/reuse Razorpay order for this exact application order
+      const response = await api.post('/payments/create-order', {
+        orderId: order._id,
+      })
+
+      if (!response.data?.success) {
+        throw new Error(response.data?.message || 'Failed to initiate payment.')
+      }
+
+      const { razorpayOrderId, amount, currency, keyId: backendKeyId } = response.data
+      const resolvedKeyId = import.meta.env.VITE_RAZORPAY_KEY_ID || backendKeyId
+
+      if (!resolvedKeyId) {
+        throw new Error('Razorpay Key ID is not configured.')
+      }
+
+      // 2. Load Razorpay script
+      const scriptLoaded = await loadRazorpayScript()
+      if (!scriptLoaded || !window.Razorpay) {
+        throw new Error('Failed to load Razorpay payment gateway. Please check your connection.')
+      }
+
+      // 3. Open Razorpay modal with existing order snapshot details
+      const options = {
+        key: resolvedKeyId,
+        amount: amount,
+        currency: currency || 'INR',
+        name: 'TrendVolt',
+        description: `Order #${order.orderNumber}`,
+        order_id: razorpayOrderId,
+        prefill: {
+          name: order.shippingAddress?.fullName || user?.name || '',
+          email: user?.email || '',
+          contact: order.shippingAddress?.phone || '',
+        },
+        notes: {
+          orderId: order._id,
+          orderNumber: order.orderNumber,
+        },
+        theme: {
+          color: '#7c3aed',
+        },
+        handler: async function (razorpayResponse) {
+          setPaymentState('verifying')
+          setPaymentMessage('Verifying payment with bank...')
+          try {
+            const verifyRes = await api.post('/payments/verify', {
+              orderId: order._id,
+              razorpayOrderId: razorpayResponse.razorpay_order_id,
+              razorpayPaymentId: razorpayResponse.razorpay_payment_id,
+              razorpaySignature: razorpayResponse.razorpay_signature,
+            })
+
+            if (verifyRes.data?.success && verifyRes.data.order) {
+              setOrder(verifyRes.data.order)
+              setPaymentState('success')
+              setPaymentMessage('Payment successful! Your order has been confirmed.')
+              dispatch(fetchCart())
+            } else {
+              throw new Error(verifyRes.data?.message || 'Payment verification failed.')
+            }
+          } catch (verifyErr) {
+            const msg =
+              verifyErr.response?.data?.message ||
+              verifyErr.message ||
+              'Payment verification failed. If your account was debited, please contact support.'
+            setPaymentState('failed')
+            setPaymentMessage(msg)
+          } finally {
+            setRetryLoading(false)
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setPaymentState('cancelled')
+            setPaymentMessage('Payment attempt was cancelled. Your order remains saved and pending.')
+            setRetryLoading(false)
+          },
+          escape: true,
+          backdropclose: false,
+        },
+      }
+
+      const rzpInstance = new window.Razorpay(options)
+
+      rzpInstance.on('payment.failed', function (failureResponse) {
+        const errorDesc =
+          failureResponse?.error?.description ||
+          failureResponse?.error?.reason ||
+          'Payment failed. Please try again or use another payment method.'
+        setPaymentState('failed')
+        setPaymentMessage(errorDesc)
+        setRetryLoading(false)
+      })
+
+      rzpInstance.open()
+    } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        'Unable to initialize payment retry. Please try again.'
+      setPaymentState('failed')
+      setPaymentMessage(msg)
+      setRetryLoading(false)
+    }
+  }
 
   const shipping = order?.shippingAddress || {}
   const items = order?.items || []
@@ -247,20 +382,109 @@ function OrderDetailsPage() {
                   </div>
                 </div>
 
-                {/* Status row */}
-                <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-white/10">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-neutral-500">Order Status</span>
-                    <OrderStatusBadge status={order.orderStatus} />
+                {/* Status row + Retry Payment */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-white/10">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-neutral-500">Order Status</span>
+                      <OrderStatusBadge status={order.orderStatus} />
+                    </div>
+                    <div className="hidden sm:block h-4 w-px bg-white/10" aria-hidden="true" />
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-neutral-500">Payment</span>
+                      <PaymentStatusBadge status={order.paymentStatus} />
+                    </div>
                   </div>
-                  <div className="hidden sm:block h-4 w-px bg-white/10" aria-hidden="true" />
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-neutral-500">Payment</span>
-                    <PaymentStatusBadge status={order.paymentStatus} />
-                  </div>
+
+                  {isPaymentEligible(order) && (
+                    <button
+                      id="retry-payment-btn"
+                      onClick={handleRetryPayment}
+                      disabled={retryLoading}
+                      className="inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:bg-purple-600/50 disabled:cursor-not-allowed text-white text-xs font-semibold px-4 py-2 transition-all duration-200 shadow-md shadow-purple-900/30 hover:shadow-purple-900/50 cursor-pointer"
+                    >
+                      {retryLoading ? (
+                        <>
+                          <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                          </svg>
+                          <span>Processing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                          </svg>
+                          <span>Retry Payment</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
+
+            {/* Payment Notification / Alert Banner */}
+            {paymentMessage && (
+              <div
+                role="alert"
+                id="payment-status-banner"
+                className={`rounded-xl border p-4 flex items-start gap-3 transition-all ${
+                  paymentState === 'success'
+                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                    : paymentState === 'verifying'
+                    ? 'border-purple-500/30 bg-purple-500/10 text-purple-300'
+                    : paymentState === 'cancelled'
+                    ? 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+                    : 'border-red-500/30 bg-red-500/10 text-red-300'
+                }`}
+              >
+                <div className="shrink-0 mt-0.5">
+                  {paymentState === 'success' && (
+                    <svg className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  )}
+                  {paymentState === 'verifying' && (
+                    <svg className="animate-spin h-5 w-5 text-purple-400" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                  )}
+                  {paymentState === 'cancelled' && (
+                    <svg className="h-5 w-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                  )}
+                  {paymentState === 'failed' && (
+                    <svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                  )}
+                </div>
+                <div className="flex-1 text-sm leading-relaxed">
+                  <p className="font-semibold text-white mb-0.5">
+                    {paymentState === 'success'
+                      ? 'Payment Successful'
+                      : paymentState === 'verifying'
+                      ? 'Verifying Payment'
+                      : paymentState === 'cancelled'
+                      ? 'Payment Cancelled'
+                      : 'Payment Failed'}
+                  </p>
+                  <p>{paymentMessage}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMessage(null)}
+                  className="text-neutral-400 hover:text-white transition-colors cursor-pointer text-xs"
+                  aria-label="Dismiss notification"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
 
             {/* ── Order Items Card ── */}
             <div className="rounded-2xl border border-white/10 bg-neutral-900/70 backdrop-blur-sm shadow-xl overflow-hidden">

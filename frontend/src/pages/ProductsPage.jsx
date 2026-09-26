@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
+import Eyebrow from '../components/Eyebrow'
 import api from '../services/api'
 import {
   TAXONOMY,
@@ -390,19 +391,19 @@ function ProductsPage() {
   }, [activeCategory, activeDepartment, activeSubcategory])
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white pt-28 sm:pt-32 lg:pt-36 pb-20">
+    <div className="min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-28 sm:pt-32 lg:pt-36 pb-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* =========================================================================
             1. TAXONOMY BREADCRUMBS & CONTEXT
            ========================================================================= */}
-        <nav aria-label="Taxonomy Breadcrumbs" className="mb-4 flex flex-wrap items-center gap-2 text-xs font-mono uppercase tracking-wider text-neutral-400">
-          <Link to="/" className="hover:text-white transition-colors">Home</Link>
-          <span className="text-white/20">/</span>
+        <nav aria-label="Taxonomy Breadcrumbs" className="mb-4 flex flex-wrap items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#5F6057]">
+          <Link to="/" className="hover:text-[#1F211C] transition-colors">Home</Link>
+          <span className="text-[#DED7CA]">/</span>
           <button
             type="button"
             onClick={handleResetFilters}
-            className={`hover:text-white transition-colors cursor-pointer ${
-              activeCategory === 'all' ? 'text-white font-bold' : ''
+            className={`hover:text-[#1F211C] transition-colors cursor-pointer ${
+              activeCategory === 'all' ? 'text-[#1F211C] font-bold' : ''
             }`}
           >
             Shop
@@ -410,12 +411,12 @@ function ProductsPage() {
 
           {activeCategory !== 'all' && (
             <>
-              <span className="text-white/20">/</span>
+              <span className="text-[#DED7CA]">/</span>
               <button
                 type="button"
                 onClick={() => handleCategoryChange(activeCategory)}
-                className={`hover:text-white transition-colors cursor-pointer ${
-                  !activeDepartment ? 'text-white font-bold' : ''
+                className={`hover:text-[#1F211C] transition-colors cursor-pointer ${
+                  !activeDepartment ? 'text-[#1F211C] font-bold' : ''
                 }`}
               >
                 {getCategoryLabel(activeCategory)}
@@ -425,12 +426,12 @@ function ProductsPage() {
 
           {activeDepartment && (
             <>
-              <span className="text-white/20">/</span>
+              <span className="text-[#DED7CA]">/</span>
               <button
                 type="button"
                 onClick={() => handleDepartmentChange(activeDepartment)}
-                className={`hover:text-white transition-colors cursor-pointer ${
-                  !activeSubcategory ? 'text-white font-bold' : ''
+                className={`hover:text-[#1F211C] transition-colors cursor-pointer ${
+                  !activeSubcategory ? 'text-[#1F211C] font-bold' : ''
                 }`}
               >
                 {getDepartmentLabel(activeCategory, activeDepartment)}
@@ -440,8 +441,8 @@ function ProductsPage() {
 
           {activeSubcategory && (
             <>
-              <span className="text-white/20">/</span>
-              <span className="text-purple-300 font-bold">
+              <span className="text-[#DED7CA]">/</span>
+              <span className="text-[#A65332] font-bold">
                 {getSubcategoryLabel(activeCategory, activeDepartment, activeSubcategory)}
               </span>
             </>
@@ -452,30 +453,29 @@ function ProductsPage() {
             2. SHOP HEADER
            ========================================================================= */}
         <header className="mb-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold tracking-widest text-neutral-300 uppercase backdrop-blur-md mb-3">
-            <span className="h-1.5 w-1.5 rounded-full bg-purple-400" />
-            CATALOG DISCOVERY
+          <div className="mb-3">
+            <Eyebrow variant="olive">SHOP THE EDIT</Eyebrow>
           </div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight text-white leading-tight">
+          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#1F211C] leading-[1.1]">
             {headerTitle}
           </h1>
-          <p className="mt-2 text-sm sm:text-base text-neutral-300 font-normal leading-relaxed max-w-2xl">
+          <p className="mt-2 text-sm sm:text-base text-[#5F6057] font-normal leading-relaxed max-w-2xl">
             {activeCategory === 'fashion'
-              ? 'Tailored silhouettes, contemporary wardrobe staples, and elevated luxury essentials.'
+              ? 'Curated fashion pieces, tailored silhouettes, and elevated wardrobe essentials.'
               : 'Explore our complete curated selection across luxury fashion apparel and contemporary essentials.'}
           </p>
 
           {/* Active Filter Chips / Clear Actions */}
           {(activeCategory !== 'all' || activeDepartment || activeSubcategory || activeSearch || priceFilterLabel) && (
             <div className="mt-4 flex flex-wrap items-center gap-2 pt-2">
-              <span className="text-xs text-neutral-400 font-mono uppercase">Active Filters:</span>
+              <span className="text-xs text-[#85857A] font-mono uppercase tracking-wider">Active Filters:</span>
               {activeSearch && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/20 border border-purple-500/40 px-3 py-1 text-xs text-purple-200">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFFDF8] border border-[#A65332]/30 px-3 py-1 text-xs text-[#A65332] shadow-2xs">
                   <span>Search: &ldquo;{activeSearch}&rdquo;</span>
                   <button
                     type="button"
                     onClick={handleClearSearch}
-                    className="hover:text-red-400 cursor-pointer ml-1"
+                    className="hover:text-red-600 cursor-pointer ml-1 font-bold"
                     title="Clear Search"
                   >
                     ×
@@ -483,12 +483,12 @@ function ProductsPage() {
                 </span>
               )}
               {priceFilterLabel && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/20 border border-purple-500/40 px-3 py-1 text-xs text-purple-200">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFFDF8] border border-[#34452F]/30 px-3 py-1 text-xs text-[#34452F] shadow-2xs">
                   <span>{priceFilterLabel}</span>
                   <button
                     type="button"
                     onClick={handleClearPriceFilter}
-                    className="hover:text-red-400 cursor-pointer ml-1"
+                    className="hover:text-red-600 cursor-pointer ml-1 font-bold"
                     title="Clear Price Filter"
                   >
                     ×
@@ -496,12 +496,12 @@ function ProductsPage() {
                 </span>
               )}
               {activeCategory !== 'all' && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/15 px-3 py-1 text-xs text-white">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFFDF8] border border-[#DED7CA] px-3 py-1 text-xs text-[#1F211C] shadow-2xs">
                   <span>Category: {getCategoryLabel(activeCategory)}</span>
                   <button
                     type="button"
                     onClick={handleResetFilters}
-                    className="hover:text-red-400 cursor-pointer ml-1"
+                    className="hover:text-red-600 cursor-pointer ml-1 font-bold"
                     title="Remove Category"
                   >
                     ×
@@ -509,12 +509,12 @@ function ProductsPage() {
                 </span>
               )}
               {activeDepartment && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/15 px-3 py-1 text-xs text-white">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFFDF8] border border-[#DED7CA] px-3 py-1 text-xs text-[#1F211C] shadow-2xs">
                   <span>Dept: {getDepartmentLabel(activeCategory, activeDepartment)}</span>
                   <button
                     type="button"
                     onClick={handleClearDepartment}
-                    className="hover:text-red-400 cursor-pointer ml-1"
+                    className="hover:text-red-600 cursor-pointer ml-1 font-bold"
                     title="Remove Department"
                   >
                     ×
@@ -522,12 +522,12 @@ function ProductsPage() {
                 </span>
               )}
               {activeSubcategory && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/20 border border-purple-500/40 px-3 py-1 text-xs text-purple-200">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFFDF8] border border-[#A65332]/30 px-3 py-1 text-xs text-[#A65332] shadow-2xs">
                   <span>Subcat: {getSubcategoryLabel(activeCategory, activeDepartment, activeSubcategory)}</span>
                   <button
                     type="button"
                     onClick={handleClearSubcategory}
-                    className="hover:text-red-400 cursor-pointer ml-1"
+                    className="hover:text-red-600 cursor-pointer ml-1 font-bold"
                     title="Remove Subcategory"
                   >
                     ×
@@ -537,7 +537,7 @@ function ProductsPage() {
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="text-xs text-neutral-400 hover:text-white underline underline-offset-2 ml-2 cursor-pointer transition-colors"
+                className="text-xs text-[#85857A] hover:text-[#A65332] underline underline-offset-2 ml-2 cursor-pointer transition-colors"
               >
                 Clear all
               </button>
@@ -546,9 +546,9 @@ function ProductsPage() {
         </header>
 
         {/* =========================================================================
-            3. TAXONOMY NAVIGATION BARS
+            3. TAXONOMY NAVIGATION & FILTERS
            ========================================================================= */}
-        <div className="mb-8 space-y-4 border-y border-white/10 py-6">
+        <div className="mb-8 rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-4 sm:p-6 shadow-xs space-y-4">
           {/* Tier 1: Category Filter Pills + Search Form + Sort Dropdown */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <nav aria-label="Main Categories" className="flex items-center flex-wrap gap-2">
@@ -562,8 +562,8 @@ function ProductsPage() {
                     aria-pressed={isActive}
                     className={`min-h-[44px] px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-wider uppercase transition-all duration-200 cursor-pointer ${
                       isActive
-                        ? 'bg-white text-neutral-950 shadow-md scale-102'
-                        : 'bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10'
+                        ? 'bg-[#34452F] text-[#FFFDF8] shadow-xs'
+                        : 'bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#5F6057] hover:text-[#1F211C] border border-[#DED7CA]'
                     }`}
                   >
                     {cat.label}
@@ -590,12 +590,12 @@ function ProductsPage() {
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                     placeholder="Search by name or brand..."
-                    className="w-full min-h-[44px] rounded-full border border-white/15 bg-neutral-900/90 pl-10 pr-9 py-2 text-xs sm:text-sm text-white placeholder-neutral-400 focus:outline-hidden focus:border-purple-400 focus:ring-1 focus:ring-purple-400 transition-colors"
+                    className="w-full min-h-[44px] rounded-full border border-[#DED7CA] bg-[#FAF7F0] pl-10 pr-9 py-2 text-xs sm:text-sm text-[#1F211C] placeholder-[#85857A] focus:outline-hidden focus:border-[#34452F] focus:ring-1 focus:ring-[#34452F] transition-colors"
                   />
                   <button
                     type="submit"
                     aria-label="Submit search"
-                    className="absolute left-3.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                    className="absolute left-3.5 text-[#85857A] hover:text-[#1F211C] transition-colors cursor-pointer"
                   >
                     <svg
                       className="h-4 w-4"
@@ -620,7 +620,7 @@ function ProductsPage() {
                         if (activeSearch) handleClearSearch()
                       }}
                       aria-label="Clear search input"
-                      className="absolute right-3.5 text-neutral-400 hover:text-white transition-colors cursor-pointer text-base leading-none"
+                      className="absolute right-3.5 text-[#85857A] hover:text-[#1F211C] transition-colors cursor-pointer text-base leading-none"
                     >
                       ×
                     </button>
@@ -636,7 +636,7 @@ function ProductsPage() {
               >
                 <div className="flex items-center gap-1">
                   <div className="relative">
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400 text-xs font-mono">₹</span>
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#85857A] text-xs font-mono">₹</span>
                     <input
                       id="min-price-input"
                       type="number"
@@ -645,12 +645,12 @@ function ProductsPage() {
                       onChange={(e) => setMinPriceInput(e.target.value)}
                       placeholder="Min"
                       aria-label="Minimum Price in INR"
-                      className="w-18 sm:w-20 min-h-[44px] rounded-xl border border-white/15 bg-neutral-900/90 pl-6 pr-1.5 py-2 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-hidden focus:border-purple-400 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-18 sm:w-20 min-h-[44px] rounded-xl border border-[#DED7CA] bg-[#FAF7F0] pl-6 pr-1.5 py-2 text-xs sm:text-sm text-[#1F211C] placeholder-[#85857A] focus:outline-hidden focus:border-[#34452F] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
-                  <span className="text-neutral-500 text-xs font-mono">-</span>
+                  <span className="text-[#85857A] text-xs font-mono">-</span>
                   <div className="relative">
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400 text-xs font-mono">₹</span>
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#85857A] text-xs font-mono">₹</span>
                     <input
                       id="max-price-input"
                       type="number"
@@ -659,14 +659,14 @@ function ProductsPage() {
                       onChange={(e) => setMaxPriceInput(e.target.value)}
                       placeholder="Max"
                       aria-label="Maximum Price in INR"
-                      className="w-18 sm:w-20 min-h-[44px] rounded-xl border border-white/15 bg-neutral-900/90 pl-6 pr-1.5 py-2 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-hidden focus:border-purple-400 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-18 sm:w-20 min-h-[44px] rounded-xl border border-[#DED7CA] bg-[#FAF7F0] pl-6 pr-1.5 py-2 text-xs sm:text-sm text-[#1F211C] placeholder-[#85857A] focus:outline-hidden focus:border-[#34452F] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                 </div>
                 <button
                   type="submit"
                   aria-label="Apply Price Filter"
-                  className="min-h-[44px] px-3.5 rounded-xl bg-white text-neutral-950 hover:bg-neutral-200 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shrink-0"
+                  className="min-h-[44px] px-3.5 rounded-xl bg-[#34452F] text-[#FFFDF8] hover:bg-[#263722] text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shrink-0 shadow-xs"
                 >
                   Filter
                 </button>
@@ -676,7 +676,7 @@ function ProductsPage() {
                     onClick={handleClearPriceFilter}
                     aria-label="Clear Price Filter"
                     title="Clear Price Filter"
-                    className="min-h-[44px] px-2.5 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white text-xs font-bold transition-colors cursor-pointer shrink-0"
+                    className="min-h-[44px] px-2.5 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#5F6057] hover:text-[#A65332] text-xs font-bold transition-colors cursor-pointer shrink-0"
                   >
                     ×
                   </button>
@@ -685,17 +685,17 @@ function ProductsPage() {
 
               {/* Sort Dropdown */}
               <div className="flex items-center gap-2 shrink-0">
-                <label htmlFor="sort-select" className="text-xs font-mono uppercase tracking-wider text-neutral-400">
+                <label htmlFor="sort-select" className="text-xs font-mono uppercase tracking-wider text-[#5F6057]">
                   Sort:
                 </label>
                 <select
                   id="sort-select"
                   value={activeSort}
                   onChange={(e) => handleSortChange(e.target.value)}
-                  className="min-h-[44px] rounded-xl border border-white/15 bg-neutral-950 px-3 py-2 text-xs font-medium text-white focus:outline-hidden focus:border-purple-400 transition-colors"
+                  className="min-h-[44px] rounded-xl border border-[#DED7CA] bg-[#FAF7F0] px-3 py-2 text-xs font-medium text-[#1F211C] focus:outline-hidden focus:border-[#34452F] transition-colors"
                 >
                   {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.id} value={opt.id} className="bg-neutral-900 text-white">
+                    <option key={opt.id} value={opt.id} className="bg-[#FFFDF8] text-[#1F211C]">
                       {opt.label}
                     </option>
                   ))}
@@ -706,9 +706,9 @@ function ProductsPage() {
 
           {/* Tier 2: Department Pills (Rendered when a category is selected) */}
           {availableDepartments.length > 0 && (
-            <div className="pt-3 border-t border-white/5">
+            <div className="pt-3 border-t border-[#DED7CA]/60">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-[11px] font-mono uppercase tracking-widest text-purple-400 font-bold">
+                <span className="text-[11px] font-mono uppercase tracking-widest text-[#34452F] font-bold">
                   {getCategoryLabel(activeCategory)} Departments:
                 </span>
               </div>
@@ -719,8 +719,8 @@ function ProductsPage() {
                   aria-pressed={!activeDepartment}
                   className={`min-h-[38px] px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase transition-all duration-200 cursor-pointer ${
                     !activeDepartment
-                      ? 'bg-purple-600 text-white shadow-md'
-                      : 'bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10'
+                      ? 'bg-[#34452F] text-[#FFFDF8] shadow-xs'
+                      : 'bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#5F6057] hover:text-[#1F211C] border border-[#DED7CA]'
                   }`}
                 >
                   All {getCategoryLabel(activeCategory)}
@@ -735,8 +735,8 @@ function ProductsPage() {
                       aria-pressed={isDeptActive}
                       className={`min-h-[38px] px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase transition-all duration-200 cursor-pointer ${
                         isDeptActive
-                          ? 'bg-purple-600 text-white shadow-md'
-                          : 'bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10'
+                          ? 'bg-[#34452F] text-[#FFFDF8] shadow-xs'
+                          : 'bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#5F6057] hover:text-[#1F211C] border border-[#DED7CA]'
                       }`}
                     >
                       {dept.name}
@@ -749,9 +749,9 @@ function ProductsPage() {
 
           {/* Tier 3: Subcategory Pills (Rendered when a department is selected) */}
           {availableSubcategories.length > 0 && (
-            <div className="pt-3 border-t border-white/5">
+            <div className="pt-3 border-t border-[#DED7CA]/60">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-[11px] font-mono uppercase tracking-widest text-neutral-400 font-bold">
+                <span className="text-[11px] font-mono uppercase tracking-widest text-[#5F6057] font-bold">
                   {getDepartmentLabel(activeCategory, activeDepartment)} Subcategories:
                 </span>
               </div>
@@ -762,8 +762,8 @@ function ProductsPage() {
                   aria-pressed={!activeSubcategory}
                   className={`min-h-[34px] px-3 py-1 rounded-full text-[11px] font-medium tracking-wide uppercase transition-all duration-200 cursor-pointer ${
                     !activeSubcategory
-                      ? 'bg-white/20 text-white border border-white/30 font-bold'
-                      : 'bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border border-white/10'
+                      ? 'bg-[#34452F]/15 text-[#34452F] border border-[#34452F]/30 font-bold'
+                      : 'bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#5F6057] hover:text-[#1F211C] border border-[#DED7CA]'
                   }`}
                 >
                   All {getDepartmentLabel(activeCategory, activeDepartment)}
@@ -778,8 +778,8 @@ function ProductsPage() {
                       aria-pressed={isSubActive}
                       className={`min-h-[34px] px-3 py-1 rounded-full text-[11px] font-medium tracking-wide uppercase transition-all duration-200 cursor-pointer ${
                         isSubActive
-                          ? 'bg-white/20 text-purple-300 border border-purple-400/40 font-bold shadow-xs'
-                          : 'bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border border-white/10'
+                          ? 'bg-[#A65332] text-white border border-[#A65332] font-bold shadow-xs'
+                          : 'bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#5F6057] hover:text-[#1F211C] border border-[#DED7CA]'
                       }`}
                     >
                       {sub.name}
@@ -793,7 +793,7 @@ function ProductsPage() {
 
         {/* Product Count Indicator */}
         {!loading && !error && (
-          <div className="mb-6 flex items-center justify-between text-xs font-mono uppercase tracking-wider text-neutral-400">
+          <div className="mb-6 flex items-center justify-between text-xs font-mono uppercase tracking-wider text-[#85857A]">
             <span>
               Showing {products.length} of {pagination.totalProducts} {pagination.totalProducts === 1 ? 'item' : 'items'}
               {activeSearch ? ` for "${activeSearch}"` : ''}
@@ -810,30 +810,30 @@ function ProductsPage() {
             {[...Array(8)].map((_, idx) => (
               <div
                 key={idx}
-                className="rounded-2xl border border-white/10 bg-neutral-900/60 p-4 space-y-4 animate-pulse"
+                className="rounded-xl border border-[#DED7CA] bg-[#FFFDF8] p-4 space-y-4 animate-pulse shadow-xs"
               >
-                <div className="aspect-square bg-white/5 rounded-xl w-full" />
-                <div className="h-4 bg-white/5 rounded-md w-3/4" />
-                <div className="h-4 bg-white/5 rounded-md w-1/2" />
-                <div className="h-8 bg-white/5 rounded-xl w-full pt-2" />
+                <div className="aspect-square bg-[#EEE7DC] rounded-lg w-full" />
+                <div className="h-4 bg-[#EEE7DC] rounded w-3/4" />
+                <div className="h-4 bg-[#EEE7DC] rounded w-1/2" />
+                <div className="h-9 bg-[#EEE7DC] rounded-lg w-full pt-2" />
               </div>
             ))}
           </div>
         )}
 
         {!loading && error && (
-          <div className="py-20 text-center max-w-md mx-auto">
-            <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-red-400 mb-4">
+          <div className="py-20 text-center max-w-md mx-auto rounded-2xl border border-red-200 bg-[#FFFDF8] p-8 sm:p-12 shadow-xs">
+            <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-[#B7473A] mb-4">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h2 className="text-xl font-bold uppercase tracking-tight text-white">Connection Error</h2>
-            <p className="mt-2 text-sm text-neutral-400">{error}</p>
+            <h2 className="font-serif text-2xl font-bold tracking-tight text-[#1F211C]">Connection Error</h2>
+            <p className="mt-2 text-sm text-[#5F6057]">{error}</p>
             <button
               type="button"
               onClick={handleRetry}
-              className="mt-6 min-h-[44px] px-6 py-2.5 rounded-full bg-white text-neutral-950 font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 transition-colors"
+              className="mt-6 min-h-[44px] px-6 py-2.5 rounded-full bg-[#34452F] text-[#FFFDF8] font-bold text-xs uppercase tracking-wider hover:bg-[#263722] transition-colors shadow-xs cursor-pointer"
             >
               Retry
             </button>
@@ -841,24 +841,24 @@ function ProductsPage() {
         )}
 
         {!loading && !error && sortedProducts.length === 0 && (
-          <div className="py-20 text-center max-w-lg mx-auto rounded-3xl border border-white/10 bg-neutral-900/40 p-8 sm:p-12">
-            <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-neutral-400 mb-4">
+          <div className="py-20 text-center max-w-lg mx-auto rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-8 sm:p-12 shadow-xs">
+            <div className="w-14 h-14 rounded-2xl bg-[#FAF7F0] border border-[#DED7CA] flex items-center justify-center mx-auto text-[#85857A] mb-4">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
             </div>
-            <h2 className="text-xl font-bold uppercase tracking-tight text-white">
+            <h2 className="font-serif text-2xl font-bold tracking-tight text-[#1F211C]">
               {activeSearch
                 ? `No products found for "${activeSearch}"`
                 : priceFilterLabel
                 ? 'No Products Within This Price Range'
                 : 'No Products In This Category'}
             </h2>
-            <p className="mt-2 text-sm text-neutral-400 leading-relaxed">
+            <p className="mt-2 text-sm text-[#5F6057] leading-relaxed">
               {activeSearch ? (
                 <>
                   We couldn&apos;t find any products matching{' '}
-                  <span className="text-white font-medium">&ldquo;{activeSearch}&rdquo;</span>.
+                  <span className="text-[#1F211C] font-semibold">&ldquo;{activeSearch}&rdquo;</span>.
                   Try checking your spelling, using more general keywords, or clearing your active filters.
                 </>
               ) : priceFilterLabel ? (
@@ -869,7 +869,7 @@ function ProductsPage() {
               ) : (
                 <>
                   We currently don&apos;t have any active listings under{' '}
-                  <span className="text-white font-medium">
+                  <span className="text-[#1F211C] font-semibold">
                     {[
                       activeCategory !== 'all' ? getCategoryLabel(activeCategory) : null,
                       activeDepartment ? getDepartmentLabel(activeCategory, activeDepartment) : null,
@@ -885,7 +885,7 @@ function ProductsPage() {
                 <button
                   type="button"
                   onClick={handleClearSearch}
-                  className="min-h-[44px] px-5 py-2 rounded-full bg-white text-neutral-950 font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 transition-colors cursor-pointer"
+                  className="min-h-[44px] px-5 py-2 rounded-full bg-[#34452F] text-[#FFFDF8] font-bold text-xs uppercase tracking-wider hover:bg-[#263722] transition-colors cursor-pointer shadow-xs"
                 >
                   Clear Search
                 </button>
@@ -894,7 +894,7 @@ function ProductsPage() {
                 <button
                   type="button"
                   onClick={handleClearPriceFilter}
-                  className="min-h-[44px] px-5 py-2 rounded-full bg-white text-neutral-950 font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 transition-colors cursor-pointer"
+                  className="min-h-[44px] px-5 py-2 rounded-full bg-[#34452F] text-[#FFFDF8] font-bold text-xs uppercase tracking-wider hover:bg-[#263722] transition-colors cursor-pointer shadow-xs"
                 >
                   Clear Price Filter
                 </button>
@@ -903,7 +903,7 @@ function ProductsPage() {
                 <button
                   type="button"
                   onClick={handleClearSubcategory}
-                  className="min-h-[44px] px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                  className="min-h-[44px] px-5 py-2 rounded-full border border-[#DED7CA] bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#1F211C] font-semibold text-xs uppercase tracking-wider transition-colors cursor-pointer"
                 >
                   View All {getDepartmentLabel(activeCategory, activeDepartment)}
                 </button>
@@ -911,7 +911,7 @@ function ProductsPage() {
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="min-h-[44px] px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                className="min-h-[44px] px-5 py-2 rounded-full border border-[#DED7CA] bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#1F211C] font-semibold text-xs uppercase tracking-wider transition-colors cursor-pointer"
               >
                 Reset All Filters
               </button>
@@ -939,7 +939,7 @@ function ProductsPage() {
                   onClick={() => handlePageChange(activePage - 1)}
                   disabled={!pagination.hasPreviousPage}
                   aria-label="Go to previous page"
-                  className="min-h-[44px] min-w-[44px] px-4 inline-flex items-center justify-center gap-1.5 rounded-full border border-white/15 bg-neutral-900/80 text-xs font-bold uppercase tracking-wider text-white transition-all duration-200 hover:bg-white hover:text-neutral-950 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-neutral-900/80 disabled:hover:text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 active:scale-95 shadow-md"
+                  className="min-h-[44px] min-w-[44px] px-4 inline-flex items-center justify-center gap-1.5 rounded-full border border-[#DED7CA] bg-[#FFFDF8] text-xs font-bold uppercase tracking-wider text-[#1F211C] transition-all duration-200 hover:bg-[#34452F] hover:text-[#FFFDF8] hover:border-[#34452F] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-[#FFFDF8] disabled:hover:text-[#1F211C] disabled:hover:border-[#DED7CA] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F] active:scale-95 shadow-xs"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -958,10 +958,10 @@ function ProductsPage() {
                         onClick={() => handlePageChange(pageNum)}
                         aria-current={isCurrent ? 'page' : undefined}
                         aria-label={`Page ${pageNum}`}
-                        className={`min-h-[44px] min-w-[44px] rounded-full text-xs font-bold transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 active:scale-95 ${
+                        className={`min-h-[44px] min-w-[44px] rounded-full text-xs font-bold transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F] active:scale-95 ${
                           isCurrent
-                            ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 ring-1 ring-purple-400'
-                            : 'bg-neutral-900/80 border border-white/10 text-neutral-300 hover:bg-white/10 hover:text-white hover:border-white/20'
+                            ? 'bg-[#34452F] text-[#FFFDF8] shadow-xs'
+                            : 'bg-[#FFFDF8] border border-[#DED7CA] text-[#5F6057] hover:bg-[#FAF7F0] hover:text-[#1F211C] hover:border-[#34452F]'
                         }`}
                       >
                         {pageNum}
@@ -976,7 +976,7 @@ function ProductsPage() {
                   onClick={() => handlePageChange(activePage + 1)}
                   disabled={!pagination.hasNextPage}
                   aria-label="Go to next page"
-                  className="min-h-[44px] min-w-[44px] px-4 inline-flex items-center justify-center gap-1.5 rounded-full border border-white/15 bg-neutral-900/80 text-xs font-bold uppercase tracking-wider text-white transition-all duration-200 hover:bg-white hover:text-neutral-950 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-neutral-900/80 disabled:hover:text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 active:scale-95 shadow-md"
+                  className="min-h-[44px] min-w-[44px] px-4 inline-flex items-center justify-center gap-1.5 rounded-full border border-[#DED7CA] bg-[#FFFDF8] text-xs font-bold uppercase tracking-wider text-[#1F211C] transition-all duration-200 hover:bg-[#34452F] hover:text-[#FFFDF8] hover:border-[#34452F] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-[#FFFDF8] disabled:hover:text-[#1F211C] disabled:hover:border-[#DED7CA] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F] active:scale-95 shadow-xs"
                 >
                   <span className="hidden sm:inline">Next</span>
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">

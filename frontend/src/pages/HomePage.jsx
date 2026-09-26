@@ -1,6 +1,8 @@
 import Hero from '../components/Hero'
 import ShopByCategory from '../components/ShopByCategory'
 import FeaturedProducts from '../components/FeaturedProducts'
+import EditorialFeature from '../components/EditorialFeature'
+import FashionTrends from '../components/FashionTrends'
 import PromoBanner from '../components/PromoBanner'
 import WhyTrendVolt from '../components/WhyTrendVolt'
 import TrendingProducts from '../components/TrendingProducts'
@@ -12,6 +14,8 @@ function HomePage() {
       <Hero />
       <ShopByCategory />
       <FeaturedProducts />
+      <EditorialFeature />
+      <FashionTrends />
       <PromoBanner />
       <WhyTrendVolt />
       <TrendingProducts />
@@ -21,3 +25,4 @@ function HomePage() {
 }
 
 export default HomePage
+

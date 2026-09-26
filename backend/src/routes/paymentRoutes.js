@@ -10,6 +10,7 @@ const router = express.Router()
 router.use(authenticate)
 
 router.post('/create-order', createRazorpayOrder)
+router.post('/razorpay-order', createRazorpayOrder)
 router.post('/verify', verifyPayment)
 
 module.exports = router

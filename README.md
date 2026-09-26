@@ -70,36 +70,31 @@ TrendVolt/
 
 ## 💻 Local Development Setup
 
-Both the backend API and frontend development server must be running.
+Both the backend API and frontend development server must be running for full-stack functionality.
 
-### 1. Start Backend Server
+### ⚡ Quick Start (Unified - Recommended)
+Run both backend (`port 5000`) and frontend (`port 5173`) concurrently with a single command from the project root:
 
-Backend runs on port `5000`.
+```bash
+npm run dev
+```
 
+---
+
+### Alternative: Run Separately in Two Terminals
+
+#### Terminal 1 — Start Backend Server (Port 5000)
 ```bash
 npm run dev:backend
+# or
+cd backend && npm run dev
 ```
 
-Or:
-
-```bash
-cd backend
-npm run dev
-```
-
-### 2. Start Frontend Dev Server
-
-Frontend runs on port `5173`.
-
+#### Terminal 2 — Start Frontend Dev Server (Port 5173)
 ```bash
 npm run dev:frontend
-```
-
-Or:
-
-```bash
-cd frontend
-npm run dev
+# or
+cd frontend && npm run dev
 ```
 
 ## 🧪 Running Automated Tests

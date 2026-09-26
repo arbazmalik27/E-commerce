@@ -1,136 +1,73 @@
 import { Link } from 'react-router-dom'
-import Eyebrow from './Eyebrow'
+import { ArrowRight, Sparkles } from 'lucide-react'
+import promoImage from '../assets/fashion-trends/trend-04.jpg'
 
-const FASHION_STRIPS = [
-  {
-    id: 1,
-    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
-    alt: 'Tailored minimalist outerwear look',
-    heightClass: 'h-[250px] sm:h-[310px] lg:h-[370px]',
-    visibility: 'hidden sm:block',
-  },
-  {
-    id: 2,
-    url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80',
-    alt: 'Dramatic studio light tailored blazer',
-    heightClass: 'h-[270px] sm:h-[330px] lg:h-[390px]',
-    visibility: 'block',
-  },
-  {
-    id: 3,
-    url: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=600&q=80',
-    alt: 'Contemporary monochrome suit editorial',
-    heightClass: 'h-[290px] sm:h-[350px] lg:h-[410px]',
-    visibility: 'block',
-  },
-  {
-    id: 4,
-    url: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=600&q=80',
-    alt: 'Structured oversized white coat and boots',
-    heightClass: 'h-[280px] sm:h-[340px] lg:h-[400px]',
-    visibility: 'block',
-  },
-  {
-    id: 5,
-    url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=600&q=80',
-    alt: 'Chic fedora hat and linen styling',
-    heightClass: 'h-[300px] sm:h-[360px] lg:h-[420px]',
-    visibility: 'block',
-  },
-  {
-    id: 6,
-    url: 'https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?auto=format&fit=crop&w=600&q=80',
-    alt: 'Sleek dark monochrome street style',
-    heightClass: 'h-[260px] sm:h-[320px] lg:h-[380px]',
-    visibility: 'hidden md:block',
-  },
-  {
-    id: 7,
-    url: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=600&q=80',
-    alt: 'Crisp oversized poplin shirt editorial',
-    heightClass: 'h-[280px] sm:h-[340px] lg:h-[400px]',
-    visibility: 'hidden lg:block',
-  },
-]
-
+/**
+ * PROMOTIONAL SECTION — Editorial Split Banner
+ * Deep olive canvas with warm cream typography and local asset imagery.
+ */
 function PromoBanner() {
   return (
     <section
       id="editorial-promo"
       aria-labelledby="promo-banner-heading"
-      className="relative w-full bg-neutral-950 py-16 sm:py-20 lg:py-24 text-white border-t border-white/5 overflow-hidden scroll-mt-32"
+      className="relative w-full bg-[#EEE7DC] py-16 sm:py-20 text-[#1F211C] border-b border-[#DED7CA] overflow-hidden"
     >
-      {/* Soft atmospheric ambient glow */}
-      <div
-        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[500px] bg-gradient-to-b from-purple-900/10 via-purple-950/5 to-transparent blur-3xl opacity-30 -z-10"
-        aria-hidden="true"
-      />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Master Editorial Campaign Canvas */}
-        <div className="relative w-full overflow-hidden rounded-3xl border border-white/10 bg-neutral-900/80 p-6 sm:p-10 lg:p-12 shadow-2xl shadow-black/80 backdrop-blur-md">
-          {/* Top Bar: Eyebrow + Social/Studio Handle */}
-          <div className="flex items-center justify-between gap-4 mb-4 sm:mb-6">
-            <Eyebrow>The TrendVolt Edit</Eyebrow>
-            <span className="text-xs font-mono font-bold tracking-[0.25em] text-neutral-400 uppercase">
-              @TRENDVOLT_STUDIO
-            </span>
-          </div>
-
-          {/* Billboard Heading: Wide, Bold, Italic (Direct Reference Match) */}
-          <div className="text-center my-6 sm:my-8">
-            <h2
-              id="promo-banner-heading"
-              className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight italic text-white leading-tight"
-            >
-              TRENDVOLT FASHION TRENDS
-            </h2>
-          </div>
-
-          {/* Dynamic Slanted Ribbon Fashion Strip Collage */}
-          <div className="flex items-center justify-center gap-2 sm:gap-3 lg:gap-4 my-6 sm:my-10 px-1 sm:px-4">
-            {FASHION_STRIPS.map((strip) => (
-              <div
-                key={strip.id}
-                className={`relative flex-1 ${strip.visibility} overflow-hidden rounded-2xl border border-white/10 bg-neutral-950 shadow-2xl transition-all duration-500 ease-out hover:scale-105 hover:z-20 hover:border-white/30 transform -skew-x-6 sm:-skew-x-8 ${strip.heightClass}`}
-              >
-                <img
-                  src={strip.url}
-                  alt={strip.alt}
-                  loading="lazy"
-                  className="h-full w-full object-cover object-center transform skew-x-6 sm:skew-x-8 scale-125 transition-transform duration-700 ease-out hover:scale-130 select-none"
-                />
-                <div
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-neutral-950/40 via-transparent to-transparent"
-                  aria-hidden="true"
-                />
+        <div className="relative w-full overflow-hidden rounded-3xl bg-[#34452F] text-[#FFFDF8] p-8 sm:p-12 lg:p-16 shadow-[0_20px_50px_-20px_rgba(52,69,47,0.3)]">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            {/* Left Content Area (lg: 7 cols) */}
+            <div className="lg:col-span-7 flex flex-col items-start text-left">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-mono font-bold tracking-[0.2em] uppercase mb-4 text-[#FFFDF8]">
+                <Sparkles className="h-3 w-3 text-[#C47A5C]" />
+                <span>LIMITED RUN &bull; AUTUMN &apos;26</span>
               </div>
-            ))}
-          </div>
 
-          {/* Bottom Bar: Outfit Of The Day Sub-label & Primary CTA */}
-          <div className="mt-8 sm:mt-10 flex flex-col items-center gap-5">
-            <span className="text-xs sm:text-sm font-mono font-bold tracking-[0.35em] text-neutral-400 uppercase italic">
-              O U T F I T &nbsp; O F &nbsp; T H E &nbsp; D A Y
-            </span>
-
-            <Link
-              to="/products?category=fashion"
-              aria-label="Explore TrendVolt fashion trends"
-              className="group inline-flex items-center justify-center gap-2.5 min-h-[44px] rounded-full bg-white px-8 py-3 text-xs sm:text-sm font-bold tracking-wider text-neutral-950 uppercase shadow-xl transition-all duration-300 hover:bg-neutral-200 hover:shadow-2xl hover:scale-102 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-            >
-              <span>Shop Fashion</span>
-              <svg
-                className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                aria-hidden="true"
+              <h2
+                id="promo-banner-heading"
+                className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-[#FFFDF8] leading-[1.05]"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-              </svg>
-            </Link>
+                Crafted for Character.
+                <br />
+                <span className="text-[#C47A5C] italic font-serif sm:font-sans">
+                  Built to Endure.
+                </span>
+              </h2>
+
+              <p className="mt-5 text-base sm:text-lg text-[#EEE7DC] font-normal leading-relaxed max-w-xl">
+                Every garment begins with intentional fiber selection and tailored precision.
+                Explore our limited seasonal run of outerwear and foundational separates.
+              </p>
+
+              <div className="mt-8 flex items-center gap-4">
+                <Link
+                  to="/products?category=fashion"
+                  aria-label="Explore TrendVolt editorial collection"
+                  className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-[#FFFDF8] px-8 py-3.5 text-xs sm:text-sm font-bold tracking-wider text-[#34452F] uppercase shadow-md transition-all duration-300 hover:bg-[#EEE7DC] active:scale-98 cursor-pointer"
+                >
+                  <span>Explore Collection</span>
+                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Split Image Area (lg: 5 cols) */}
+            <div className="lg:col-span-5">
+              <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-white/15 bg-[#263722] shadow-xl">
+                <img
+                  src={promoImage}
+                  alt="Structured oversized outerwear look"
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-cover object-center select-none transition-transform duration-700 ease-out hover:scale-103"
+                />
+                <div className="absolute bottom-4 left-4 z-10">
+                  <span className="px-3 py-1 rounded-full bg-[#1F211C]/80 backdrop-blur-xs border border-white/10 text-[10px] font-mono tracking-widest text-[#FFFDF8] uppercase">
+                    FEATURED LOOK &bull; WHITE COAT
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

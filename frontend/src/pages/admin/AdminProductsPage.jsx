@@ -85,6 +85,7 @@ function AdminProductsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [stockFilter, setStockFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all') // 'all' | 'active' | 'inactive'
 
   // Modal State
   const [modalOpen, setModalOpen] = useState(false)
@@ -117,7 +118,7 @@ function AdminProductsPage() {
     setLoading(true)
     setError(null)
     try {
-      const response = await api.get('/products')
+      const response = await api.get('/products?all=true')
       if (response.data?.success && Array.isArray(response.data.products)) {
         setProducts(response.data.products)
       } else {
@@ -182,9 +183,17 @@ function AdminProductsPage() {
         matchesStock = product.stock <= 0
       }
 
-      return matchesSearch && matchesCategory && matchesStock
+      // Status filter
+      let matchesStatus = true
+      if (statusFilter === 'active') {
+        matchesStatus = product.isActive !== false
+      } else if (statusFilter === 'inactive') {
+        matchesStatus = product.isActive === false
+      }
+
+      return matchesSearch && matchesCategory && matchesStock && matchesStatus
     })
-  }, [products, searchQuery, categoryFilter, stockFilter])
+  }, [products, searchQuery, categoryFilter, stockFilter, statusFilter])
 
   // Open Add Modal
   const handleOpenAdd = () => {
@@ -442,7 +451,7 @@ function AdminProductsPage() {
       if (res.data?.success) {
         setToast({
           type: 'success',
-          message: `Product "${productToDelete.name}" deleted successfully.`,
+          message: `Product "${productToDelete.name}" deactivated successfully.`,
         })
         setDeleteModalOpen(false)
         setProductToDelete(null)
@@ -451,10 +460,29 @@ function AdminProductsPage() {
     } catch (err) {
       setToast({
         type: 'error',
-        message: err.response?.data?.message || 'Failed to delete product.',
+        message: err.response?.data?.message || 'Failed to deactivate product.',
       })
     } finally {
       setDeleting(false)
+    }
+  }
+
+  // Reactivate Handler
+  const handleReactivate = async (product) => {
+    try {
+      const res = await api.put(`/products/${product._id}`, { isActive: true })
+      if (res.data?.success) {
+        setToast({
+          type: 'success',
+          message: `Product "${product.name}" reactivated successfully.`,
+        })
+        await loadProducts()
+      }
+    } catch (err) {
+      setToast({
+        type: 'error',
+        message: err.response?.data?.message || 'Failed to reactivate product.',
+      })
     }
   }
 
@@ -631,6 +659,23 @@ function AdminProductsPage() {
                 <option value="all">All Stock Status</option>
                 <option value="inStock">In Stock (&gt;0)</option>
                 <option value="outOfStock">Out of Stock (0)</option>
+              </select>
+            </div>
+
+            {/* Status Filter */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="admin-filter-status" className="text-xs font-mono uppercase tracking-wider text-neutral-400">
+                Status:
+              </label>
+              <select
+                id="admin-filter-status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="min-h-[44px] rounded-xl border border-white/10 bg-neutral-950/80 px-3 text-xs font-medium text-white focus:outline-hidden focus:border-purple-400 transition-all"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active Only</option>
+                <option value="inactive">Inactive Only</option>
               </select>
             </div>
 
@@ -853,14 +898,25 @@ function AdminProductsPage() {
                           >
                             Edit
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenDelete(product)}
-                            aria-label={`Delete ${product.name}`}
-                            className="min-h-[44px] px-3.5 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-red-200 text-xs font-semibold tracking-wider uppercase transition-colors active:scale-95 cursor-pointer border border-red-500/20"
-                          >
-                            Delete
-                          </button>
+                          {product.isActive === false ? (
+                            <button
+                              type="button"
+                              onClick={() => handleReactivate(product)}
+                              aria-label={`Reactivate ${product.name}`}
+                              className="min-h-[44px] px-3.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 hover:text-emerald-200 text-xs font-semibold tracking-wider uppercase transition-colors active:scale-95 cursor-pointer border border-emerald-500/20"
+                            >
+                              Reactivate
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDelete(product)}
+                              aria-label={`Deactivate ${product.name}`}
+                              className="min-h-[44px] px-3.5 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-red-200 text-xs font-semibold tracking-wider uppercase transition-colors active:scale-95 cursor-pointer border border-red-500/20"
+                            >
+                              Deactivate
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -963,14 +1019,25 @@ function AdminProductsPage() {
                     >
                       Edit
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleOpenDelete(product)}
-                      aria-label={`Delete ${product.name}`}
-                      className="min-h-[44px] flex items-center justify-center rounded-xl bg-red-500/15 hover:bg-red-600 text-red-300 hover:text-white text-xs font-bold tracking-wider uppercase transition-all active:scale-95 cursor-pointer border border-red-500/30"
-                    >
-                      Delete
-                    </button>
+                    {product.isActive === false ? (
+                      <button
+                        type="button"
+                        onClick={() => handleReactivate(product)}
+                        aria-label={`Reactivate ${product.name}`}
+                        className="min-h-[44px] flex items-center justify-center rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-300 hover:text-white text-xs font-bold tracking-wider uppercase transition-all active:scale-95 cursor-pointer border border-emerald-500/30"
+                      >
+                        Reactivate
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDelete(product)}
+                        aria-label={`Deactivate ${product.name}`}
+                        className="min-h-[44px] flex items-center justify-center rounded-xl bg-red-500/15 hover:bg-red-600 text-red-300 hover:text-white text-xs font-bold tracking-wider uppercase transition-all active:scale-95 cursor-pointer border border-red-500/30"
+                      >
+                        Deactivate
+                      </button>
+                    )}
                   </div>
                 </article>
               )
@@ -1366,13 +1433,13 @@ function AdminProductsPage() {
             </div>
 
             <h2 id="delete-dialog-title" className="text-xl font-bold uppercase tracking-tight text-white">
-              Delete Product Permanently?
+              Deactivate Product?
             </h2>
 
             <p className="mt-2 text-sm text-neutral-300 leading-relaxed">
-              Are you sure you want to remove{' '}
+              Are you sure you want to deactivate{' '}
               <strong className="text-white font-semibold">&ldquo;{productToDelete.name}&rdquo;</strong>?
-              This action will permanently delete this item from the database and remove it from the live catalog.
+              This product will be hidden from customer catalog, but historical orders and references will remain intact. You can reactivate it at any time.
             </p>
 
             <div className="mt-6 flex items-center justify-end gap-3">
@@ -1398,7 +1465,7 @@ function AdminProductsPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                 )}
-                <span>Delete Permanently</span>
+                <span>Deactivate Product</span>
               </button>
             </div>
           </div>

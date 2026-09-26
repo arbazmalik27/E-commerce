@@ -1,5 +1,6 @@
 const crypto = require('crypto')
 const Order = require('../models/Order')
+const Cart = require('../models/Cart')
 const Product = require('../models/Product')
 const Payment = require('../models/Payment')
 const { getRazorpayInstance } = require('../config/razorpay')
@@ -35,6 +36,13 @@ const createRazorpayOrder = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Cannot create payment for a cancelled order',
+      })
+    }
+
+    if (['delivered', 'shipped'].includes(order.orderStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot process payment for an order with status "${order.orderStatus}"`,
       })
     }
 
@@ -88,6 +96,9 @@ const createRazorpayOrder = async (req, res) => {
         throw apiErr
       }
     }
+
+    order.razorpayOrderId = razorpayOrder.id
+    await order.save()
 
     return res.status(200).json({
       success: true,
@@ -148,10 +159,24 @@ const verifyPayment = async (req, res) => {
       })
     }
 
+    if (['delivered', 'shipped'].includes(order.orderStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot process payment for an order with status "${order.orderStatus}"`,
+      })
+    }
+
     if (!process.env.RAZORPAY_KEY_SECRET) {
       return res.status(500).json({
         success: false,
         message: 'Razorpay credentials not configured',
+      })
+    }
+
+    if (order.razorpayOrderId && order.razorpayOrderId !== razorpayOrderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Razorpay order ID does not match order record',
       })
     }
 
@@ -205,6 +230,41 @@ const verifyPayment = async (req, res) => {
       currency: 'INR',
       status: 'successful',
     })
+
+    // Selective cart cleanup: Remove ONLY the cart items corresponding to this paid order,
+    // preserving any unrelated or newly added cart items.
+    try {
+      const cart = await Cart.findOne({ user: req.user.id })
+      if (cart && Array.isArray(cart.items) && cart.items.length > 0) {
+        const orderProductQty = new Map()
+        for (const item of order.items) {
+          const pid = item.product.toString()
+          orderProductQty.set(pid, (orderProductQty.get(pid) || 0) + item.quantity)
+        }
+
+        const remainingItems = []
+        for (const cartItem of cart.items) {
+          const pid = cartItem.product.toString()
+          if (orderProductQty.has(pid)) {
+            const orderQty = orderProductQty.get(pid)
+            if (cartItem.quantity > orderQty) {
+              cartItem.quantity -= orderQty
+              remainingItems.push(cartItem)
+            }
+            // If cartItem.quantity <= orderQty, this item is fully covered by the paid order and removed
+          } else {
+            // Unrelated product or item added after order placement is preserved
+            remainingItems.push(cartItem)
+          }
+        }
+
+        cart.items = remainingItems
+        await cart.save()
+      }
+    } catch (cartErr) {
+      // Non-fatal: Cart cleanup failure should not prevent returning successful payment verification
+      console.error('Non-fatal cart cleanup error on payment verification:', cartErr.message)
+    }
 
     return res.status(200).json({
       success: true,

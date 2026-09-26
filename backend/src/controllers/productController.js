@@ -1,5 +1,8 @@
 const mongoose = require('mongoose')
+const jwt = require('jsonwebtoken')
 const Product = require('../models/Product')
+const User = require('../models/User')
+const { COOKIE_NAME } = require('../utils/jwt')
 const {
   validateCreateProductInput,
   validateUpdateProductInput,
@@ -10,7 +13,30 @@ const isValidObjectId = (id) =>
 
 const getProducts = async (req, res) => {
   try {
-    const filter = { isActive: true }
+    let includeInactive = false
+    if (req.query.all === 'true' || req.query.includeInactive === 'true') {
+      const token = req.cookies && req.cookies[COOKIE_NAME]
+      if (token) {
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET)
+          const user = await User.findById(decoded.id)
+          if (user && user.role === 'admin' && user.isActive !== false) {
+            includeInactive = true
+          }
+        } catch {}
+      }
+    }
+
+    const filter = includeInactive ? {} : { isActive: true }
+
+    if (includeInactive) {
+      if (req.query.status === 'active' || req.query.isActive === 'true') {
+        filter.isActive = true
+      } else if (req.query.status === 'inactive' || req.query.isActive === 'false') {
+        filter.isActive = false
+      }
+    }
+
     const { category, department, subcategory, search, sort, minPrice, maxPrice } = req.query
 
     if (category && typeof category === 'string' && category.trim()) {
@@ -112,7 +138,21 @@ const getProductById = async (req, res) => {
   }
 
   try {
-    const product = await Product.findOne({ _id: id, isActive: true })
+    let query = { _id: id, isActive: true }
+
+    // If an authenticated admin requests product details, allow viewing inactive products
+    const token = req.cookies && req.cookies[COOKIE_NAME]
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+        const user = await User.findById(decoded.id)
+        if (user && user.role === 'admin' && user.isActive !== false) {
+          query = { _id: id }
+        }
+      } catch {}
+    }
+
+    const product = await Product.findOne(query)
 
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' })
@@ -188,15 +228,19 @@ const deleteProduct = async (req, res) => {
   }
 
   try {
-    const product = await Product.findByIdAndDelete(id)
+    const product = await Product.findById(id)
 
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' })
     }
 
+    product.isActive = false
+    await product.save()
+
     return res.status(200).json({
       success: true,
       message: 'Product deleted successfully',
+      product,
     })
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Server error' })
