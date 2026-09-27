@@ -209,7 +209,7 @@ function OrdersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const fetchOrders = () => {
+  const handleRetry = () => {
     setLoading(true)
     setError(null)
     api.get('/orders')
@@ -234,7 +234,36 @@ function OrdersPage() {
 
   useEffect(() => {
     window.scrollTo(0, 0)
-    fetchOrders()
+    let isMounted = true
+
+    api.get('/orders')
+      .then((response) => {
+        if (isMounted) {
+          if (response.data?.success) {
+            setOrders(response.data.orders || [])
+          } else {
+            setError(response.data?.message || 'Failed to load orders.')
+          }
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          const message =
+            err.response?.data?.message ||
+            err.message ||
+            'Unable to load your orders. Please check your connection and try again.'
+          setError(message)
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   return (
@@ -304,7 +333,7 @@ function OrdersPage() {
             <p className="text-sm text-[#5F6057] mb-6 max-w-sm mx-auto">{error}</p>
             <button
               type="button"
-              onClick={fetchOrders}
+              onClick={handleRetry}
               className="min-h-[44px] inline-flex items-center gap-2 rounded-xl bg-[#34452F] hover:bg-[#263722] text-[#FFFDF8] px-6 py-2.5 text-xs font-bold uppercase tracking-wider transition-all active:scale-95 shadow-xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">

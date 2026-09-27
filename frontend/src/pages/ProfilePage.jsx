@@ -99,7 +99,32 @@ function ProfilePage() {
   }
 
   useEffect(() => {
-    fetchAddresses()
+    let isMounted = true
+
+    api.get('/users/addresses')
+      .then((res) => {
+        if (isMounted) {
+          if (res.data?.success && Array.isArray(res.data.addresses)) {
+            setAddresses(res.data.addresses)
+          } else {
+            setAddresses([])
+          }
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setAddressesError('Unable to load saved addresses. Please check your connection.')
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setAddressesLoading(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   // Auto-dismiss feedback message after 4 seconds

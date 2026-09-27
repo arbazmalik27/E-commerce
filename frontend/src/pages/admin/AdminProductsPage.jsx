@@ -133,7 +133,32 @@ function AdminProductsPage() {
   }
 
   useEffect(() => {
-    loadProducts()
+    let isMounted = true
+
+    api.get('/products?all=true')
+      .then((response) => {
+        if (isMounted) {
+          if (response.data?.success && Array.isArray(response.data.products)) {
+            setProducts(response.data.products)
+          } else {
+            setProducts([])
+          }
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          setError(err.response?.data?.message || 'Failed to load products from server.')
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   // Derived Department options for Add/Edit Modal

@@ -42,6 +42,25 @@ function Navbar() {
     }
   }, [dispatch, isAuthenticated, cartInitialized, wishlistInitialized])
 
+  // Auto-close drawers on route change (React recommended render-time state adjustment)
+  const [prevPathname, setPrevPathname] = useState(location.pathname)
+  if (prevPathname !== location.pathname) {
+    setPrevPathname(location.pathname)
+    setMobileMenuOpen(false)
+    setMobileSearchOpen(false)
+    setDesktopSearchOpen(false)
+  }
+
+  // Close mobile drawer on Escape key
+  useEffect(() => {
+    if (!mobileMenuOpen) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [mobileMenuOpen])
+
   const handleLogout = async () => {
     await dispatch(logout())
     setMobileMenuOpen(false)
@@ -122,18 +141,26 @@ function Navbar() {
               <span>Pages</span>
               <span className="text-[10px] text-[#5F6057] leading-none" aria-hidden="true">▾</span>
             </Link>
-            <a
-              href="#fashion-trends"
-              className="py-1.5 transition-colors hover:text-[#1F211C]"
+            <Link
+              to="/blog"
+              className={`py-1.5 transition-colors hover:text-[#1F211C] ${
+                location.pathname === '/blog'
+                  ? 'text-[#1F211C] font-semibold'
+                  : ''
+              }`}
             >
               Blog
-            </a>
-            <a
-              href="#footer"
-              className="py-1.5 transition-colors hover:text-[#1F211C]"
+            </Link>
+            <Link
+              to="/contact"
+              className={`py-1.5 transition-colors hover:text-[#1F211C] ${
+                location.pathname === '/contact'
+                  ? 'text-[#1F211C] font-semibold'
+                  : ''
+              }`}
             >
               Contact
-            </a>
+            </Link>
           </nav>
 
           {/* Right: Search, Wishlist, Cart, Account, Admin */}
@@ -373,13 +400,28 @@ function Navbar() {
             >
               Orders &amp; Account
             </Link>
-            <a
-              href="#blog"
+            <Link
+              to="/blog"
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg hover:bg-[#FAF7F0] transition-colors"
+              className={`px-3 py-2 rounded-lg transition-colors ${
+                location.pathname === '/blog'
+                  ? 'bg-[#34452F]/10 text-[#34452F] font-semibold'
+                  : 'hover:bg-[#FAF7F0]'
+              }`}
             >
               Editorial Blog
-            </a>
+            </Link>
+            <Link
+              to="/contact"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`px-3 py-2 rounded-lg transition-colors ${
+                location.pathname === '/contact'
+                  ? 'bg-[#34452F]/10 text-[#34452F] font-semibold'
+                  : 'hover:bg-[#FAF7F0]'
+              }`}
+            >
+              Contact Atelier
+            </Link>
 
             <div className="h-px bg-[#DED7CA] my-2" />
 

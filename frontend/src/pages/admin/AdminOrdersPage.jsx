@@ -100,7 +100,35 @@ function AdminOrdersPage() {
   }
 
   useEffect(() => {
-    loadOrders()
+    let isMounted = true
+
+    api.get('/orders/admin')
+      .then((res) => {
+        if (isMounted) {
+          if (res.data?.success) {
+            setOrders(res.data.orders || [])
+          } else {
+            setError(res.data?.message || 'Failed to fetch admin orders.')
+          }
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          setError(
+            err.response?.data?.message ||
+              'Failed to load customer orders. Please check your connection and try again.'
+          )
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   // Auto-dismiss toast after 4s

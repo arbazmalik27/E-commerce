@@ -26,7 +26,8 @@ const ACCOUNT_LINKS = [
   { label: 'My Account', to: '/profile' },
   { label: 'Orders', to: '/orders' },
   { label: 'Shopping Cart', to: '/cart' },
-  { label: 'Sign In', to: '/login' },
+  { label: 'Editorial Blog', to: '/blog' },
+  { label: 'Contact Atelier', to: '/contact' },
 ]
 
 function Footer() {
@@ -157,6 +158,12 @@ function Footer() {
           <p>&copy; {new Date().getFullYear()} TrendVolt Studio. All rights reserved.</p>
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <Link to="/blog" className="hover:text-[#FFFDF8] transition-colors">
+              Editorial Blog
+            </Link>
+            <Link to="/contact" className="hover:text-[#FFFDF8] transition-colors">
+              Contact Concierge
+            </Link>
             <Link to="/privacy" className="hover:text-[#FFFDF8] transition-colors">
               Privacy Policy
             </Link>

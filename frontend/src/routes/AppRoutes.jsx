@@ -18,6 +18,9 @@ import AdminProductsPage from '../pages/admin/AdminProductsPage'
 import AdminOrdersPage from '../pages/admin/AdminOrdersPage'
 import AdminUsersPage from '../pages/admin/AdminUsersPage'
 import NotFoundPage from '../pages/NotFoundPage'
+import PolicyPage from '../pages/PolicyPage'
+import BlogPage from '../pages/BlogPage'
+import ContactPage from '../pages/ContactPage'
 import ProtectedRoute from '../components/ProtectedRoute'
 import AdminRoute from '../components/AdminRoute'
 import PublicOnlyRoute from '../components/PublicOnlyRoute'
@@ -30,6 +33,11 @@ function AppRoutes() {
         <Route path="/" element={<HomePage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/products/:id" element={<ProductDetailsPage />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/privacy" element={<PolicyPage />} />
+        <Route path="/terms" element={<PolicyPage />} />
+        <Route path="/shipping" element={<PolicyPage />} />
 
         {/* Public Only (Login / Register / Password Recovery) */}
         <Route

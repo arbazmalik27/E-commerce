@@ -229,22 +229,22 @@ function Hero() {
 
             {/* Shop Now + Explore Edit — directly below pebble */}
             <div
-              className="flex items-center justify-center w-full z-30"
+              className="flex items-center justify-center w-max max-w-[92vw] sm:w-full sm:max-w-none z-30"
               style={{ marginTop: '4%', gap: '4%' }}
             >
               <Link
                 to="/products"
                 className="group inline-flex items-center justify-center gap-1 rounded-full bg-[#34452F] hover:bg-[#263722] text-[#FFFDF8] font-semibold tracking-wide transition-all duration-300 shadow-sm active:scale-98 cursor-pointer whitespace-nowrap"
                 style={{
-                  padding: 'clamp(5px, 0.7vw, 13px) clamp(10px, 1.7vw, 26px)',
-                  fontSize: 'clamp(8px, 0.95vw, 13px)',
+                  padding: 'clamp(5px, 0.75vw, 13px) clamp(10px, 1.7vw, 26px)',
+                  fontSize: 'clamp(9px, 0.95vw, 13px)',
                   borderRadius: '9999px',
                   gap: 'clamp(3px, 0.4vw, 7px)',
                 }}
               >
                 <span>Shop Now</span>
                 <ArrowRight
-                  style={{ width: 'clamp(7px, 0.9vw, 14px)', height: 'clamp(7px, 0.9vw, 14px)' }}
+                  style={{ width: 'clamp(8px, 0.9vw, 14px)', height: 'clamp(8px, 0.9vw, 14px)' }}
                   className="transition-transform duration-300 group-hover:translate-x-0.5"
                 />
               </Link>
@@ -253,15 +253,15 @@ function Hero() {
                 to="/products?category=fashion"
                 className="group inline-flex items-center justify-center gap-1 border border-[#1F211C]/35 hover:border-[#34452F] bg-[#FAF7F0] hover:bg-[#FFFDF8] text-[#1F211C] font-semibold tracking-wide transition-all duration-300 active:scale-98 cursor-pointer whitespace-nowrap"
                 style={{
-                  padding: 'clamp(5px, 0.7vw, 13px) clamp(10px, 1.7vw, 26px)',
-                  fontSize: 'clamp(8px, 0.95vw, 13px)',
+                  padding: 'clamp(5px, 0.75vw, 13px) clamp(10px, 1.7vw, 26px)',
+                  fontSize: 'clamp(9px, 0.95vw, 13px)',
                   borderRadius: '9999px',
                   gap: 'clamp(3px, 0.4vw, 7px)',
                 }}
               >
                 <span>Explore Edit</span>
                 <ArrowRight
-                  style={{ width: 'clamp(7px, 0.9vw, 14px)', height: 'clamp(7px, 0.9vw, 14px)' }}
+                  style={{ width: 'clamp(8px, 0.9vw, 14px)', height: 'clamp(8px, 0.9vw, 14px)' }}
                   className="transition-transform duration-300 group-hover:translate-x-0.5"
                 />
               </Link>
@@ -360,26 +360,26 @@ function Hero() {
                 type="button"
                 onClick={handlePrevSlide}
                 aria-label="Previous campaign frame"
-                className="rounded-full border border-[#DED7CA] hover:border-[#34452F] hover:text-[#34452F] bg-[#FFFDF8] flex items-center justify-center text-[#5F6057] transition-colors cursor-pointer active:scale-95"
-                style={{ width: 'clamp(18px, 2vw, 34px)', height: 'clamp(18px, 2vw, 34px)' }}
+                className="rounded-full border border-[#DED7CA] hover:border-[#34452F] hover:text-[#34452F] bg-[#FFFDF8] flex items-center justify-center text-[#5F6057] transition-colors cursor-pointer active:scale-95 shadow-xs"
+                style={{ width: 'clamp(24px, 2.2vw, 34px)', height: 'clamp(24px, 2.2vw, 34px)' }}
               >
-                <ArrowLeft style={{ width: 'clamp(7px, 0.8vw, 13px)', height: 'clamp(7px, 0.8vw, 13px)' }} />
+                <ArrowLeft style={{ width: 'clamp(10px, 0.9vw, 14px)', height: 'clamp(10px, 0.9vw, 14px)' }} />
               </button>
               <button
                 type="button"
                 onClick={handleNextSlide}
                 aria-label="Next campaign frame"
-                className="rounded-full border border-[#DED7CA] hover:border-[#34452F] hover:text-[#34452F] bg-[#FFFDF8] flex items-center justify-center text-[#5F6057] transition-colors cursor-pointer active:scale-95"
-                style={{ width: 'clamp(18px, 2vw, 34px)', height: 'clamp(18px, 2vw, 34px)' }}
+                className="rounded-full border border-[#DED7CA] hover:border-[#34452F] hover:text-[#34452F] bg-[#FFFDF8] flex items-center justify-center text-[#5F6057] transition-colors cursor-pointer active:scale-95 shadow-xs"
+                style={{ width: 'clamp(24px, 2.2vw, 34px)', height: 'clamp(24px, 2.2vw, 34px)' }}
               >
-                <ArrowRight style={{ width: 'clamp(7px, 0.8vw, 13px)', height: 'clamp(7px, 0.8vw, 13px)' }} />
+                <ArrowRight style={{ width: 'clamp(10px, 0.9vw, 14px)', height: 'clamp(10px, 0.9vw, 14px)' }} />
               </button>
             </div>
           </div>
 
           {/* ── 7. BOTTOM-LEFT BRAND NOTE ────────────────────────────────── */}
           <div
-            className="absolute flex items-center pointer-events-none select-none"
+            className="hidden sm:flex absolute items-center pointer-events-none select-none"
             style={{
               left: '1%',
               bottom: '2%',

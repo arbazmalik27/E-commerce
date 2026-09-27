@@ -64,13 +64,16 @@ function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8 bg-white p-8 sm:p-10 rounded-2xl shadow-sm border border-gray-100">
-        <div>
-          <h2 className="text-center text-3xl font-extrabold tracking-tight text-gray-900">
+    <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center px-4 py-16 sm:px-6 lg:px-8 bg-[#F5F0E8]">
+      <div className="w-full max-w-md space-y-8 bg-[#FFFDF8] p-8 sm:p-10 rounded-2xl shadow-xs border border-[#DED7CA]">
+        <div className="text-center">
+          <span className="inline-block text-[11px] font-mono font-bold uppercase tracking-[0.2em] text-[#34452F] bg-[#34452F]/10 px-3 py-1 rounded-full mb-3">
+            NEW CREDENTIALS
+          </span>
+          <h1 className="font-serif text-3xl font-bold tracking-tight text-[#1F211C]">
             Reset Your Password
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          </h1>
+          <p className="mt-2 text-sm text-[#5F6057]">
             Enter your new password below.
           </p>
         </div>
@@ -78,12 +81,13 @@ function ResetPasswordPage() {
         {errorMessage && (
           <div
             role="alert"
-            className="rounded-lg bg-red-50 p-4 border border-red-200 text-sm text-red-700 flex items-start gap-2"
+            className="rounded-xl bg-[#A65332]/10 p-4 border border-[#A65332]/25 text-xs text-[#A65332] flex items-start gap-2.5 leading-relaxed"
           >
             <svg
-              className="h-5 w-5 text-red-500 shrink-0 mt-0.5"
+              className="h-4 w-4 shrink-0 mt-0.5 text-[#A65332]"
               viewBox="0 0 20 20"
               fill="currentColor"
+              aria-hidden="true"
             >
               <path
                 fillRule="evenodd"
@@ -99,12 +103,13 @@ function ResetPasswordPage() {
           <div className="space-y-6">
             <div
               role="status"
-              className="rounded-lg bg-green-50 p-4 border border-green-200 text-sm text-green-800 flex items-start gap-3"
+              className="rounded-xl bg-[#3F6B45]/10 p-4 border border-[#3F6B45]/25 text-xs text-[#3F6B45] flex items-start gap-3"
             >
               <svg
-                className="h-5 w-5 text-green-600 shrink-0 mt-0.5"
+                className="h-5 w-5 text-[#3F6B45] shrink-0 mt-0.5"
                 viewBox="0 0 20 20"
                 fill="currentColor"
+                aria-hidden="true"
               >
                 <path
                   fillRule="evenodd"
@@ -112,16 +117,16 @@ function ResetPasswordPage() {
                   clipRule="evenodd"
                 />
               </svg>
-              <div className="space-y-1">
-                <p className="font-semibold text-green-900">Password Reset Successful</p>
-                <p>Your password has been changed. You can now log in with your new password.</p>
+              <div className="space-y-1 text-[#1F211C]">
+                <p className="font-bold text-sm text-[#3F6B45]">Password Reset Successful</p>
+                <p className="text-xs text-[#5F6057]">Your password has been changed. You can now log in with your new password.</p>
               </div>
             </div>
 
             <div className="text-center">
               <Link
                 to="/login"
-                className="inline-flex justify-center items-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 transition"
+                className="inline-flex justify-center items-center rounded-xl bg-[#34452F] hover:bg-[#263722] px-6 py-3 text-xs font-bold uppercase tracking-wider text-[#FFFDF8] shadow-xs transition cursor-pointer"
               >
                 Sign in with new password
               </Link>
@@ -131,12 +136,13 @@ function ResetPasswordPage() {
           <div className="space-y-6">
             <div
               role="alert"
-              className="rounded-lg bg-amber-50 p-4 border border-amber-200 text-sm text-amber-800 flex items-start gap-3"
+              className="rounded-xl bg-[#A65332]/10 p-4 border border-[#A65332]/25 text-xs text-[#A65332] flex items-start gap-3"
             >
               <svg
-                className="h-5 w-5 text-amber-600 shrink-0 mt-0.5"
+                className="h-5 w-5 text-[#A65332] shrink-0 mt-0.5"
                 viewBox="0 0 20 20"
                 fill="currentColor"
+                aria-hidden="true"
               >
                 <path
                   fillRule="evenodd"
@@ -145,27 +151,27 @@ function ResetPasswordPage() {
                 />
               </svg>
               <div>
-                <p className="font-semibold text-amber-900">Invalid Link</p>
-                <p>No password reset token was provided in the URL.</p>
+                <p className="font-bold text-sm text-[#A65332]">Invalid Link</p>
+                <p className="text-xs text-[#5F6057]">No password reset token was provided in the URL.</p>
               </div>
             </div>
 
             <div className="text-center">
               <Link
                 to="/forgot-password"
-                className="inline-flex justify-center items-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 transition"
+                className="inline-flex justify-center items-center rounded-xl bg-[#34452F] hover:bg-[#263722] px-6 py-3 text-xs font-bold uppercase tracking-wider text-[#FFFDF8] shadow-xs transition cursor-pointer"
               >
                 Request a new reset link
               </Link>
             </div>
           </div>
         ) : (
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <form className="mt-8 space-y-5" onSubmit={handleSubmit} noValidate>
             <div className="space-y-4">
               <div>
                 <label
                   htmlFor="new-password"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-xs font-semibold uppercase tracking-wider text-[#5F6057] mb-1.5"
                 >
                   New Password
                 </label>
@@ -178,7 +184,7 @@ function ResetPasswordPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
-                  className="block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 sm:text-sm disabled:bg-gray-100 transition"
+                  className="block w-full rounded-xl border border-[#DED7CA] bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] focus:border-[#34452F] focus:outline-none focus:ring-1 focus:ring-[#34452F] disabled:bg-[#EEE7DC] transition-colors"
                   placeholder="At least 8 characters"
                 />
               </div>
@@ -186,7 +192,7 @@ function ResetPasswordPage() {
               <div>
                 <label
                   htmlFor="confirm-password"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-xs font-semibold uppercase tracking-wider text-[#5F6057] mb-1.5"
                 >
                   Confirm New Password
                 </label>
@@ -199,7 +205,7 @@ function ResetPasswordPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   disabled={loading}
-                  className="block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 sm:text-sm disabled:bg-gray-100 transition"
+                  className="block w-full rounded-xl border border-[#DED7CA] bg-[#FAF7F0] px-4 py-3 text-sm text-[#1F211C] placeholder-[#85857A] focus:border-[#34452F] focus:outline-none focus:ring-1 focus:ring-[#34452F] disabled:bg-[#EEE7DC] transition-colors"
                   placeholder="Re-enter new password"
                 />
               </div>
@@ -209,12 +215,12 @@ function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex w-full justify-center items-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed transition cursor-pointer"
+                className="flex w-full justify-center items-center gap-2 rounded-xl bg-[#34452F] hover:bg-[#263722] px-4 py-3.5 text-xs font-bold uppercase tracking-wider text-[#FFFDF8] shadow-xs active:scale-98 disabled:opacity-60 disabled:cursor-not-allowed transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
               >
                 {loading && (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#FFFDF8] border-t-transparent" />
                 )}
-                {loading ? 'Resetting password...' : 'Reset password'}
+                <span>{loading ? 'Resetting password...' : 'Reset password'}</span>
               </button>
             </div>
           </form>

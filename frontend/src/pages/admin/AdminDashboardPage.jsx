@@ -90,7 +90,35 @@ function AdminDashboardPage() {
   }
 
   useEffect(() => {
-    fetchDashboard()
+    let isMounted = true
+
+    api.get('/orders/admin/dashboard')
+      .then((res) => {
+        if (isMounted) {
+          if (res.data?.success) {
+            setData(res.data)
+          } else {
+            setError(res.data?.message || 'Failed to load live dashboard statistics.')
+          }
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          setError(
+            err.response?.data?.message ||
+              'Unable to connect to dashboard service. Please check your connection and try again.'
+          )
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   const stats = data?.stats

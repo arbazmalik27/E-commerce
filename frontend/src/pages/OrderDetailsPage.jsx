@@ -164,8 +164,43 @@ function OrderDetailsPage() {
 
   useEffect(() => {
     window.scrollTo(0, 0)
-    fetchOrder()
-  }, [fetchOrder])
+    let isMounted = true
+
+    if (!id) return
+
+    api.get(`/orders/${id}`)
+      .then((response) => {
+        if (isMounted) {
+          if (response.data?.success && response.data.order) {
+            setOrder(response.data.order)
+          } else {
+            setError('Order could not be loaded.')
+          }
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          const status = err.response?.status
+          if (status === 404 || status === 401 || status === 403) {
+            setNotFound(true)
+          } else {
+            setError(
+              err.response?.data?.message ||
+              'Unable to load order details. Please check your connection and try again.'
+            )
+          }
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [id])
 
   // Handle Razorpay Payment Retry for Existing Pending Order
   const handleRetryPayment = async () => {
