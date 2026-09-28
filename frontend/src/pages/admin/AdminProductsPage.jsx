@@ -86,6 +86,7 @@ function AdminProductsPage() {
   // Search and Filter State
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
+  const [departmentFilter, setDepartmentFilter] = useState('all')
   const [stockFilter, setStockFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all') // 'all' | 'active' | 'inactive'
 
@@ -114,6 +115,33 @@ function AdminProductsPage() {
       return () => clearTimeout(timer)
     }
   }, [toast])
+
+  // Lock background scroll when modal is active
+  useEffect(() => {
+    if (modalOpen || deleteModalOpen) {
+      const prevOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.body.style.overflow = prevOverflow
+      }
+    }
+  }, [modalOpen, deleteModalOpen])
+
+  // Close modals on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (modalOpen && !submitting) {
+          setModalOpen(false)
+        } else if (deleteModalOpen && !deleting) {
+          setDeleteModalOpen(false)
+          setProductToDelete(null)
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [modalOpen, deleteModalOpen, submitting, deleting])
 
   // Fetch Products
   const loadProducts = async () => {
@@ -166,6 +194,7 @@ function AdminProductsPage() {
   const departmentOptions = useMemo(() => {
     if (!formData.category || !TAXONOMY[formData.category]) return []
     const depts = TAXONOMY[formData.category].departments
+    if (!depts) return []
     return Object.keys(depts).map((key) => ({
       id: key,
       name: depts[key].name,
@@ -176,9 +205,37 @@ function AdminProductsPage() {
   const subcategoryOptions = useMemo(() => {
     if (!formData.category || !formData.department) return []
     const depts = TAXONOMY[formData.category]?.departments
-    if (!depts || !depts[formData.department]) return []
-    return depts[formData.department].subcategories || []
+    if (!depts) return []
+    const deptKey = formData.department === 'mens' ? 'men' : formData.department
+    const deptObj = depts[deptKey]
+    if (!deptObj || !deptObj.subcategories) return []
+    return Object.entries(deptObj.subcategories).map(([id, name]) => ({
+      id,
+      name,
+    }))
   }, [formData.category, formData.department])
+
+  // Derived Department filter options based on categoryFilter
+  const filterDepartmentOptions = useMemo(() => {
+    if (categoryFilter !== 'all' && TAXONOMY[categoryFilter]) {
+      const depts = TAXONOMY[categoryFilter].departments || {}
+      return Object.entries(depts).map(([id, dept]) => ({
+        id,
+        name: dept.name,
+      }))
+    }
+    const deptMap = new Map()
+    Object.values(TAXONOMY).forEach((cat) => {
+      if (cat.departments) {
+        Object.entries(cat.departments).forEach(([id, dept]) => {
+          if (!deptMap.has(id)) {
+            deptMap.set(id, { id, name: dept.name })
+          }
+        })
+      }
+    })
+    return Array.from(deptMap.values())
+  }, [categoryFilter])
 
   // Filtered Products List
   const filteredProducts = useMemo(() => {
@@ -202,17 +259,24 @@ function AdminProductsPage() {
         if (item.category !== categoryFilter) return false
       }
 
-      // 3. Stock Filter
+      // 3. Department Filter
+      if (departmentFilter !== 'all') {
+        const normFilterDept = departmentFilter === 'mens' ? 'men' : departmentFilter
+        const normItemDept = item.department === 'mens' ? 'men' : item.department
+        if (normItemDept !== normFilterDept) return false
+      }
+
+      // 4. Stock Filter
       if (stockFilter === 'inStock' && item.stock <= 0) return false
       if (stockFilter === 'outOfStock' && item.stock > 0) return false
 
-      // 4. Status Filter
+      // 5. Status Filter
       if (statusFilter === 'active' && item.isActive === false) return false
       if (statusFilter === 'inactive' && item.isActive !== false) return false
 
       return true
     })
-  }, [products, searchQuery, categoryFilter, stockFilter, statusFilter])
+  }, [products, searchQuery, categoryFilter, departmentFilter, stockFilter, statusFilter])
 
   // Quick Metrics
   const inStockCount = useMemo(() => products.filter((p) => p.stock > 0).length, [products])
@@ -247,7 +311,7 @@ function AdminProductsPage() {
       description: product.description || '',
       price: product.price ?? '',
       category: product.category || 'fashion',
-      department: product.department || '',
+      department: product.department === 'mens' ? 'men' : (product.department || ''),
       subcategory: product.subcategory || '',
       brand: product.brand || '',
       stock: product.stock ?? '',
@@ -258,6 +322,17 @@ function AdminProductsPage() {
       setImagePreview(product.images[0])
     }
     setModalOpen(true)
+  }
+
+  // Filter Bar Category Change Handler (auto-resets incompatible department filter)
+  const handleCategoryFilterChange = (newCat) => {
+    setCategoryFilter(newCat)
+    if (newCat !== 'all' && departmentFilter !== 'all') {
+      const depts = TAXONOMY[newCat]?.departments || {}
+      if (!depts[departmentFilter]) {
+        setDepartmentFilter('all')
+      }
+    }
   }
 
   // Taxonomy Cascade Handlers in Modal
@@ -662,11 +737,31 @@ function AdminProductsPage() {
               <select
                 id="admin-filter-category"
                 value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
+                onChange={(e) => handleCategoryFilterChange(e.target.value)}
                 className="min-h-[44px] rounded-xl border border-[#DED7CA] bg-[#FAF7F0] px-3 text-xs font-medium text-[#1F211C] focus:outline-hidden focus:border-[#34452F] transition-all"
               >
                 <option value="all">All Categories</option>
                 <option value="fashion">Fashion</option>
+              </select>
+            </div>
+
+            {/* Department Filter */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="admin-filter-dept" className="text-xs font-mono uppercase tracking-wider text-[#5F6057]">
+                Dept:
+              </label>
+              <select
+                id="admin-filter-dept"
+                value={departmentFilter}
+                onChange={(e) => setDepartmentFilter(e.target.value)}
+                className="min-h-[44px] rounded-xl border border-[#DED7CA] bg-[#FAF7F0] px-3 text-xs font-medium text-[#1F211C] focus:outline-hidden focus:border-[#34452F] transition-all"
+              >
+                <option value="all">All Depts</option>
+                {filterDepartmentOptions.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -773,17 +868,19 @@ function AdminProductsPage() {
             </div>
             <h3 className="mt-4 text-base font-serif font-bold text-[#1F211C]">No Products Found</h3>
             <p className="mt-1 text-xs text-[#5F6057]">
-              {searchQuery || categoryFilter !== 'all' || stockFilter !== 'all'
+              {searchQuery || categoryFilter !== 'all' || departmentFilter !== 'all' || stockFilter !== 'all' || statusFilter !== 'all'
                 ? 'No catalog items match your search and filter criteria.'
                 : 'Your store catalog is currently empty. Click "New Product" above to create your first item.'}
             </p>
-            {(searchQuery || categoryFilter !== 'all' || stockFilter !== 'all') && (
+            {(searchQuery || categoryFilter !== 'all' || departmentFilter !== 'all' || stockFilter !== 'all' || statusFilter !== 'all') && (
               <button
                 type="button"
                 onClick={() => {
                   setSearchQuery('')
                   setCategoryFilter('all')
+                  setDepartmentFilter('all')
                   setStockFilter('all')
+                  setStatusFilter('all')
                 }}
                 className="mt-5 min-h-[44px] px-5 py-2 rounded-full bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#1F211C] border border-[#DED7CA] font-semibold text-xs uppercase tracking-wider transition-colors"
               >
@@ -1079,22 +1176,30 @@ function AdminProductsPage() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-[#1F211C]/60 backdrop-blur-xs animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-[#1F211C]/60 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !submitting) {
+              setModalOpen(false)
+            }
+          }}
         >
-          <div className="relative w-full max-w-2xl rounded-3xl border border-[#DED7CA] bg-[#FFFDF8] p-6 sm:p-8 shadow-2xl my-8 text-[#1F211C]">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-[#DED7CA]">
+          <div
+            className="relative w-full max-w-2xl max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2.5rem)] flex flex-col rounded-2xl sm:rounded-3xl border border-[#DED7CA] bg-[#FFFDF8] shadow-2xl overflow-hidden text-[#1F211C]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header (Fixed / Non-scrolling) */}
+            <div className="shrink-0 flex items-center justify-between px-5 py-4 sm:px-6 sm:py-5 border-b border-[#DED7CA] bg-[#FFFDF8]">
               <div>
                 <span className="text-[10px] font-mono uppercase tracking-widest text-[#34452F] font-bold">
                   {modalMode === 'add' ? 'Catalog Expansion' : 'Catalog Modification'}
                 </span>
-                <h2 id="modal-title" className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-[#1F211C] mt-1">
+                <h2 id="modal-title" className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-[#1F211C] mt-0.5">
                   {modalMode === 'add' ? 'Create New Product' : 'Edit Product'}
                 </h2>
               </div>
               <button
                 type="button"
-                onClick={() => setModalOpen(false)}
+                onClick={() => !submitting && setModalOpen(false)}
                 className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-[#5F6057] hover:text-[#1F211C] hover:bg-[#FAF7F0] transition-colors"
                 aria-label="Close modal"
               >
@@ -1104,15 +1209,16 @@ function AdminProductsPage() {
               </button>
             </div>
 
-            {/* Error Banner */}
-            {formErrors.body && (
-              <div className="mt-4 p-3 rounded-xl bg-[#A65332]/10 border border-[#A65332]/30 text-[#A65332] text-xs">
-                {formErrors.body}
-              </div>
-            )}
+            {/* Modal Scrollable Body */}
+            <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4 sm:px-6 sm:py-6">
+              {/* Error Banner */}
+              {formErrors.body && (
+                <div className="mb-4 p-3 rounded-xl bg-[#A65332]/10 border border-[#A65332]/30 text-[#A65332] text-xs">
+                  {formErrors.body}
+                </div>
+              )}
 
-            {/* Modal Form */}
-            <form onSubmit={handleFormSubmit} className="mt-6 space-y-4">
+              <form id="admin-product-form" onSubmit={handleFormSubmit} className="space-y-4">
               {/* Product Name */}
               <div>
                 <label htmlFor="form-name" className="block text-xs font-mono uppercase tracking-wider text-[#5F6057] mb-1.5">
@@ -1411,34 +1517,36 @@ function AdminProductsPage() {
                   Product Active (Visible in Storefront)
                 </label>
               </div>
-
-              {/* Actions */}
-              <div className="pt-4 border-t border-[#DED7CA] flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  disabled={submitting}
-                  className="min-h-[44px] px-5 py-2.5 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#1F211C] font-semibold text-xs uppercase tracking-wider transition-all disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="min-h-[44px] inline-flex items-center justify-center gap-2 rounded-xl bg-[#34452F] hover:bg-[#263722] px-6 py-2.5 text-xs font-bold tracking-wider text-[#FFFDF8] uppercase shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
-                >
-                  {submitting && (
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                  )}
-                  <span>{modalMode === 'add' ? 'Create Product' : 'Save Changes'}</span>
-                </button>
-              </div>
             </form>
           </div>
+
+          {/* Modal Footer (Fixed / Non-scrolling sticky actions) */}
+          <div className="shrink-0 px-5 py-3.5 sm:px-6 sm:py-4 border-t border-[#DED7CA] bg-[#FAF7F0]/90 backdrop-blur-xs flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setModalOpen(false)}
+              disabled={submitting}
+              className="min-h-[44px] px-5 py-2.5 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#1F211C] font-semibold text-xs uppercase tracking-wider transition-all disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="admin-product-form"
+              disabled={submitting}
+              className="min-h-[44px] inline-flex items-center justify-center gap-2 rounded-xl bg-[#34452F] hover:bg-[#263722] px-6 py-2.5 text-xs font-bold tracking-wider text-[#FFFDF8] uppercase shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+            >
+              {submitting && (
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              )}
+              <span>{modalMode === 'add' ? 'Create Product' : 'Save Changes'}</span>
+            </button>
+          </div>
         </div>
-      )}
+      </div>
+    )}
 
       {/* =========================================================================
           DELETE CONFIRMATION DIALOG (SOFT-DELETE DEACTIVATE)
@@ -1449,8 +1557,17 @@ function AdminProductsPage() {
           aria-modal="true"
           aria-labelledby="delete-dialog-title"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1F211C]/60 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !deleting) {
+              setDeleteModalOpen(false)
+              setProductToDelete(null)
+            }
+          }}
         >
-          <div className="relative w-full max-w-md rounded-3xl border border-[#A65332]/30 bg-[#FFFDF8] p-6 sm:p-7 shadow-2xl text-[#1F211C]">
+          <div
+            className="relative w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-3xl border border-[#A65332]/30 bg-[#FFFDF8] p-6 sm:p-7 shadow-2xl text-[#1F211C]"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="w-12 h-12 rounded-2xl bg-[#A65332]/10 border border-[#A65332]/25 flex items-center justify-center text-[#A65332] mb-4">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

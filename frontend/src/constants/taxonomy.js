@@ -103,31 +103,47 @@ export const isValidCategory = (category) => {
 export const isValidDepartment = (category, department) => {
   if (!isValidCategory(category) || !department || typeof department !== 'string') return false
   const catObj = TAXONOMY[category.toLowerCase()]
-  return Boolean(catObj.departments[department.toLowerCase()])
+  const deptKey = department.toLowerCase()
+  const normalizedDept = deptKey === 'mens' ? 'men' : deptKey === 'womens' ? 'women' : deptKey
+  return Boolean(catObj?.departments?.[normalizedDept])
 }
 
 export const isValidSubcategory = (category, department, subcategory) => {
   if (!isValidDepartment(category, department) || !subcategory || typeof subcategory !== 'string') return false
   const catObj = TAXONOMY[category.toLowerCase()]
-  const deptObj = catObj.departments[department.toLowerCase()]
-  return Boolean(deptObj.subcategories[subcategory.toLowerCase()])
+  const deptKey = department.toLowerCase()
+  const normalizedDept = deptKey === 'mens' ? 'men' : deptKey === 'womens' ? 'women' : deptKey
+  const deptObj = catObj?.departments?.[normalizedDept]
+  return Boolean(deptObj?.subcategories?.[subcategory.toLowerCase()])
 }
 
 export const getCategoryLabel = (category) => {
-  if (!category) return ''
+  if (!category || typeof category !== 'string') return ''
   return TAXONOMY[category.toLowerCase()]?.name || category
 }
 
 export const getDepartmentLabel = (category, department) => {
   if (!category || !department) return department || ''
-  return TAXONOMY[category.toLowerCase()]?.departments[department.toLowerCase()]?.name || department
+  if (typeof department !== 'string') return ''
+  const deptKey = department.toLowerCase()
+  const normalizedDept = deptKey === 'mens' ? 'men' : deptKey === 'womens' ? 'women' : deptKey
+  return (
+    TAXONOMY[category.toLowerCase()]?.departments?.[normalizedDept]?.name ||
+    TAXONOMY[category.toLowerCase()]?.departments?.[deptKey]?.name ||
+    department
+  )
 }
 
 export const getSubcategoryLabel = (category, department, subcategory) => {
   if (!category || !department || !subcategory) return subcategory || ''
+  if (typeof department !== 'string' || typeof subcategory !== 'string') return subcategory || ''
+  const deptKey = department.toLowerCase()
+  const normalizedDept = deptKey === 'mens' ? 'men' : deptKey === 'womens' ? 'women' : deptKey
+  const subcatKey = subcategory.toLowerCase()
+
   return (
-    TAXONOMY[category.toLowerCase()]?.departments[department.toLowerCase()]?.subcategories[
-      subcategory.toLowerCase()
-    ] || subcategory
+    TAXONOMY[category.toLowerCase()]?.departments?.[normalizedDept]?.subcategories?.[subcatKey] ||
+    TAXONOMY[category.toLowerCase()]?.departments?.[deptKey]?.subcategories?.[subcatKey] ||
+    subcategory
   )
 }
