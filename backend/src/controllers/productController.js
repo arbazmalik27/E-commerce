@@ -15,7 +15,11 @@ const getProducts = async (req, res) => {
   try {
     let includeInactive = false
     if (req.query.all === 'true' || req.query.includeInactive === 'true') {
-      const token = req.cookies && req.cookies[COOKIE_NAME]
+      const token =
+        (req.cookies && req.cookies[COOKIE_NAME]) ||
+        (req.headers && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')
+          ? req.headers.authorization.split(' ')[1]
+          : null)
       if (token) {
         try {
           const decoded = jwt.verify(token, process.env.JWT_SECRET)
@@ -141,7 +145,11 @@ const getProductById = async (req, res) => {
     let query = { _id: id, isActive: true }
 
     // If an authenticated admin requests product details, allow viewing inactive products
-    const token = req.cookies && req.cookies[COOKIE_NAME]
+    const token =
+      (req.cookies && req.cookies[COOKIE_NAME]) ||
+      (req.headers && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')
+        ? req.headers.authorization.split(' ')[1]
+        : null)
     if (token) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET)

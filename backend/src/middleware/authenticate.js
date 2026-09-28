@@ -3,7 +3,11 @@ const User = require('../models/User')
 const { COOKIE_NAME } = require('../utils/jwt')
 
 const authenticate = async (req, res, next) => {
-  const token = req.cookies[COOKIE_NAME]
+  const token =
+    (req.cookies && req.cookies[COOKIE_NAME]) ||
+    (req.headers && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')
+      ? req.headers.authorization.split(' ')[1]
+      : null)
 
   if (!token) {
     return res.status(401).json({ success: false, message: 'Not authenticated' })

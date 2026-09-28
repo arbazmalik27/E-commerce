@@ -18,11 +18,13 @@ const paymentSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      index: true,
     },
     razorpayPaymentId: {
       type: String,
       required: true,
       trim: true,
+      index: true,
     },
     razorpaySignature: {
       type: String,

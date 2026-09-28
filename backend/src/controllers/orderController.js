@@ -118,7 +118,7 @@ const getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(id)
 
-    if (!order || order.user.toString() !== req.user.id.toString()) {
+    if (!order || (order.user.toString() !== req.user.id.toString() && req.user.role !== 'admin')) {
       return res.status(404).json({ success: false, message: 'Order not found' })
     }
 

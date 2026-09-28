@@ -115,6 +115,7 @@ const logout = (req, res) => {
   })
 
   return res.status(200).json({
+    success: true,
     message: 'Logged out successfully',
   })
 }
@@ -143,7 +144,17 @@ const forgotPassword = async (req, res) => {
       await user.save()
 
       const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password?token=${rawToken}`
-      await sendPasswordResetEmail({ to: user.email, resetUrl })
+      try {
+        const result = await sendPasswordResetEmail({ to: user.email, resetUrl })
+        if (result && result.delivered === false && process.env.EMAIL_SERVICE_ENABLED === 'true') {
+          throw new Error('Email service failed to deliver message')
+        }
+      } catch (emailErr) {
+        user.passwordResetToken = undefined
+        user.passwordResetExpires = undefined
+        await user.save()
+        console.error('Password reset email dispatch error:', emailErr.message)
+      }
     }
 
     return res.status(200).json({

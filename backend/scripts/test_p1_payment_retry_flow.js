@@ -1,5 +1,8 @@
+const path = require('path')
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') })
 const http = require('http')
 const crypto = require('crypto')
+const mongoose = require('mongoose')
 
 const BASE_URL = 'http://localhost:5000'
 const RAZORPAY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'placeholder_secret_for_hmac_verification'
@@ -59,6 +62,58 @@ async function runTests() {
 
   let passedCount = 0
   let failedCount = 0
+  let tempProduct1 = null
+  let tempProduct2 = null
+  let adminCookie = null
+  let dbConnected = false
+  let isCleanedUp = false
+
+  async function cleanup() {
+    if (isCleanedUp) return
+    isCleanedUp = true
+    try {
+      const idsToDelete = [tempProduct1?._id, tempProduct2?._id].filter(Boolean)
+      if (idsToDelete.length > 0) {
+        if (dbConnected) {
+          await mongoose.connection.collection('products').deleteMany({
+            _id: { $in: idsToDelete.map((id) => new mongoose.Types.ObjectId(id)) },
+          })
+          console.log(`\n  [Cleanup] Removed ${idsToDelete.length} temporary test product(s) from database.`)
+        } else if (adminCookie) {
+          for (const id of idsToDelete) {
+            await request(
+              { path: `/api/products/${id}`, method: 'DELETE', headers: { Cookie: adminCookie } }
+            )
+          }
+          console.log(`\n  [Cleanup] Deactivated ${idsToDelete.length} temporary test product(s) via admin API.`)
+        }
+      }
+    } catch (cleanupErr) {
+      console.warn('\n  [Cleanup] Warning during test cleanup:', cleanupErr.message)
+    } finally {
+      if (dbConnected) {
+        await mongoose.disconnect().catch(() => {})
+      }
+    }
+  }
+
+  process.on('SIGINT', async () => {
+    await cleanup()
+    process.exit(1)
+  })
+  process.on('SIGTERM', async () => {
+    await cleanup()
+    process.exit(1)
+  })
+
+  if (process.env.MONGODB_URI) {
+    try {
+      await mongoose.connect(process.env.MONGODB_URI)
+      dbConnected = true
+    } catch (err) {
+      // Direct connection optional, API cleanup fallback available
+    }
+  }
 
   function assert(name, condition, extraInfo = '') {
     if (condition) {
@@ -93,10 +148,59 @@ async function runTests() {
     // Fetch existing active products
     const productsRes = await request({ path: '/api/products', method: 'GET' })
     assert('Fetch products', productsRes.status === 200 && productsRes.data.products?.length >= 2)
-    const product1 = productsRes.data.products[0]
-    const product2 = productsRes.data.products[1]
-    console.log(`  Using Product 1: ${product1.name} (Stock: ${product1.stock}, Price: ${product1.price})`)
-    console.log(`  Using Product 2: ${product2.name} (Stock: ${product2.stock}, Price: ${product2.price})`)
+
+    // Authenticate Admin to create isolated temporary test products
+    const adminLoginRes = await request(
+      { path: '/api/auth/login', method: 'POST' },
+      JSON.stringify({ email: 'admin@trendvolt.com', password: 'AdminPass123!' })
+    )
+    adminCookie = extractCookie(adminLoginRes.headers)
+
+    // Create dedicated temporary test products for payment retry isolation
+    const tempProd1Payload = {
+      name: `Retry Test Shirt 1 ${timestamp}`,
+      description: 'Temporary product 1 for payment retry flow testing.',
+      price: 1999,
+      category: 'fashion',
+      department: 'men',
+      subcategory: 'shirts',
+      brand: 'TrendVolt Luxe',
+      stock: 50,
+      images: ['https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800'],
+      isActive: true,
+    }
+    const createProd1 = await request(
+      { path: '/api/products', method: 'POST', headers: { Cookie: adminCookie } },
+      JSON.stringify(tempProd1Payload)
+    )
+    tempProduct1 = createProd1.data?.product
+
+    const tempProd2Payload = {
+      name: `Retry Test Shirt 2 ${timestamp}`,
+      description: 'Temporary product 2 for payment retry flow testing.',
+      price: 899,
+      category: 'fashion',
+      department: 'men',
+      subcategory: 't-shirts',
+      brand: 'TrendVolt Basics',
+      stock: 50,
+      images: ['https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800'],
+      isActive: true,
+    }
+    const createProd2 = await request(
+      { path: '/api/products', method: 'POST', headers: { Cookie: adminCookie } },
+      JSON.stringify(tempProd2Payload)
+    )
+    tempProduct2 = createProd2.data?.product
+
+    if (!tempProduct1?._id || !tempProduct2?._id) {
+      throw new Error(`Failed to create temporary test products: prod1=${createProd1.status}, prod2=${createProd2.status}`)
+    }
+
+    const product1 = tempProduct1
+    const product2 = tempProduct2
+    console.log(`  Using Temporary Product 1: ${product1.name} (Stock: ${product1.stock}, Price: ${product1.price})`)
+    console.log(`  Using Temporary Product 2: ${product2.name} (Stock: ${product2.stock}, Price: ${product2.price})`)
 
     // =========================================================================
     // SCENARIO A: Create Pending Order
@@ -329,7 +433,7 @@ async function runTests() {
       { path: '/api/auth/login', method: 'POST' },
       JSON.stringify({ email: 'admin@trendvolt.com', password: 'AdminPass123!' })
     )
-    const adminCookie = extractCookie(adminLogin.headers)
+    adminCookie = extractCookie(adminLogin.headers)
 
     // Cancel orderI via admin
     const cancelRes = await request(
@@ -421,19 +525,21 @@ async function runTests() {
     )
     assert('Order A remains paid/confirmed on refresh', refreshA.data?.order?.paymentStatus === 'paid')
     assert('Order A orderStatus is confirmed on refresh', refreshA.data?.order?.orderStatus === 'confirmed')
-
-    console.log('\n====================================================================')
-    console.log(`TEST RESULTS: ${passedCount} PASSED, ${failedCount} FAILED`)
-    console.log('====================================================================')
-
-    if (failedCount > 0) {
-      process.exit(1)
-    } else {
-      process.exit(0)
-    }
   } catch (err) {
     console.error('Test run error:', err)
+    failedCount++
+  } finally {
+    await cleanup()
+  }
+
+  console.log('\n====================================================================')
+  console.log(`TEST RESULTS: ${passedCount} PASSED, ${failedCount} FAILED`)
+  console.log('====================================================================')
+
+  if (failedCount > 0) {
     process.exit(1)
+  } else {
+    process.exit(0)
   }
 }
 

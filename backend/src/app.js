@@ -36,16 +36,18 @@ app.use(
       if (!origin || allowedOrigins.includes(origin) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
         callback(null, true)
       } else {
-        callback(new Error(`Origin ${origin} not allowed by CORS`))
+        const corsErr = new Error(`Origin ${origin} not allowed by CORS`)
+        corsErr.status = 403
+        callback(corsErr)
       }
     },
     credentials: true,
   })
 )
 
-// Body parsing (support up to 50mb for image uploads)
-app.use(express.json({ limit: '50mb' }))
-app.use(express.urlencoded({ limit: '50mb', extended: true }))
+// Body parsing (standard safe 2mb limit)
+app.use(express.json({ limit: '2mb' }))
+app.use(express.urlencoded({ limit: '2mb', extended: true }))
 
 // Cookie parsing (required for JWT HTTP-only cookie auth)
 app.use(cookieParser())
@@ -59,6 +61,11 @@ app.use('/api/orders', orderRoutes)
 app.use('/api/payments', paymentRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/newsletter', newsletterRoutes)
+
+// 404 handler for undefined routes
+app.use((_req, res) => {
+  return res.status(404).json({ success: false, message: 'Resource not found' })
+})
 
 // Centralized error handling middleware
 app.use((err, req, res, next) => {

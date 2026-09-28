@@ -9,6 +9,7 @@ const {
 } = require('../controllers/orderController')
 const authenticate = require('../middleware/authenticate')
 const authorize = require('../middleware/authorize')
+const { paymentLimiter } = require('../middleware/rateLimiter')
 
 const router = express.Router()
 
@@ -16,7 +17,7 @@ const router = express.Router()
 router.use(authenticate)
 
 // Customer endpoints
-router.post('/', createOrder)
+router.post('/', paymentLimiter, createOrder)
 router.get('/', getMyOrders)
 
 // Admin endpoints (must define /admin before /:id)
