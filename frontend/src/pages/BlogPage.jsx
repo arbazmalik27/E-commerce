@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, BookOpen, Clock, Calendar, X, Sparkles, Filter, Search, Share2, Check } from 'lucide-react'
 import Eyebrow from '../components/Eyebrow'
 import NewsletterCTA from '../components/NewsletterCTA'
+import SEO from '../components/SEO'
 
 import trend01 from '../assets/fashion-trends/trend-01.jpg'
 import trend02 from '../assets/fashion-trends/trend-02.jpg'
@@ -194,6 +195,14 @@ function BlogPage() {
 
   return (
     <div className="bg-[#F5F0E8] text-[#1F211C] min-h-screen">
+      <SEO
+        title="Editorial Journal & Style Trends"
+        description="Read TrendVolt's editorial perspectives on modern tailoring, seasonal outerwear, styling guides, and contemporary fashion aesthetics."
+        canonical="/blog"
+        ogType="article"
+        ogImage={trend03}
+        twitterImage={trend03}
+      />
       {/* =========================================================================
           1. EDITORIAL HERO
          ========================================================================= */}

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import api from '../services/api'
 import Eyebrow from '../components/Eyebrow'
 import { getProductImage } from '../utils/productImageMap'
+import SEO from '../components/SEO'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -268,6 +269,12 @@ function OrdersPage() {
 
   return (
     <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-24 overflow-hidden">
+      <SEO
+        title="Your Orders"
+        description="View your past purchases, order status, and dispatch tracking with TrendVolt."
+        canonical="/orders"
+        noindex={true}
+      />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Breadcrumb */}

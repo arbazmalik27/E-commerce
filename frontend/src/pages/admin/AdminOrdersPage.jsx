@@ -3,6 +3,7 @@ import api from '../../services/api'
 import Eyebrow from '../../components/Eyebrow'
 import AdminNav from '../../components/AdminNav'
 import { getProductImage } from '../../utils/productImageMap'
+import SEO from '../../components/SEO'
 
 // ─── Helpers & Formatters ───────────────────────────────────────────────────
 
@@ -226,6 +227,12 @@ function AdminOrdersPage() {
 
   return (
     <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-20 px-4 sm:px-6 lg:px-8">
+      <SEO
+        title="Manage Orders | TrendVolt Admin"
+        description="TrendVolt customer orders and fulfillment management."
+        canonical="/admin/orders"
+        noindex={true}
+      />
       {/* Toast Notification */}
       {toast && (
         <div className="fixed top-24 right-6 z-50 animate-in fade-in slide-in-from-top-4 duration-300 max-w-md">

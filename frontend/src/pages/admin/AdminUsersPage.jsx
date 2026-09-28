@@ -4,6 +4,7 @@ import { selectUser } from '../../features/auth/authSlice'
 import api from '../../services/api'
 import Eyebrow from '../../components/Eyebrow'
 import AdminNav from '../../components/AdminNav'
+import SEO from '../../components/SEO'
 
 // ─── Formatters & Badges ───────────────────────────────────────────────────────
 
@@ -271,6 +272,12 @@ function AdminUsersPage() {
 
   return (
     <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-20 px-4 sm:px-6 lg:px-8">
+      <SEO
+        title="Manage Users | TrendVolt Admin"
+        description="TrendVolt customer accounts and administrative role management."
+        canonical="/admin/users"
+        noindex={true}
+      />
       <div className="max-w-7xl mx-auto space-y-6">
         {/* =========================================================================
             SUB-NAVIGATION BAR

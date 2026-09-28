@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import CartItem from '../components/CartItem'
 import CartSummary from '../components/CartSummary'
 import Eyebrow from '../components/Eyebrow'
+import SEO from '../components/SEO'
 import {
   clearCart,
   fetchCart,
@@ -122,6 +123,12 @@ function CartPage() {
 
   return (
     <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-28 sm:pt-32 lg:pt-36 pb-24 overflow-hidden">
+      <SEO
+        title="Shopping Bag"
+        description="Review the fashion garments and accessories currently in your TrendVolt shopping bag."
+        canonical="/cart"
+        noindex={true}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* =========================================================================
             BREADCRUMBS & BACK TO SHOP

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import Eyebrow from '../components/Eyebrow'
+import SEO from '../components/SEO'
 import api from '../services/api'
 import {
   TAXONOMY,
@@ -392,6 +393,12 @@ function ProductsPage() {
 
   return (
     <div className="min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-28 sm:pt-32 lg:pt-36 pb-24">
+      <SEO
+        title={headerTitle === 'All Products' ? 'All Fashion Collection' : headerTitle}
+        description={`Explore TrendVolt's catalog of premium apparel, designer essentials, footwear, and accessories crafted for timeless style.`}
+        canonical="/products"
+        ogType="website"
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* =========================================================================
             1. TAXONOMY BREADCRUMBS & CONTEXT

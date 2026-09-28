@@ -7,6 +7,7 @@ import {
 } from '../features/auth/authSlice'
 import api from '../services/api'
 import Eyebrow from '../components/Eyebrow'
+import SEO from '../components/SEO'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -309,6 +310,12 @@ function ProfilePage() {
 
   return (
     <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-24 overflow-hidden">
+      <SEO
+        title="Account Profile"
+        description="Manage your personal details, contact preferences, and delivery addresses on TrendVolt."
+        canonical="/profile"
+        noindex={true}
+      />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Navigation Breadcrumbs */}

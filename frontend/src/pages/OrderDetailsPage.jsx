@@ -7,6 +7,7 @@ import { fetchCart } from '../features/cart/cartSlice'
 import { loadRazorpayScript } from '../utils/loadRazorpay'
 import Eyebrow from '../components/Eyebrow'
 import { getProductImage } from '../utils/productImageMap'
+import SEO from '../components/SEO'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -324,6 +325,12 @@ function OrderDetailsPage() {
 
   return (
     <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-24 overflow-hidden">
+      <SEO
+        title="Order Details"
+        description="View comprehensive order details, items, delivery tracking, and payment summary."
+        canonical={`/orders/${id}`}
+        noindex={true}
+      />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Breadcrumb & Navigation */}

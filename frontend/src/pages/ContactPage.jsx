@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import Eyebrow from '../components/Eyebrow'
 import NewsletterCTA from '../components/NewsletterCTA'
+import SEO from '../components/SEO'
 
 const SUBJECT_OPTIONS = [
   'General Inquiry',
@@ -130,6 +131,12 @@ function ContactPage() {
 
   return (
     <div className="bg-[#F5F0E8] text-[#1F211C] min-h-screen">
+      <SEO
+        title="Client Concierge & Support"
+        description="Get in touch with TrendVolt client services for styling advice, order inquiries, sizing counsel, and customer support."
+        canonical="/contact"
+        ogType="website"
+      />
       {/* =========================================================================
           1. CONTACT HERO
          ========================================================================= */}

@@ -1,9 +1,15 @@
 import { Link } from 'react-router-dom'
 import Eyebrow from '../components/Eyebrow'
+import SEO from '../components/SEO'
 
 function NotFoundPage() {
   return (
     <section className="flex min-h-[65vh] items-center justify-center px-4 py-16 sm:py-24">
+      <SEO
+        title="Page Not Found"
+        description="The page you requested could not be found on TrendVolt."
+        noindex={true}
+      />
       <div className="max-w-lg w-full text-center space-y-6">
         <Eyebrow variant="terracotta">PAGE NOT FOUND</Eyebrow>
         

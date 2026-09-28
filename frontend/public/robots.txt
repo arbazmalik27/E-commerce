@@ -1,0 +1,36 @@
+# TrendVolt robots.txt
+# https://trendvolt.com
+
+User-agent: *
+Allow: /
+Allow: /products
+Allow: /products/*
+Allow: /blog
+Allow: /contact
+Allow: /privacy
+Allow: /terms
+Allow: /shipping
+
+# Customer private routes and session states
+Disallow: /cart
+Disallow: /checkout
+Disallow: /orders
+Disallow: /orders/*
+Disallow: /profile
+Disallow: /wishlist
+
+# Authentication routes
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+
+# Administrative backoffice
+Disallow: /admin
+Disallow: /admin/*
+
+# Backend API proxy
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://trendvolt.com/sitemap.xml

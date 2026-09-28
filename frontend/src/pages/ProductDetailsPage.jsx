@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import Eyebrow from '../components/Eyebrow'
+import SEO from '../components/SEO'
 import { selectIsAuthenticated } from '../features/auth/authSlice'
 import { addToCart } from '../features/cart/cartSlice'
 import {
@@ -288,8 +289,50 @@ function ProductDetailsPage() {
     }
   }
 
+  const seoConfig = useMemo(() => {
+    if (isNotFound) {
+      return {
+        title: 'Product Not Found',
+        description: 'The requested fashion piece could not be found in our catalog.',
+        noindex: true,
+      }
+    }
+    if (error) {
+      return {
+        title: 'Product Unavailable',
+        description: 'Unable to load product details from the TrendVolt catalog.',
+        noindex: true,
+      }
+    }
+    if (loading && !product) {
+      return {
+        title: 'Loading Product...',
+        description: 'Loading curated product details from TrendVolt atelier.',
+        noindex: true,
+      }
+    }
+    if (product) {
+      return {
+        title: product.name,
+        description: product.description || `Discover ${product.name} at TrendVolt.`,
+        canonical: `/products/${product._id || id}`,
+        ogTitle: product.name,
+        ogDescription: product.description || `Discover ${product.name} at TrendVolt.`,
+        ogType: 'product',
+        ogImage: displayImage,
+        twitterImage: displayImage,
+        noindex: false,
+      }
+    }
+    return {
+      title: 'Product',
+      noindex: true,
+    }
+  }, [isNotFound, error, loading, product, id, displayImage])
+
   return (
     <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-28 sm:pt-32 lg:pt-36 pb-24 overflow-hidden">
+      <SEO {...seoConfig} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* =========================================================================
             1. BREADCRUMBS & BACK LINK

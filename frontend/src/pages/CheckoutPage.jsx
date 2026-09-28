@@ -10,8 +10,16 @@ import api from '../services/api'
 import { loadRazorpayScript } from '../utils/loadRazorpay'
 import Eyebrow from '../components/Eyebrow'
 import { getProductImage } from '../utils/productImageMap'
+import useSEO from '../hooks/useSEO'
 
 function CheckoutPage() {
+  useSEO({
+    title: 'Checkout',
+    description: 'Complete your TrendVolt order securely with encrypted checkout and order verification.',
+    canonical: '/checkout',
+    noindex: true,
+  })
+
   const dispatch = useDispatch()
   const user = useSelector(selectUser)
   const {

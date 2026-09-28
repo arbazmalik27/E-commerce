@@ -1,10 +1,13 @@
 import { useLocation, Link } from 'react-router-dom'
 import { ShieldCheck, FileText, Truck, ArrowLeft } from 'lucide-react'
+import SEO from '../components/SEO'
 
 const POLICY_DATA = {
   '/privacy': {
     title: 'Privacy Policy',
     subtitle: 'Editorial Care & Digital Protection',
+    description:
+      'Read TrendVolt\'s privacy policy to learn how we protect your personal information, manage cookies, and safeguard user data.',
     icon: ShieldCheck,
     lastUpdated: 'September 2026',
     sections: [
@@ -33,6 +36,8 @@ const POLICY_DATA = {
   '/terms': {
     title: 'Terms of Service',
     subtitle: 'Guidelines of our Curated Atelier',
+    description:
+      'Review the terms and conditions governing purchases, accounts, and services across the TrendVolt atelier.',
     icon: FileText,
     lastUpdated: 'September 2026',
     sections: [
@@ -61,6 +66,8 @@ const POLICY_DATA = {
   '/shipping': {
     title: 'Shipping & Returns',
     subtitle: 'White-Glove Delivery & Seamless Exchanges',
+    description:
+      'Learn about TrendVolt\'s domestic dispatch, delivery timelines, real-time tracking, and 14-day complimentary return policy.',
     icon: Truck,
     lastUpdated: 'September 2026',
     sections: [
@@ -95,6 +102,12 @@ function PolicyPage() {
 
   return (
     <div className="min-h-[70vh] bg-[#F5F0E8] py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
+      <SEO
+        title={policy.title}
+        description={policy.description}
+        canonical={pathname}
+        ogType="website"
+      />
       <div className="max-w-3xl mx-auto">
         {/* Back Link */}
         <div className="mb-8">

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import SEO from '../components/SEO'
 import api from '../services/api'
 
 function ForgotPasswordPage() {
@@ -49,6 +50,12 @@ function ForgotPasswordPage() {
 
   return (
     <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center px-4 py-16 sm:px-6 lg:px-8 bg-[#F5F0E8]">
+      <SEO
+        title="Forgot Password"
+        description="Request a secure password reset link for your TrendVolt account."
+        canonical="/forgot-password"
+        noindex={true}
+      />
       <div className="w-full max-w-md space-y-8 bg-[#FFFDF8] p-8 sm:p-10 rounded-2xl shadow-xs border border-[#DED7CA]">
         <div className="text-center">
           <span className="inline-block text-[11px] font-mono font-bold uppercase tracking-[0.2em] text-[#34452F] bg-[#34452F]/10 px-3 py-1 rounded-full mb-3">

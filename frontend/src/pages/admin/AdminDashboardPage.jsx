@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import api from '../../services/api'
 import Eyebrow from '../../components/Eyebrow'
 import AdminNav from '../../components/AdminNav'
+import SEO from '../../components/SEO'
 
 // ─── Formatters & Style Tokens ───────────────────────────────────────────────
 
@@ -126,6 +127,12 @@ function AdminDashboardPage() {
 
   return (
     <div className="relative min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-36 sm:pt-40 lg:pt-44 pb-20 px-4 sm:px-6 lg:px-8">
+      <SEO
+        title="Admin Dashboard"
+        description="TrendVolt administrative backoffice and operations management."
+        canonical="/admin"
+        noindex={true}
+      />
       <div className="max-w-7xl mx-auto space-y-8 sm:space-y-10">
         {/* ── Sub Navigation ──────────────────────────────────────────────── */}
         <div className="flex items-center justify-between flex-wrap gap-4">
