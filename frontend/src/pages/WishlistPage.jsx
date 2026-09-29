@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import Eyebrow from '../components/Eyebrow'
 import SEO from '../components/SEO'
+import WishlistRecommendations from '../components/WishlistRecommendations'
 import {
   fetchWishlist,
   removeFromWishlist,
@@ -219,6 +220,11 @@ function WishlistPage() {
               </div>
             ))}
           </div>
+        )}
+
+        {/* ── Smart Wishlist Recommendations (Feature #9) ──────────────────── */}
+        {!loading && !error && items.length > 0 && (
+          <WishlistRecommendations wishlistLength={items.length} />
         )}
       </div>
     </div>

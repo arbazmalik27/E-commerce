@@ -18,6 +18,8 @@ import AdminProductsPage from '../pages/admin/AdminProductsPage'
 import AdminOrdersPage from '../pages/admin/AdminOrdersPage'
 import AdminUsersPage from '../pages/admin/AdminUsersPage'
 import AdminReviewsPage from '../pages/admin/AdminReviewsPage'
+import AdminCouponsPage from '../pages/admin/AdminCouponsPage'
+import AdminFlashSalesPage from '../pages/admin/AdminFlashSalesPage'
 import NotFoundPage from '../pages/NotFoundPage'
 import PolicyPage from '../pages/PolicyPage'
 import BlogPage from '../pages/BlogPage'
@@ -162,6 +164,22 @@ function AppRoutes() {
           element={
             <AdminRoute>
               <AdminReviewsPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/coupons"
+          element={
+            <AdminRoute>
+              <AdminCouponsPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/flash-sales"
+          element={
+            <AdminRoute>
+              <AdminFlashSalesPage />
             </AdminRoute>
           }
         />

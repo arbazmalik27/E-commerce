@@ -846,8 +846,13 @@ function AdminOrdersPage() {
                 </div>
                 {selectedOrder.discount > 0 && (
                   <div className="flex justify-between text-[#3F6B45]">
-                    <span>Discount</span>
+                    <span>Discount {selectedOrder.coupon?.code ? `(${selectedOrder.coupon.code})` : ''}</span>
                     <span className="font-mono">-{formatCurrency(selectedOrder.discount)}</span>
+                  </div>
+                )}
+                {selectedOrder.coupon && selectedOrder.coupon.type === 'buy_x_get_y' && (
+                  <div className="text-[11px] text-[#2D5032] bg-[#3F6B45]/10 px-2 py-0.5 rounded-md font-medium">
+                    BOGO: Buy {selectedOrder.coupon.buyQuantity} Get {selectedOrder.coupon.freeQuantity} Free
                   </div>
                 )}
                 <div className="flex justify-between text-[#5F6057]">

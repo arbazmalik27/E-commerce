@@ -6,6 +6,7 @@ import RecentlyViewed from '../components/RecentlyViewed'
 import ProductReviews from '../components/ProductReviews'
 import Eyebrow from '../components/Eyebrow'
 import SEO from '../components/SEO'
+import CountdownTimer from '../components/CountdownTimer'
 import { selectIsAuthenticated } from '../features/auth/authSlice'
 import { addToCart } from '../features/cart/cartSlice'
 import {
@@ -894,11 +895,68 @@ function ProductDetailsPage() {
                     </a>
                   )}
 
+                  {/* Flash Sale Banner & Countdown */}
+                  {product.isFlashSale && product.flashSale && (
+                    <div className="mt-4 p-3.5 sm:p-4 rounded-xl bg-linear-to-r from-[#A65332]/10 via-[#FFFDF8] to-[#A65332]/10 border border-[#A65332]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#A65332] text-white text-xs font-bold shadow-xs">
+                          ⚡
+                        </span>
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-wider text-[#A65332]">
+                            {product.flashSale.name || 'Flash Sale'}
+                          </p>
+                          <p className="text-[11px] text-[#5F6057]">Limited time offer on select pieces</p>
+                        </div>
+                      </div>
+                      {product.flashSale.endAt && (
+                        <CountdownTimer
+                          targetDate={product.flashSale.endAt}
+                          label="Ends in"
+                          onExpire={handleRetry}
+                        />
+                      )}
+                    </div>
+                  )}
+
+                  {/* Upcoming Flash Sale Notice */}
+                  {!product.isFlashSale && product.upcomingFlashSale && (
+                    <div className="mt-4 p-3 sm:p-3.5 rounded-xl bg-[#FAF7F0] border border-[#DED7CA] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#85857A] font-bold">Upcoming Sale:</span>
+                        <span className="font-semibold text-[#1F211C]">{product.upcomingFlashSale.name}</span>
+                        <span className="bg-[#A65332]/10 text-[#A65332] px-2 py-0.5 rounded-full font-bold font-mono">
+                          {product.upcomingFlashSale.discountPercentage}% OFF
+                        </span>
+                      </div>
+                      <CountdownTimer
+                        targetDate={product.upcomingFlashSale.startAt}
+                        label="Starts in"
+                        onExpire={handleRetry}
+                        compact
+                      />
+                    </div>
+                  )}
+
                   {/* Price & Stock Status Bar */}
                   <div className="mt-5 flex flex-wrap items-baseline gap-4">
-                    <span className="font-serif text-3xl sm:text-4xl font-extrabold text-[#1F211C] tracking-tight">
-                      ₹{Number(product.price).toLocaleString('en-IN')}
-                    </span>
+                    {product.isFlashSale && product.originalPrice ? (
+                      <div className="flex items-baseline gap-3 flex-wrap">
+                        <span className="font-serif text-3xl sm:text-4xl font-extrabold text-[#A65332] tracking-tight">
+                          ₹{Number(product.price).toLocaleString('en-IN')}
+                        </span>
+                        <span className="font-serif text-xl sm:text-2xl text-[#85857A] line-through font-normal">
+                          ₹{Number(product.originalPrice).toLocaleString('en-IN')}
+                        </span>
+                        <span className="inline-flex items-center rounded-full bg-[#A65332]/10 border border-[#A65332]/25 px-2.5 py-0.5 text-xs font-bold text-[#A65332] font-mono">
+                          {product.discountPercentage}% OFF
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="font-serif text-3xl sm:text-4xl font-extrabold text-[#1F211C] tracking-tight">
+                        ₹{Number(product.price).toLocaleString('en-IN')}
+                      </span>
+                    )}
 
                     {/* Stock Badge */}
                     <span

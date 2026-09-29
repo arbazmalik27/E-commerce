@@ -85,6 +85,40 @@ const shippingAddressSchema = new mongoose.Schema(
   { _id: false }
 )
 
+const orderCouponSchema = new mongoose.Schema(
+  {
+    code: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      default: null,
+    },
+    type: {
+      type: String,
+      enum: ['percentage', 'fixed', 'buy_x_get_y'],
+      default: null,
+    },
+    value: {
+      type: Number,
+      default: 0,
+    },
+    buyQuantity: {
+      type: Number,
+      default: null,
+    },
+    freeQuantity: {
+      type: Number,
+      default: null,
+    },
+    discountAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+  },
+  { _id: false }
+)
+
 const orderSchema = new mongoose.Schema(
   {
     user: {
@@ -122,6 +156,10 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       min: 0,
+    },
+    coupon: {
+      type: orderCouponSchema,
+      default: null,
     },
     shippingFee: {
       type: Number,

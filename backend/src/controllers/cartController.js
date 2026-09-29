@@ -5,8 +5,12 @@ const {
   validateAddToCartInput,
   validateUpdateQuantityInput,
 } = require('../validators/cartValidator')
+const {
+  getBatchEffectivePrices,
+  calculateSalePrice,
+} = require('../services/pricingService')
 
-const formatCart = (cart) => {
+const formatCart = async (cart) => {
   if (!cart || !cart.items) {
     return {
       items: [],
@@ -15,11 +19,48 @@ const formatCart = (cart) => {
     }
   }
 
+  const rawProducts = cart.items
+    .filter((item) => item.product && typeof item.product === 'object' && item.product._id)
+    .map((item) => item.product)
+
+  // Fetch active flash sales for products in cart authoritatively
+  const saleMap = await getBatchEffectivePrices(rawProducts)
+
   const validItems = cart.items
     .filter((item) => item.product && typeof item.product === 'object' && item.product._id)
     .map((item) => {
-      const price = typeof item.product.price === 'number' ? item.product.price : 0
-      const itemTotal = Number((price * item.quantity).toFixed(2))
+      const pId = item.product._id.toString()
+      const originalPrice = typeof item.product.price === 'number' ? item.product.price : 0
+      const activeSale = saleMap.get(pId)
+
+      let effectivePrice = originalPrice
+      let salePrice = null
+      let discountPercentage = 0
+      let isFlashSale = false
+      let flashSaleInfo = null
+
+      if (activeSale) {
+        const pricing = calculateSalePrice(
+          originalPrice,
+          activeSale.discountType,
+          activeSale.discountValue
+        )
+        effectivePrice = pricing.salePrice
+        salePrice = pricing.salePrice
+        discountPercentage = pricing.discountPercentage
+        isFlashSale = true
+        flashSaleInfo = {
+          _id: activeSale._id,
+          name: activeSale.name,
+          slug: activeSale.slug,
+          discountType: activeSale.discountType,
+          discountValue: activeSale.discountValue,
+          startAt: activeSale.startAt,
+          endAt: activeSale.endAt,
+        }
+      }
+
+      const itemTotal = Number((effectivePrice * item.quantity).toFixed(2))
 
       return {
         _id: item._id,
@@ -27,7 +68,12 @@ const formatCart = (cart) => {
         product: {
           _id: item.product._id,
           name: item.product.name,
-          price: item.product.price,
+          price: effectivePrice,
+          originalPrice,
+          salePrice,
+          discountPercentage,
+          isFlashSale,
+          flashSale: flashSaleInfo,
           images: item.product.images || [],
           category: item.product.category,
           brand: item.product.brand,
@@ -77,9 +123,10 @@ const getCart = async (req, res) => {
       await cart.save()
     }
 
+    const formattedCart = await formatCart(cart)
     return res.status(200).json({
       success: true,
-      cart: formatCart(cart),
+      cart: formattedCart,
     })
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Server error' })
@@ -178,9 +225,10 @@ const addToCart = async (req, res) => {
     await cart.save()
     await cart.populate('items.product', 'name price images category brand stock isActive sizes')
 
+    const formattedCart = await formatCart(cart)
     return res.status(200).json({
       success: true,
-      cart: formatCart(cart),
+      cart: formattedCart,
     })
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Server error' })
@@ -245,9 +293,10 @@ const updateCartItem = async (req, res) => {
     await cart.save()
     await cart.populate('items.product', 'name price images category brand stock isActive sizes')
 
+    const formattedCart = await formatCart(cart)
     return res.status(200).json({
       success: true,
-      cart: formatCart(cart),
+      cart: formattedCart,
     })
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Server error' })
@@ -282,9 +331,10 @@ const removeCartItem = async (req, res) => {
     await cart.save()
     await cart.populate('items.product', 'name price images category brand stock isActive sizes')
 
+    const formattedCart = await formatCart(cart)
     return res.status(200).json({
       success: true,
-      cart: formatCart(cart),
+      cart: formattedCart,
     })
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Server error' })

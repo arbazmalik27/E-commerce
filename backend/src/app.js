@@ -13,6 +13,8 @@ const userRoutes = require('./routes/userRoutes')
 const newsletterRoutes = require('./routes/newsletterRoutes')
 const reviewRoutes = require('./routes/reviewRoutes')
 const stockAlertRoutes = require('./routes/stockAlertRoutes')
+const couponRoutes = require('./routes/couponRoutes')
+const flashSaleRoutes = require('./routes/flashSaleRoutes')
 
 const app = express()
 
@@ -65,6 +67,8 @@ app.use('/api/users', userRoutes)
 app.use('/api/newsletter', newsletterRoutes)
 app.use('/api/reviews', reviewRoutes)
 app.use('/api/stock-alerts', stockAlertRoutes)
+app.use('/api/coupons', couponRoutes)
+app.use('/api/flash-sales', flashSaleRoutes)
 
 // 404 handler for undefined routes
 app.use((_req, res) => {

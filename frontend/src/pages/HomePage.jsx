@@ -1,5 +1,7 @@
 import Hero from '../components/Hero'
+import PersonalizedSection from '../components/PersonalizedSection'
 import ShopByCategory from '../components/ShopByCategory'
+import FlashSaleSection from '../components/FlashSaleSection'
 import FeaturedProducts from '../components/FeaturedProducts'
 import EditorialFeature from '../components/EditorialFeature'
 import FashionTrends from '../components/FashionTrends'
@@ -19,7 +21,9 @@ function HomePage() {
         ogType="website"
       />
       <Hero />
+      <PersonalizedSection />
       <ShopByCategory />
+      <FlashSaleSection />
       <FeaturedProducts />
       <EditorialFeature />
       <FashionTrends />

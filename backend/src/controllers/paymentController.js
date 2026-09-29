@@ -3,6 +3,7 @@ const Order = require('../models/Order')
 const Cart = require('../models/Cart')
 const Product = require('../models/Product')
 const Payment = require('../models/Payment')
+const Coupon = require('../models/Coupon')
 const { getRazorpayInstance } = require('../config/razorpay')
 const {
   validateCreatePaymentOrderInput,
@@ -230,6 +231,18 @@ const verifyPayment = async (req, res) => {
       currency: 'INR',
       status: 'successful',
     })
+
+    // Finalize coupon usage atomically on successful payment verification
+    if (order.coupon && order.coupon.code) {
+      try {
+        await Coupon.findOneAndUpdate(
+          { code: order.coupon.code },
+          { $inc: { usedCount: 1 } }
+        )
+      } catch (couponUsageErr) {
+        console.error('Non-fatal error incrementing coupon usage count:', couponUsageErr.message)
+      }
+    }
 
     // Selective cart cleanup: Remove ONLY the cart items corresponding to this paid order,
     // preserving any unrelated or newly added cart items.

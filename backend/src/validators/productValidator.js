@@ -493,6 +493,11 @@ const validateProductQueryParams = (query = {}) => {
     }
   }
 
+  // 11. Flash Sale filter
+  if (query.flashSale === 'true' || query.flashSale === true) {
+    sanitized.flashSale = true
+  }
+
   return sanitized
 }
 

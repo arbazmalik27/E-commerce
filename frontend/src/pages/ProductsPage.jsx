@@ -59,6 +59,7 @@ function ProductsPage() {
   const activeBrand = searchParams.get('brand')?.trim() || ''
   const activeInStock =
     searchParams.get('inStock') === 'true' || searchParams.get('availability') === 'in-stock'
+  const activeFlashSale = searchParams.get('flashSale') === 'true'
   const rawPage = parseInt(searchParams.get('page'), 10)
   const activePage = !isNaN(rawPage) && rawPage > 0 ? rawPage : 1
   const rawLimit = parseInt(searchParams.get('limit'), 10)
@@ -195,6 +196,9 @@ function ProductsPage() {
         if (activeInStock) {
           params.inStock = 'true'
         }
+        if (activeFlashSale) {
+          params.flashSale = 'true'
+        }
 
         const response = await api.get('/products', { params })
         if (isMounted) {
@@ -236,6 +240,7 @@ function ProductsPage() {
     activeMaxPrice,
     activeBrand,
     activeInStock,
+    activeFlashSale,
     activePage,
     activeLimit,
   ])
@@ -365,6 +370,25 @@ function ProductsPage() {
     const nextParams = new URLSearchParams(searchParams)
     nextParams.delete('inStock')
     nextParams.delete('availability')
+    nextParams.delete('page')
+    setSearchParams(nextParams)
+  }
+
+  // Flash Sale Filter Handler
+  const handleFlashSaleToggle = () => {
+    const nextParams = new URLSearchParams(searchParams)
+    if (activeFlashSale) {
+      nextParams.delete('flashSale')
+    } else {
+      nextParams.set('flashSale', 'true')
+    }
+    nextParams.delete('page')
+    setSearchParams(nextParams)
+  }
+
+  const handleClearFlashSale = () => {
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('flashSale')
     nextParams.delete('page')
     setSearchParams(nextParams)
   }
@@ -742,6 +766,21 @@ function ProductsPage() {
                 </span>
               )}
 
+              {activeFlashSale && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#A65332]/10 border border-[#A65332]/40 px-3 py-1 text-xs text-[#A65332] shadow-2xs font-bold">
+                  <span>⚡ Flash Sale Only</span>
+                  <button
+                    type="button"
+                    onClick={handleClearFlashSale}
+                    className="hover:text-red-600 cursor-pointer ml-1 font-bold text-sm leading-none"
+                    title="Clear Flash Sale Filter"
+                    aria-label="Clear Flash Sale Filter"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+
               {priceFilterLabel && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFFDF8] border border-[#34452F]/40 px-3 py-1 text-xs text-[#34452F] shadow-2xs">
                   <span>{priceFilterLabel}</span>
@@ -808,6 +847,21 @@ function ProductsPage() {
 
             {/* Desktop & Tablet Filter Bar Controls */}
             <div className="flex items-center flex-wrap gap-2.5 sm:gap-3">
+              {/* Flash Sale Filter Button */}
+              <button
+                type="button"
+                onClick={handleFlashSaleToggle}
+                aria-pressed={activeFlashSale}
+                className={`min-h-[44px] px-3.5 rounded-xl border text-xs font-semibold tracking-wide transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+                  activeFlashSale
+                    ? 'bg-[#A65332] text-white border-[#A65332] shadow-xs'
+                    : 'bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#A65332] hover:text-[#8C4326] border-[#DED7CA]'
+                }`}
+              >
+                <span>⚡</span>
+                <span>Flash Sales</span>
+              </button>
+
               {/* In-Stock Toggle Button */}
               <button
                 type="button"

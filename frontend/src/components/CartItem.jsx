@@ -120,11 +120,25 @@ function CartItem({
             </div>
           )}
 
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-sm font-medium text-[#5F6057]">Unit Price:</span>
-            <span className="font-serif text-sm font-bold text-[#1F211C]">
-              ₹{Number(price).toLocaleString('en-IN')}
-            </span>
+          <div className="mt-2 flex items-baseline gap-2 flex-wrap">
+            <span className="text-xs font-medium text-[#5F6057]">Unit Price:</span>
+            {product.isFlashSale && product.originalPrice ? (
+              <div className="inline-flex items-center gap-1.5 flex-wrap">
+                <span className="font-serif text-sm font-bold text-[#A65332]">
+                  ₹{Number(price).toLocaleString('en-IN')}
+                </span>
+                <span className="text-xs text-[#85857A] line-through font-medium">
+                  ₹{Number(product.originalPrice).toLocaleString('en-IN')}
+                </span>
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-[#A65332]/10 text-[#A65332] font-mono text-[10px] font-bold">
+                  ⚡ {product.discountPercentage}% OFF
+                </span>
+              </div>
+            ) : (
+              <span className="font-serif text-sm font-bold text-[#1F211C]">
+                ₹{Number(price).toLocaleString('en-IN')}
+              </span>
+            )}
           </div>
 
           {/* Stock availability indicator if low */}

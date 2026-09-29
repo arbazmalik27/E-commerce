@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Search, Heart, ShoppingBag, User, Menu, X, ArrowRight, ShieldCheck } from 'lucide-react'
+import ThemeToggle from './ThemeToggle'
 import {
   logout,
   selectIsAuthenticated,
@@ -211,6 +212,9 @@ function Navbar() {
               </button>
             )}
 
+            {/* Theme Toggle Button */}
+            <ThemeToggle />
+
             {/* Wishlist Icon */}
             {isAuthenticated && (
               <Link
@@ -303,8 +307,9 @@ function Navbar() {
             TrendVolt
           </Link>
 
-          {/* Mobile Utility Actions: Search, Wishlist, Cart */}
+          {/* Mobile Utility Actions: Theme, Search, Wishlist, Cart */}
           <div className="flex items-center gap-1">
+            <ThemeToggle className="h-9 w-9" />
             <button
               type="button"
               aria-label="Search catalog"
@@ -424,6 +429,8 @@ function Navbar() {
             </Link>
 
             <div className="h-px bg-[#DED7CA] my-2" />
+
+            <ThemeToggle variant="mobile-row" />
 
             <Link
               to={isAuthenticated ? '/profile' : '/login'}

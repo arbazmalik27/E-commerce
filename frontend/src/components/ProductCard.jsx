@@ -132,7 +132,7 @@ function ProductCard({
           )}
 
           {/* Real Stock Status indicator */}
-          <div className="absolute top-2.5 left-2.5 z-10">
+          <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 items-start">
             <span
               className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[9px] font-mono font-semibold tracking-wide backdrop-blur-xs border ${
                 isAvailable
@@ -146,6 +146,11 @@ function ProductCard({
               />
               {isAvailable ? 'In Stock' : 'Sold Out'}
             </span>
+            {product.isFlashSale && (
+              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-mono font-bold tracking-wider uppercase bg-[#A65332] text-white shadow-xs">
+                ⚡ Flash Sale
+              </span>
+            )}
           </div>
 
           {/* Editorial Tag or Category */}
@@ -194,9 +199,25 @@ function ProductCard({
           </div>
 
           <div className="mt-3 pt-2.5 border-t border-[#DED7CA] flex items-center justify-between gap-1.5">
-            <span className="text-xs sm:text-sm font-black text-[#1F211C] tracking-tight">
-              ₹{Number(product.price).toLocaleString('en-IN')}
-            </span>
+            <div className="flex flex-col min-w-0">
+              {product.isFlashSale && product.originalPrice ? (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xs sm:text-sm font-black text-[#A65332] tracking-tight">
+                    ₹{Number(product.price).toLocaleString('en-IN')}
+                  </span>
+                  <span className="text-[11px] font-medium text-[#85857A] line-through">
+                    ₹{Number(product.originalPrice).toLocaleString('en-IN')}
+                  </span>
+                  <span className="text-[9px] font-bold text-[#A65332] font-mono">
+                    {product.discountPercentage}% OFF
+                  </span>
+                </div>
+              ) : (
+                <span className="text-xs sm:text-sm font-black text-[#1F211C] tracking-tight">
+                  ₹{Number(product.price).toLocaleString('en-IN')}
+                </span>
+              )}
+            </div>
 
             {showAddToCart ? (
               <button
@@ -271,7 +292,7 @@ function ProductCard({
         )}
 
         {/* Real Stock Status Badge */}
-        <div className="absolute top-2.5 left-2.5 z-10">
+        <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 items-start">
           <span
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-mono font-semibold tracking-wide backdrop-blur-xs border ${
               isAvailable
@@ -287,6 +308,11 @@ function ProductCard({
             />
             {isAvailable ? 'In Stock' : 'Sold Out'}
           </span>
+          {product.isFlashSale && (
+            <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-mono font-bold tracking-wider uppercase bg-[#A65332] text-white shadow-xs">
+              ⚡ Flash Sale
+            </span>
+          )}
         </div>
 
         {/* Wishlist Heart Button */}
@@ -344,10 +370,31 @@ function ProductCard({
         {/* Price & Action Area */}
         <div className="mt-3 pt-3 border-t border-[#DED7CA] flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-[#85857A] block">Price</span>
-            <span className="text-base sm:text-lg font-bold text-[#1F211C] tracking-tight truncate block">
-              ₹{Number(product.price).toLocaleString('en-IN')}
-            </span>
+            {product.isFlashSale && product.originalPrice ? (
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#A65332] font-semibold block">
+                  Flash Sale
+                </span>
+                <div className="flex items-baseline gap-1.5 flex-wrap">
+                  <span className="text-base sm:text-lg font-black text-[#A65332] tracking-tight">
+                    ₹{Number(product.price).toLocaleString('en-IN')}
+                  </span>
+                  <span className="text-xs text-[#85857A] line-through font-medium">
+                    ₹{Number(product.originalPrice).toLocaleString('en-IN')}
+                  </span>
+                  <span className="text-[10px] font-bold text-[#A65332] font-mono">
+                    {product.discountPercentage}% OFF
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#85857A] block">Price</span>
+                <span className="text-base sm:text-lg font-bold text-[#1F211C] tracking-tight truncate block">
+                  ₹{Number(product.price).toLocaleString('en-IN')}
+                </span>
+              </div>
+            )}
           </div>
 
           {showAddToCart ? (

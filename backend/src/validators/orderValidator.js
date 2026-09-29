@@ -66,6 +66,16 @@ const validateCreateOrderInput = (body = {}) => {
     errors.country = 'Country is required'
   }
 
+  const { couponCode } = body
+  let sanitizedCouponCode = null
+  if (couponCode !== undefined && couponCode !== null && couponCode !== '') {
+    if (typeof couponCode !== 'string') {
+      errors.couponCode = 'Coupon code must be a string'
+    } else {
+      sanitizedCouponCode = couponCode.trim().toUpperCase()
+    }
+  }
+
   return {
     isValid: Object.keys(errors).length === 0,
     errors,
@@ -79,6 +89,7 @@ const validateCreateOrderInput = (body = {}) => {
         postalCode: typeof postalCode === 'string' ? postalCode.trim() : '',
         country: typeof country === 'string' ? country.trim() : '',
       },
+      couponCode: sanitizedCouponCode,
     },
   }
 }

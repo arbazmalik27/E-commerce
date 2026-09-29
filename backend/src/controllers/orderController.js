@@ -2,11 +2,14 @@ const Order = require('../models/Order')
 const Cart = require('../models/Cart')
 const Product = require('../models/Product')
 const User = require('../models/User')
+const Coupon = require('../models/Coupon')
 const {
   isValidObjectId,
   validateCreateOrderInput,
   validateOrderStatusInput,
 } = require('../validators/orderValidator')
+const { validateCouponEligibility } = require('../services/couponService')
+const { getEffectiveProductPrice } = require('../services/pricingService')
 
 const createOrder = async (req, res) => {
   const { isValid, errors, sanitized } = validateCreateOrderInput(req.body)
@@ -52,7 +55,9 @@ const createOrder = async (req, res) => {
         })
       }
 
-      const price = product.price
+      // Compute authoritative effective price at time of order creation
+      const pricing = await getEffectiveProductPrice(product)
+      const price = pricing.price
       const itemSubtotal = Number((price * item.quantity).toFixed(2))
       calculatedSubtotal += itemSubtotal
 
@@ -68,7 +73,44 @@ const createOrder = async (req, res) => {
     }
 
     calculatedSubtotal = Number(calculatedSubtotal.toFixed(2))
-    const discount = 0
+    let discount = 0
+    let couponSnapshot = null
+
+    if (sanitized.couponCode) {
+      const coupon = await Coupon.findOne({ code: sanitized.couponCode })
+
+      if (!coupon) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid coupon code',
+        })
+      }
+
+      // Revalidate coupon authoritatively against current cart items & prices
+      const eligibility = await validateCouponEligibility({
+        coupon,
+        user: req.user,
+        cartItems: orderItems,
+      })
+
+      if (!eligibility.isValid) {
+        return res.status(400).json({
+          success: false,
+          message: eligibility.message,
+        })
+      }
+
+      discount = eligibility.calculation.discountAmount
+      couponSnapshot = {
+        code: coupon.code,
+        type: coupon.type,
+        value: coupon.value,
+        buyQuantity: coupon.buyQuantity,
+        freeQuantity: coupon.freeQuantity,
+        discountAmount: discount,
+      }
+    }
+
     const shippingFee = 0
     const totalAmount = Number((calculatedSubtotal - discount + shippingFee).toFixed(2))
 
@@ -81,6 +123,7 @@ const createOrder = async (req, res) => {
       shippingAddress: sanitized.shippingAddress,
       subtotal: calculatedSubtotal,
       discount,
+      coupon: couponSnapshot,
       shippingFee,
       totalAmount,
       orderStatus: 'pending',

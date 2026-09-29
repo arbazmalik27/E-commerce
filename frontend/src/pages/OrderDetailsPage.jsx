@@ -662,8 +662,15 @@ function OrderDetailsPage() {
                   </div>
                   {Number(order.discount) > 0 && (
                     <div className="flex justify-between text-[#3F6B45]">
-                      <span>Discount</span>
+                      <span>
+                        Discount {order.coupon?.code ? `(${order.coupon.code})` : ''}
+                      </span>
                       <span className="font-medium">− {formatCurrency(order.discount)}</span>
+                    </div>
+                  )}
+                  {order.coupon && order.coupon.type === 'buy_x_get_y' && (
+                    <div className="text-[11px] text-[#2D5032] bg-[#3F6B45]/10 px-2.5 py-1 rounded-md font-medium">
+                      BOGO Offer: Buy {order.coupon.buyQuantity} Get {order.coupon.freeQuantity} Free applied
                     </div>
                   )}
                   <div className="flex justify-between text-[#5F6057]">

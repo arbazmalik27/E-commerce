@@ -19,6 +19,20 @@
     <link rel="canonical" href="https://trendvolt.com/" />
     <meta property="og:site_name" content="TrendVolt" />
     <meta property="og:type" content="website" />
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('trendvolt_theme');
+          if (saved === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
