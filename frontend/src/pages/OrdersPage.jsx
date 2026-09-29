@@ -58,7 +58,7 @@ function PaymentStatusBadge({ status }) {
 
 // ─── Item Row ─────────────────────────────────────────────────────────────────
 
-function ItemRow({ item }) {
+function ItemRow({ item, isPaid }) {
   const [imgError, setImgError] = useState(false)
   const imgSrc = !imgError ? getProductImage(item) : null
 
@@ -80,9 +80,26 @@ function ItemRow({ item }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm text-[#1F211C] font-medium truncate">{item.name}</p>
-        <p className="text-xs text-[#5F6057]">{formatCurrency(item.price)} × {item.quantity}</p>
+        <div className="flex items-center gap-2 flex-wrap mt-0.5">
+          <p className="text-xs text-[#5F6057]">{formatCurrency(item.price)} × {item.quantity}</p>
+          {item.size && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded border border-[#DED7CA] bg-[#FAF7F0] font-mono text-[10px] font-bold text-[#34452F]">
+              Size {item.size}
+            </span>
+          )}
+        </div>
       </div>
-      <p className="font-serif text-sm font-bold text-[#1F211C] shrink-0">{formatCurrency(item.subtotal)}</p>
+      <div className="flex flex-col items-end shrink-0 gap-0.5">
+        <p className="font-serif text-sm font-bold text-[#1F211C]">{formatCurrency(item.subtotal)}</p>
+        {isPaid && (
+          <Link
+            to={`/products/${item.product?._id || item.product}#reviews`}
+            className="text-[11px] font-semibold text-[#34452F] hover:text-[#263722] hover:underline transition-colors"
+          >
+            Review
+          </Link>
+        )}
+      </div>
     </div>
   )
 }
@@ -126,7 +143,11 @@ function OrderCard({ order }) {
       {/* Items preview */}
       <div className="px-5 sm:px-6 py-4 space-y-3">
         {previewItems.map((item, idx) => (
-          <ItemRow key={item._id || idx} item={item} />
+          <ItemRow
+            key={item._id || idx}
+            item={item}
+            isPaid={order.paymentStatus === 'paid' && order.orderStatus !== 'cancelled'}
+          />
         ))}
 
         {remainingCount > 0 && (

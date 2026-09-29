@@ -22,6 +22,7 @@ const INITIAL_FORM = {
   brand: '',
   stock: '',
   images: [],
+  sizes: [],
   isActive: true,
 }
 
@@ -316,6 +317,7 @@ function AdminProductsPage() {
       brand: product.brand || '',
       stock: product.stock ?? '',
       images: Array.isArray(product.images) ? product.images : [],
+      sizes: Array.isArray(product.sizes) ? product.sizes : [],
       isActive: product.isActive !== false,
     })
     if (Array.isArray(product.images) && product.images.length > 0) {
@@ -447,6 +449,7 @@ function AdminProductsPage() {
         brand: formData.brand.trim(),
         stock: stockNum,
         images: finalImageUrl ? [finalImageUrl] : [],
+        sizes: Array.isArray(formData.sizes) ? formData.sizes : [],
         isActive: formData.isActive,
       }
 
@@ -525,6 +528,50 @@ function AdminProductsPage() {
       fileInputRef.current.value = ''
     }
     setFormData((prev) => ({ ...prev, images: [] }))
+  }
+
+  // Size Configuration Helpers for Admin Modal
+  const getSizeOptionsForForm = () => {
+    const dept = (formData.department || '').toLowerCase()
+    const subcat = (formData.subcategory || '').toLowerCase()
+    if (dept === 'accessories' || dept === 'beauty-fragrance') return []
+    if (dept === 'footwear') return ['6', '7', '8', '9', '10', '11', '12']
+    if (dept === 'kids' && subcat === 'kids-footwear') return ['8K', '9K', '10K', '11K', '12K', '13K', '1', '2']
+    if (dept === 'kids') return ['2-3Y', '4-5Y', '6-7Y', '8-9Y', '10-11Y', '12-13Y']
+    return ['XS', 'S', 'M', 'L', 'XL', 'XXL']
+  }
+
+  const handleToggleSize = (label) => {
+    const currentSizes = Array.isArray(formData.sizes) ? [...formData.sizes] : []
+    const existingIndex = currentSizes.findIndex((s) => s.label === label)
+    if (existingIndex > -1) {
+      currentSizes.splice(existingIndex, 1)
+    } else {
+      currentSizes.push({ label, available: true })
+    }
+    setFormData((prev) => ({ ...prev, sizes: currentSizes }))
+  }
+
+  const handleToggleSizeAvailability = (label) => {
+    const currentSizes = (formData.sizes || []).map((s) => {
+      if (s.label === label) {
+        return { ...s, available: s.available === false }
+      }
+      return s
+    })
+    setFormData((prev) => ({ ...prev, sizes: currentSizes }))
+  }
+
+  const handleSelectAllSizes = () => {
+    const opts = getSizeOptionsForForm()
+    setFormData((prev) => ({
+      ...prev,
+      sizes: opts.map((lbl) => ({ label: lbl, available: true })),
+    }))
+  }
+
+  const handleClearSizes = () => {
+    setFormData((prev) => ({ ...prev, sizes: [] }))
   }
 
   // Delete Action Handlers
@@ -1501,6 +1548,91 @@ function AdminProductsPage() {
 
                 {(formErrors.image || formErrors.images) && (
                   <p className="mt-2 text-xs text-[#A65332]">{formErrors.image || formErrors.images}</p>
+                )}
+              </div>
+
+              {/* Sizes Configuration */}
+              <div className="rounded-xl border border-[#DED7CA] bg-[#FAF7F0] p-4">
+                <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+                  <div>
+                    <span className="block text-xs font-mono uppercase tracking-wider text-[#1F211C] font-bold">
+                      Available Sizing & Stock
+                    </span>
+                    <span className="text-[11px] text-[#5F6057]">
+                      Configure sizes offered for this product and toggle per-size availability.
+                    </span>
+                  </div>
+                  {getSizeOptionsForForm().length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSelectAllSizes}
+                        className="text-[11px] font-semibold text-[#34452F] hover:underline cursor-pointer"
+                      >
+                        Select All
+                      </button>
+                      <span className="text-[#DED7CA]">|</span>
+                      <button
+                        type="button"
+                        onClick={handleClearSizes}
+                        className="text-[11px] font-semibold text-[#A65332] hover:underline cursor-pointer"
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {getSizeOptionsForForm().length === 0 ? (
+                  <p className="text-xs text-[#85857A] italic py-2">
+                    Sizing is not applicable for {formData.department || 'this category'}.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2">
+                    {getSizeOptionsForForm().map((sizeLabel) => {
+                      const sizeObj = (formData.sizes || []).find((s) => s.label === sizeLabel)
+                      const isIncluded = Boolean(sizeObj)
+                      const isAvailable = sizeObj ? sizeObj.available !== false : true
+
+                      return (
+                        <div
+                          key={sizeLabel}
+                          className={`rounded-xl border p-2.5 flex items-center justify-between transition-all ${
+                            isIncluded
+                              ? 'border-[#34452F]/40 bg-[#FFFDF8]'
+                              : 'border-[#DED7CA]/60 bg-[#FAF7F0]/60 opacity-60'
+                          }`}
+                        >
+                          <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={isIncluded}
+                              onChange={() => handleToggleSize(sizeLabel)}
+                              className="h-4 w-4 rounded-md border-[#DED7CA] text-[#34452F] focus:ring-[#34452F] cursor-pointer"
+                            />
+                            <span className="font-mono text-xs font-bold text-[#1F211C]">
+                              {sizeLabel}
+                            </span>
+                          </label>
+
+                          {isIncluded && (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleSizeAvailability(sizeLabel)}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full cursor-pointer transition-colors ${
+                                isAvailable
+                                  ? 'bg-[#3F6B45]/15 text-[#3F6B45] hover:bg-[#3F6B45]/25'
+                                  : 'bg-[#A65332]/15 text-[#A65332] hover:bg-[#A65332]/25'
+                              }`}
+                              title="Click to toggle In Stock / Out of Stock"
+                            >
+                              {isAvailable ? 'In Stock' : 'Out'}
+                            </button>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
                 )}
               </div>
 

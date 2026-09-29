@@ -326,6 +326,14 @@ function ProductCard({
             </Link>
           </h3>
 
+          {product.numReviews > 0 && (
+            <div className="flex items-center gap-1 mt-1 text-[11px] font-medium text-[#5F6057]">
+              <span className="text-[#D97706]" aria-hidden="true">★</span>
+              <span className="font-semibold text-[#1F211C]">{Number(product.averageRating).toFixed(1)}</span>
+              <span className="text-[#85857A]">({product.numReviews})</span>
+            </div>
+          )}
+
           {showDescription && product.description && (
             <p className="mt-1.5 text-xs text-[#5F6057] line-clamp-2 leading-relaxed">
               {product.description}

@@ -30,21 +30,24 @@ function CartItem({
   const imageUrl = !imageError ? getProductImage(product) : null
 
 
+  const itemId = item._id || productId
+  const size = item.size
+
   const handleDecrement = () => {
     if (quantity > 1 && !isUpdating) {
-      onUpdateQuantity(productId, quantity - 1)
+      onUpdateQuantity(itemId, quantity - 1)
     }
   }
 
   const handleIncrement = () => {
     if (quantity < stock && !isUpdating) {
-      onUpdateQuantity(productId, quantity + 1)
+      onUpdateQuantity(itemId, quantity + 1)
     }
   }
 
   const handleRemove = () => {
     if (!isUpdating) {
-      onRemove(productId)
+      onRemove(itemId)
     }
   }
 
@@ -105,6 +108,16 @@ function CartItem({
             <h3 className="font-serif text-base sm:text-lg font-bold text-[#1F211C] tracking-tight line-clamp-2">
               {name}
             </h3>
+          )}
+
+          {/* Size Badge if product has size */}
+          {size && (
+            <div className="mt-1 flex items-center gap-1.5">
+              <span className="text-xs text-[#5F6057]">Size:</span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-[#DED7CA] bg-[#FAF7F0] font-mono text-xs font-bold text-[#34452F]">
+                {size}
+              </span>
+            </div>
           )}
 
           <div className="mt-2 flex items-baseline gap-2">

@@ -90,9 +90,9 @@ function Navbar() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* =========================================================================
-            DESKTOP & TABLET NAVBAR: Balanced Editorial 3-Zone Architecture
+            DESKTOP & LAPTOP NAVBAR: Balanced Editorial 3-Zone Architecture
            ========================================================================= */}
-        <div className="hidden md:flex items-center justify-between h-20">
+        <div className="hidden lg:flex items-center justify-between h-20">
           {/* Left: Editorial Serif Brand Wordmark */}
           <div className="flex items-center">
             <Link
@@ -275,9 +275,9 @@ function Navbar() {
         </div>
 
         {/* =========================================================================
-            MOBILE NAVBAR: Clean [ ☰   TRENDVOLT   🔍  🛒 ] Ivory Bar + Slide Drawer
+            MOBILE & TABLET NAVBAR: Clean [ ☰   TRENDVOLT   🔍  🛒 ] Ivory Bar + Slide Drawer
            ========================================================================= */}
-        <div className="md:hidden flex items-center justify-between h-16">
+        <div className="lg:hidden flex items-center justify-between h-16">
           {/* Hamburger Menu Toggle */}
           <button
             type="button"

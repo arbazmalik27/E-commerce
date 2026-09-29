@@ -6,7 +6,9 @@ const { COOKIE_NAME } = require('../utils/jwt')
 const {
   validateCreateProductInput,
   validateUpdateProductInput,
+  validateProductQueryParams,
 } = require('../validators/productValidator')
+const { processBackInStockAlerts } = require('../services/stockAlertService')
 
 const isValidObjectId = (id) =>
   typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id) && mongoose.isValidObjectId(id)
@@ -41,76 +43,120 @@ const getProducts = async (req, res) => {
       }
     }
 
-    const { category, department, subcategory, search, sort, minPrice, maxPrice } = req.query
+    // Validate and sanitize all query parameters
+    const sanitizedQuery = validateProductQueryParams(req.query)
 
-    if (category && typeof category === 'string' && category.trim()) {
-      filter.category = category.trim().toLowerCase()
-    }
-    if (department && typeof department === 'string' && department.trim()) {
-      filter.department = department.trim().toLowerCase()
-    }
-    if (subcategory && typeof subcategory === 'string' && subcategory.trim()) {
-      filter.subcategory = subcategory.trim().toLowerCase()
-    }
-    if (search && typeof search === 'string' && search.trim()) {
-      const sanitizedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      const searchRegex = new RegExp(sanitizedSearch, 'i')
-      filter.$or = [{ name: searchRegex }, { brand: searchRegex }]
+    // Category filter
+    if (sanitizedQuery.category) {
+      filter.category = sanitizedQuery.category
     }
 
-    // Sanitize and apply price range filters
-    let parsedMin
-    if (minPrice !== undefined && minPrice !== null && String(minPrice).trim() !== '') {
-      const num = Number(minPrice)
-      if (!isNaN(num) && num >= 0) {
-        parsedMin = num
+    // Department filter
+    if (sanitizedQuery.department) {
+      filter.department = sanitizedQuery.department
+    }
+
+    // Subcategory filter
+    if (sanitizedQuery.subcategory) {
+      filter.subcategory = sanitizedQuery.subcategory
+    }
+
+    // Specific IDs filter (e.g. for batch fetching or recently viewed)
+    if (sanitizedQuery.ids && sanitizedQuery.ids.length > 0) {
+      filter._id = { $in: sanitizedQuery.ids }
+    }
+
+    // Advanced Fashion Search across name, description, brand, category, department, subcategory
+    if (sanitizedQuery.search) {
+      const escapedSearch = sanitizedQuery.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const fullRegex = new RegExp(escapedSearch, 'i')
+
+      const tokens = sanitizedQuery.search.split(/\s+/).filter(Boolean)
+      if (tokens.length <= 1) {
+        filter.$or = [
+          { name: fullRegex },
+          { description: fullRegex },
+          { brand: fullRegex },
+          { category: fullRegex },
+          { department: fullRegex },
+          { subcategory: fullRegex },
+        ]
+      } else {
+        const tokenConditions = tokens.map((token) => {
+          const tokenRegex = new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+          return {
+            $or: [
+              { name: tokenRegex },
+              { description: tokenRegex },
+              { brand: tokenRegex },
+              { category: tokenRegex },
+              { department: tokenRegex },
+              { subcategory: tokenRegex },
+            ],
+          }
+        })
+        filter.$or = [
+          { name: fullRegex },
+          { description: fullRegex },
+          { brand: fullRegex },
+          { category: fullRegex },
+          { department: fullRegex },
+          { subcategory: fullRegex },
+          { $and: tokenConditions },
+        ]
       }
     }
 
-    let parsedMax
-    if (maxPrice !== undefined && maxPrice !== null && String(maxPrice).trim() !== '') {
-      const num = Number(maxPrice)
-      if (!isNaN(num) && num >= 0) {
-        parsedMax = num
+    // Brand filter (supports single brand or comma-separated list)
+    if (sanitizedQuery.brand) {
+      const brandList = sanitizedQuery.brand.split(',').map((b) => b.trim()).filter(Boolean)
+      if (brandList.length === 1) {
+        const escapedBrand = brandList[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        filter.brand = new RegExp(`^${escapedBrand}$`, 'i')
+      } else if (brandList.length > 1) {
+        filter.brand = {
+          $in: brandList.map((b) => new RegExp(`^${b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')),
+        }
       }
     }
 
-    if (parsedMin !== undefined && parsedMax !== undefined) {
-      filter.price = { $gte: parsedMin, $lte: parsedMax }
-    } else if (parsedMin !== undefined) {
-      filter.price = { $gte: parsedMin }
-    } else if (parsedMax !== undefined) {
-      filter.price = { $lte: parsedMax }
+    // Price range filters
+    if (sanitizedQuery.minPrice !== undefined && sanitizedQuery.maxPrice !== undefined) {
+      filter.price = { $gte: sanitizedQuery.minPrice, $lte: sanitizedQuery.maxPrice }
+    } else if (sanitizedQuery.minPrice !== undefined) {
+      filter.price = { $gte: sanitizedQuery.minPrice }
+    } else if (sanitizedQuery.maxPrice !== undefined) {
+      filter.price = { $lte: sanitizedQuery.maxPrice }
+    }
+
+    // Stock / Availability filter
+    if (sanitizedQuery.availability === 'in-stock') {
+      filter.stock = { $gt: 0 }
+    } else if (sanitizedQuery.availability === 'out-of-stock') {
+      filter.stock = { $lte: 0 }
     }
 
     // Determine sort ordering
     let sortObj = { createdAt: -1 }
-    if (sort === 'price-asc') {
+    if (sanitizedQuery.sort === 'price-asc') {
       sortObj = { price: 1, createdAt: -1 }
-    } else if (sort === 'price-desc') {
+    } else if (sanitizedQuery.sort === 'price-desc') {
       sortObj = { price: -1, createdAt: -1 }
-    } else if (sort === 'newest') {
+    } else if (sanitizedQuery.sort === 'newest') {
+      sortObj = { createdAt: -1 }
+    } else if (sanitizedQuery.sort === 'relevance' || sanitizedQuery.sort === 'default') {
       sortObj = { createdAt: -1 }
     }
 
-    // Sanitize pagination parameters
-    let page = parseInt(req.query.page, 10)
-    if (isNaN(page) || page < 1) {
-      page = 1
-    }
-
-    let limit = parseInt(req.query.limit, 10)
-    if (isNaN(limit) || limit < 1) {
-      limit = 12
-    } else {
-      limit = Math.min(limit, 100) // Prevent unreasonable limit values
-    }
-
+    // Pagination
+    const page = sanitizedQuery.page
+    const limit = sanitizedQuery.limit
     const skip = (page - 1) * limit
 
-    const [totalProducts, products] = await Promise.all([
+    const [totalProducts, products, brands] = await Promise.all([
       Product.countDocuments(filter),
       Product.find(filter).sort(sortObj).skip(skip).limit(limit),
+      Product.distinct('brand', includeInactive ? {} : { isActive: true }),
     ])
 
     const totalPages = Math.ceil(totalProducts / limit) || 1
@@ -128,6 +174,7 @@ const getProducts = async (req, res) => {
         hasNextPage,
         hasPreviousPage,
       },
+      brands: brands.filter(Boolean).sort(),
     })
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Server error' })
@@ -218,6 +265,16 @@ const updateProduct = async (req, res) => {
       new: true,
       runValidators: true,
     })
+
+    // Trigger back-in-stock alerts if stock or size availability replenished
+    try {
+      await processBackInStockAlerts({
+        product: updatedProduct,
+        previousProduct: existing,
+      })
+    } catch (alertErr) {
+      console.error('Non-fatal back-in-stock alert trigger error:', alertErr.message)
+    }
 
     return res.status(200).json({
       success: true,

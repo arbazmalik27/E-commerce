@@ -150,7 +150,110 @@ const sendPasswordResetEmail = async ({ to, resetUrl }) => {
   return { delivered: true, id: data?.id }
 }
 
+/**
+ * Send back-in-stock notification email via Resend API.
+ * @param {Object} options
+ * @param {string} options.to - Recipient customer email
+ * @param {string} options.productName - Product title
+ * @param {string|null} [options.size] - Specific size replenished
+ * @param {string} options.productUrl - Storefront URL to purchase item
+ * @returns {Promise<{delivered: boolean, id?: string, note?: string}>}
+ */
+const sendBackInStockEmail = async ({ to, productName, size, productUrl }) => {
+  if (process.env.EMAIL_SERVICE_ENABLED !== 'true') {
+    return { delivered: false, note: 'Email service is disabled' }
+  }
+
+  const resend = getResendClient()
+  const fromAddress = process.env.EMAIL_FROM || 'TrendVolt <onboarding@resend.dev>'
+  const sizeText = size ? ` in Size ${size}` : ''
+  const subject = `Back in Stock: ${productName}${sizeText}`
+  const currentYear = new Date().getFullYear()
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #FAF7F2; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1A1A1A;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #FAF7F2; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 540px; background-color: #FFFFFF; border: 1px solid #E8E2D9; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+          <tr>
+            <td style="padding: 36px 40px 24px; text-align: center; border-bottom: 1px solid #F0ECE4;">
+              <h1 style="margin: 0; font-family: Georgia, serif; font-size: 26px; font-weight: 600; letter-spacing: 0.05em; color: #1A1A1A;">
+                TRENDVOLT
+              </h1>
+              <p style="margin: 4px 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: #7A7A7A;">
+                Modern Fashion &amp; Luxury
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 36px 40px 28px;">
+              <h2 style="margin: 0 0 16px; font-size: 18px; font-weight: 600; color: #1A1A1A;">
+                Good News — It's Back in Stock
+              </h2>
+              <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #4A4A4A;">
+                You asked us to let you know when <strong>${productName}</strong>${sizeText} returned to stock. It is available right now on TrendVolt.
+              </p>
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 28px auto;">
+                <tr>
+                  <td align="center" style="border-radius: 4px; background-color: #34452F;">
+                    <a href="${productUrl}" target="_blank" style="display: inline-block; padding: 14px 32px; font-size: 14px; font-weight: 600; color: #FFFFFF; text-decoration: none; border-radius: 4px; letter-spacing: 0.03em;">
+                      Shop Now
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 24px 0 8px; font-size: 12px; color: #7A7A7A; line-height: 1.5;">
+                Items sell out quickly. Secure yours while supplies last.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 20px 40px; background-color: #FAF7F2; text-align: center; border-top: 1px solid #F0ECE4;">
+              <p style="margin: 0; font-size: 11px; color: #9A9A9A;">
+                &copy; ${currentYear} TrendVolt. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+
+  const text = `TRENDVOLT — BACK IN STOCK
+
+Good news: ${productName}${sizeText} is now back in stock!
+
+View and shop now:
+${productUrl}
+
+© ${currentYear} TrendVolt. All rights reserved.`
+
+  const { data, error } = await resend.emails.send({
+    from: fromAddress,
+    to: [to],
+    subject,
+    text,
+    html,
+  })
+
+  if (error) {
+    throw new Error(`Resend email delivery failed: ${error.message || 'Unknown error'}`)
+  }
+
+  return { delivered: true, id: data?.id }
+}
+
 module.exports = {
   sendPasswordResetEmail,
+  sendBackInStockEmail,
   setResendClient,
 }

@@ -82,11 +82,44 @@ const productSchema = new mongoose.Schema(
       trim: true,
       default: null,
     },
+    sizes: {
+      type: [
+        new mongoose.Schema(
+          {
+            label: {
+              type: String,
+              required: true,
+              trim: true,
+            },
+            available: {
+              type: Boolean,
+              default: true,
+            },
+          },
+          { _id: false }
+        ),
+      ],
+      default: [],
+    },
+    averageRating: {
+      type: Number,
+      default: 0,
+      min: [0, 'Rating cannot be negative'],
+      max: [5, 'Rating cannot exceed 5'],
+    },
+    numReviews: {
+      type: Number,
+      default: 0,
+      min: [0, 'Review count cannot be negative'],
+    },
   },
   { timestamps: true }
 )
 
 productSchema.index({ category: 1, department: 1, subcategory: 1, isActive: 1 })
+productSchema.index({ brand: 1 })
+productSchema.index({ price: 1 })
+productSchema.index({ stock: 1 })
 
 const Product = mongoose.model('Product', productSchema)
 

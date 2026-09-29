@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 const isValidObjectId = (id) =>
   typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id) && mongoose.isValidObjectId(id)
 
-const validateAddToCartInput = (body = {}) => {
+const validateCreateStockAlertInput = (body = {}) => {
   const errors = {}
 
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
@@ -14,7 +14,7 @@ const validateAddToCartInput = (body = {}) => {
     }
   }
 
-  const { productId, quantity, size } = body
+  const { productId, size } = body
 
   if (!productId || typeof productId !== 'string' || productId.trim() === '') {
     errors.productId = 'Product ID is required'
@@ -22,20 +22,13 @@ const validateAddToCartInput = (body = {}) => {
     errors.productId = 'Invalid product ID'
   }
 
-  const qty = quantity === undefined ? 1 : quantity
-  if (typeof qty !== 'number' || !Number.isInteger(qty) || qty < 1) {
-    errors.quantity = 'Quantity must be a positive integer'
-  }
-
   let sanitizedSize = null
   if (size !== undefined && size !== null) {
     if (typeof size !== 'string') {
       errors.size = 'Size must be a string'
-    } else if (size.trim().length === 0) {
-      errors.size = 'Size cannot be empty'
     } else if (size.trim().length > 30) {
       errors.size = 'Size cannot exceed 30 characters'
-    } else {
+    } else if (size.trim().length > 0) {
       sanitizedSize = size.trim()
     }
   }
@@ -45,40 +38,39 @@ const validateAddToCartInput = (body = {}) => {
     errors,
     sanitized: {
       productId: typeof productId === 'string' ? productId.trim() : productId,
-      quantity: qty,
       size: sanitizedSize,
     },
   }
 }
 
-const validateUpdateQuantityInput = (body = {}) => {
+const validateAlertStatusQuery = (query = {}) => {
   const errors = {}
 
-  if (!body || typeof body !== 'object' || Array.isArray(body)) {
-    return {
-      isValid: false,
-      errors: { body: 'Request body must be a JSON object' },
-      sanitized: {},
-    }
+  const { productId, size } = query
+
+  if (!productId || typeof productId !== 'string' || productId.trim() === '') {
+    errors.productId = 'Product ID query parameter is required'
+  } else if (!isValidObjectId(productId.trim())) {
+    errors.productId = 'Invalid product ID'
   }
 
-  const { quantity } = body
-
-  if (quantity === undefined || typeof quantity !== 'number' || !Number.isInteger(quantity) || quantity < 1) {
-    errors.quantity = 'Quantity must be a positive integer'
+  let sanitizedSize = null
+  if (size !== undefined && size !== null && typeof size === 'string' && size.trim().length > 0) {
+    sanitizedSize = size.trim()
   }
 
   return {
     isValid: Object.keys(errors).length === 0,
     errors,
     sanitized: {
-      quantity,
+      productId: typeof productId === 'string' ? productId.trim() : productId,
+      size: sanitizedSize,
     },
   }
 }
 
 module.exports = {
   isValidObjectId,
-  validateAddToCartInput,
-  validateUpdateQuantityInput,
+  validateCreateStockAlertInput,
+  validateAlertStatusQuery,
 }

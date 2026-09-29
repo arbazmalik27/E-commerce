@@ -63,6 +63,7 @@ const createOrder = async (req, res) => {
         quantity: item.quantity,
         subtotal: itemSubtotal,
         images: product.images || [],
+        size: item.size || null,
       })
     }
 

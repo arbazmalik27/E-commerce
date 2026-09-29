@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
+import RecentlyViewed from '../components/RecentlyViewed'
+import ProductReviews from '../components/ProductReviews'
 import Eyebrow from '../components/Eyebrow'
 import SEO from '../components/SEO'
 import { selectIsAuthenticated } from '../features/auth/authSlice'
@@ -18,6 +20,10 @@ import {
   getSubcategoryLabel,
 } from '../constants/taxonomy'
 import { getProductImage } from '../utils/productImageMap'
+import { addRecentlyViewedId } from '../utils/recentlyViewed'
+import SizeGuideModal from '../components/SizeGuideModal'
+import SizeRecommendationModal from '../components/SizeRecommendationModal'
+import { getProductSizeCategory } from '../constants/sizeCharts'
 
 function ProductDetailsPage() {
   const { id } = useParams()
@@ -41,6 +47,19 @@ function ProductDetailsPage() {
   const [cartSuccessMessage, setCartSuccessMessage] = useState(null)
   const [cartErrorMessage, setCartErrorMessage] = useState(null)
 
+  // Size Guide & Recommendation states
+  const [selectedSize, setSelectedSize] = useState(null)
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false)
+  const [sizeRecommendOpen, setSizeRecommendOpen] = useState(false)
+  const [sizeError, setSizeError] = useState(null)
+
+  // Back-in-Stock Alert states
+  const [alertSubscribed, setAlertSubscribed] = useState(false)
+  const [alertId, setAlertId] = useState(null)
+  const [alertLoading, setAlertLoading] = useState(false)
+  const [alertFeedback, setAlertFeedback] = useState(null)
+  const [alertError, setAlertError] = useState(null)
+
   // Share & wishlist feedback states
   const [shareFeedback, setShareFeedback] = useState(null)
   const [wishlistFeedback, setWishlistFeedback] = useState(null)
@@ -59,14 +78,22 @@ function ProductDetailsPage() {
       setIsNotFound(false)
       setImageError(false)
       setQuantity(1)
+      setSelectedSize(null)
+      setSizeError(null)
       setCartSuccessMessage(null)
       setCartErrorMessage(null)
+      setAlertSubscribed(false)
+      setAlertId(null)
+      setAlertLoading(false)
+      setAlertFeedback(null)
+      setAlertError(null)
 
       try {
         const response = await api.get(`/products/${id}`)
         if (isMounted) {
           if (response.data?.success && response.data.product) {
             setProduct(response.data.product)
+            addRecentlyViewedId(response.data.product._id)
           } else {
             setIsNotFound(true)
           }
@@ -133,10 +160,78 @@ function ProductDetailsPage() {
     }
   }, [product])
 
+  // Check alert subscription status for currently selected product / size
+  useEffect(() => {
+    let isMounted = true
+
+    const checkAlertStatus = async () => {
+      if (!isAuthenticated || !product?._id) {
+        setAlertSubscribed(false)
+        setAlertId(null)
+        return
+      }
+
+      const currentSelectedSizeObj = Array.isArray(product.sizes) && selectedSize
+        ? product.sizes.find((s) => s.label.toLowerCase() === selectedSize.toLowerCase())
+        : null
+
+      const isSizeOut = Boolean(currentSelectedSizeObj && currentSelectedSizeObj.available === false)
+      const isProductOut = (!product.sizes || product.sizes.length === 0) && (product.stock ?? 0) <= 0
+
+      if (!isSizeOut && !isProductOut) {
+        setAlertSubscribed(false)
+        setAlertId(null)
+        return
+      }
+
+      try {
+        const params = { productId: product._id }
+        if (selectedSize) {
+          params.size = selectedSize
+        }
+        const response = await api.get('/stock-alerts/status', { params })
+        if (isMounted && response.data?.success) {
+          setAlertSubscribed(Boolean(response.data.isSubscribed))
+          setAlertId(response.data.alertId || null)
+          if (response.data.isSubscribed) {
+            setAlertFeedback(
+              selectedSize
+                ? `You'll be notified when size ${selectedSize} is back in stock.`
+                : "You're on the alert list."
+            )
+          }
+        }
+      } catch {
+        if (isMounted) {
+          setAlertSubscribed(false)
+          setAlertId(null)
+        }
+      }
+    }
+
+    checkAlertStatus()
+
+    return () => {
+      isMounted = false
+    }
+  }, [isAuthenticated, product?._id, product?.stock, product?.sizes, selectedSize])
+
   // Canonical product image via getProductImage
   const displayImage = getProductImage(product)
   const isAvailable = (product?.stock ?? 0) > 0
   const maxAllowedQuantity = Math.max(1, product?.stock ?? 1)
+
+  const sizeCategory = getProductSizeCategory(product?.department, product?.subcategory)
+  const hasConfiguredSizes = Array.isArray(product?.sizes) && product.sizes.length > 0
+  const supportsSizing = Boolean(sizeCategory || hasConfiguredSizes)
+
+  // Derived stock & alert eligibility
+  const selectedSizeObj = hasConfiguredSizes && selectedSize
+    ? product.sizes.find((s) => s.label.toLowerCase() === selectedSize.toLowerCase())
+    : null
+  const isSelectedSizeOutOfStock = Boolean(selectedSizeObj && selectedSizeObj.available === false)
+  const isProductOutOfStock = Boolean(product) && !hasConfiguredSizes && (product?.stock ?? 0) <= 0
+  const isCurrentSelectionOutOfStock = Boolean(product) && (isSelectedSizeOutOfStock || isProductOutOfStock)
 
   // Quantity controls
   const handleDecrement = () => {
@@ -147,13 +242,89 @@ function ProductDetailsPage() {
     setQuantity((prev) => Math.min(maxAllowedQuantity, prev + 1))
   }
 
+  // Subscribe to Back-in-Stock Alert
+  const handleSubscribeAlert = async () => {
+    if (!isAuthenticated) {
+      navigate('/login')
+      return
+    }
+    if (!product?._id) return
+
+    setAlertLoading(true)
+    setAlertError(null)
+    setAlertFeedback(null)
+
+    try {
+      const payload = { productId: product._id }
+      if (selectedSize) {
+        payload.size = selectedSize
+      }
+
+      const response = await api.post('/stock-alerts', payload)
+      if (response.data?.success) {
+        setAlertSubscribed(true)
+        if (response.data.alert?._id) {
+          setAlertId(response.data.alert._id)
+        }
+        const msg = selectedSize
+          ? `You'll be notified when size ${selectedSize} is back in stock.`
+          : "You're on the alert list."
+        setAlertFeedback(msg)
+      } else {
+        setAlertError(response.data?.message || 'Could not subscribe to alerts.')
+      }
+    } catch (err) {
+      const errMsg = err.response?.data?.message || 'Could not subscribe to alerts. Please try again.'
+      setAlertError(errMsg)
+    } finally {
+      setAlertLoading(false)
+    }
+  }
+
+  // Cancel active Back-in-Stock Alert
+  const handleCancelAlert = async () => {
+    if (!isAuthenticated || !alertId) return
+
+    setAlertLoading(true)
+    setAlertError(null)
+    setAlertFeedback(null)
+
+    try {
+      const response = await api.delete(`/stock-alerts/${alertId}`)
+      if (response.data?.success) {
+        setAlertSubscribed(false)
+        setAlertId(null)
+        setAlertFeedback('Alert cancelled.')
+        setTimeout(() => setAlertFeedback(null), 3000)
+      } else {
+        setAlertError(response.data?.message || 'Could not cancel alert.')
+      }
+    } catch (err) {
+      const errMsg = err.response?.data?.message || 'Could not cancel alert. Please try again.'
+      setAlertError(errMsg)
+    } finally {
+      setAlertLoading(false)
+    }
+  }
+
   // Add to Cart workflow
   const handleAddToCart = async () => {
     setCartSuccessMessage(null)
     setCartErrorMessage(null)
+    setSizeError(null)
 
-    if (!isAvailable) {
-      setCartErrorMessage('This item is currently out of stock.')
+    if (!isAvailable || isCurrentSelectionOutOfStock) {
+      setCartErrorMessage(
+        isSelectedSizeOutOfStock
+          ? `Size ${selectedSize} is currently out of stock.`
+          : 'This item is currently out of stock.'
+      )
+      return
+    }
+
+    const hasSizes = Array.isArray(product?.sizes) && product.sizes.length > 0
+    if (hasSizes && !selectedSize) {
+      setSizeError('Please select a size before adding to your bag.')
       return
     }
 
@@ -168,12 +339,13 @@ function ProductDetailsPage() {
         addToCart({
           productId: product._id,
           quantity,
+          size: selectedSize || null,
         })
       )
 
       if (addToCart.fulfilled.match(actionResult)) {
         setCartSuccessMessage(
-          `Added ${quantity} ${quantity === 1 ? 'item' : 'items'} to your cart.`
+          `Added ${quantity} ${quantity === 1 ? 'item' : 'items'} ${selectedSize ? `(Size ${selectedSize}) ` : ''}to your cart.`
         )
       } else {
         setCartErrorMessage(actionResult.payload || 'Failed to add item to cart.')
@@ -189,7 +361,14 @@ function ProductDetailsPage() {
 
   // Buy Now workflow
   const handleBuyNow = async () => {
-    if (!isAvailable) return
+    if (!isAvailable || isCurrentSelectionOutOfStock) return
+    setSizeError(null)
+
+    const hasSizes = Array.isArray(product?.sizes) && product.sizes.length > 0
+    if (hasSizes && !selectedSize) {
+      setSizeError('Please select a size before proceeding to checkout.')
+      return
+    }
 
     if (!isAuthenticated) {
       navigate('/login')
@@ -202,6 +381,7 @@ function ProductDetailsPage() {
         addToCart({
           productId: product._id,
           quantity,
+          size: selectedSize || null,
         })
       )
 
@@ -693,6 +873,27 @@ function ProductDetailsPage() {
                     {product.name}
                   </h1>
 
+                  {/* Rating Indicator */}
+                  {product.numReviews > 0 ? (
+                    <a
+                      href="#reviews"
+                      className="inline-flex items-center gap-1.5 mt-2 text-xs font-medium text-[#5F6057] hover:text-[#34452F] transition-colors"
+                    >
+                      <span className="text-[#D97706]" aria-hidden="true">★</span>
+                      <span className="font-semibold text-[#1F211C]">{Number(product.averageRating).toFixed(1)}</span>
+                      <span className="underline">({product.numReviews} review{product.numReviews > 1 ? 's' : ''})</span>
+                    </a>
+                  ) : (
+                    <a
+                      href="#reviews"
+                      className="inline-flex items-center gap-1.5 mt-2 text-xs text-[#85857A] hover:text-[#34452F] transition-colors"
+                    >
+                      <span>No reviews yet</span>
+                      <span className="text-[#DED7CA]">·</span>
+                      <span className="underline">Write a review</span>
+                    </a>
+                  )}
+
                   {/* Price & Stock Status Bar */}
                   <div className="mt-5 flex flex-wrap items-baseline gap-4">
                     <span className="font-serif text-3xl sm:text-4xl font-extrabold text-[#1F211C] tracking-tight">
@@ -738,172 +939,384 @@ function ProductDetailsPage() {
                       PURCHASE CONTROLS
                      ----------------------------------------------------------------- */}
                   <div className="space-y-6">
-                    {/* Quantity Selector */}
-                    <div>
-                      <label
-                        htmlFor="quantity-input"
-                        className="block text-xs font-bold uppercase tracking-wider text-[#5F6057] mb-2.5"
-                      >
-                        Quantity
-                      </label>
-                      <div className="inline-flex items-center rounded-xl border border-[#DED7CA] bg-[#FAF7F0] p-1">
-                        <button
-                          type="button"
-                          onClick={handleDecrement}
-                          disabled={!isAvailable || quantity <= 1}
-                          aria-label="Decrease quantity"
-                          className="flex h-9 w-9 items-center justify-center rounded-lg text-[#1F211C] hover:bg-[#EEE7DC] transition-colors disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
-                        >
-                          <svg
-                            className="h-3.5 w-3.5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth="2.5"
-                            aria-hidden="true"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15" />
-                          </svg>
-                        </button>
+                    {/* Size Selector & Size Guide */}
+                    {supportsSizing && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold uppercase tracking-wider text-[#5F6057]">
+                              Select Size
+                            </span>
+                            {selectedSize && (
+                              <span
+                                className={`font-mono text-xs font-bold px-2 py-0.5 rounded-md ${
+                                  isSelectedSizeOutOfStock
+                                    ? 'text-[#B7473A] bg-[#B7473A]/10 border border-[#B7473A]/30'
+                                    : 'text-[#34452F] bg-[#34452F]/10'
+                                }`}
+                              >
+                                {selectedSize} {isSelectedSizeOutOfStock ? '(Out of Stock)' : ''}
+                              </span>
+                            )}
+                          </div>
 
-                        <span
-                          id="quantity-input"
-                          aria-live="polite"
-                          className="w-12 text-center text-sm font-bold text-[#1F211C] select-none"
-                        >
-                          {quantity}
-                        </span>
+                          <div className="flex items-center gap-3 text-xs">
+                            <button
+                              type="button"
+                              onClick={() => setSizeGuideOpen(true)}
+                              className="inline-flex items-center gap-1.5 font-semibold text-[#34452F] hover:text-[#263722] hover:underline transition-colors cursor-pointer"
+                            >
+                              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                              </svg>
+                              <span>Size Guide</span>
+                            </button>
 
-                        <button
-                          type="button"
-                          onClick={handleIncrement}
-                          disabled={!isAvailable || quantity >= maxAllowedQuantity}
-                          aria-label="Increase quantity"
-                          className="flex h-9 w-9 items-center justify-center rounded-lg text-[#1F211C] hover:bg-[#EEE7DC] transition-colors disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
-                        >
-                          <svg
-                            className="h-3.5 w-3.5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth="2.5"
-                            aria-hidden="true"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M12 4.5v15m7.5-7.5h-15"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
+                            <span className="text-[#DED7CA]">|</span>
 
-                    {/* Cart Feedback Alerts */}
-                    {cartSuccessMessage && (
-                      <div
-                        role="status"
-                        className="rounded-xl border border-[#3F6B45]/30 bg-[#3F6B45]/10 p-4 text-xs font-medium text-[#3F6B45] flex items-center justify-between gap-4"
-                      >
-                        <div className="flex items-center gap-2">
-                          <svg
-                            className="h-4 w-4 shrink-0 text-[#3F6B45]"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth="2.5"
-                            aria-hidden="true"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M4.5 12.75l6 6 9-13.5"
-                            />
-                          </svg>
-                          <span>{cartSuccessMessage}</span>
+                            <button
+                              type="button"
+                              onClick={() => setSizeRecommendOpen(true)}
+                              className="inline-flex items-center gap-1.5 font-semibold text-[#A65332] hover:text-[#8b4226] hover:underline transition-colors cursor-pointer"
+                            >
+                              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                              </svg>
+                              <span>Find My Size</span>
+                            </button>
+                          </div>
                         </div>
-                        <Link
-                          to="/cart"
-                          className="font-bold underline underline-offset-2 hover:text-[#263722] shrink-0"
-                        >
-                          View Cart →
-                        </Link>
-                      </div>
-                    )}
 
-                    {cartErrorMessage && (
-                      <div
-                        role="alert"
-                        className="rounded-xl border border-[#B7473A]/30 bg-[#B7473A]/10 p-4 text-xs font-medium text-[#B7473A] flex items-center justify-between gap-4"
-                      >
-                        <div className="flex items-center gap-2">
-                          <svg
-                            className="h-4 w-4 shrink-0 text-[#B7473A]"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth="2.5"
-                            aria-hidden="true"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
-                            />
-                          </svg>
-                          <span>{cartErrorMessage}</span>
-                        </div>
-                        {!isAuthenticated && (
-                          <Link
-                            to="/login"
-                            className="font-bold underline underline-offset-2 hover:text-[#1F211C] shrink-0"
-                          >
-                            Sign In →
-                          </Link>
+                        {/* Size pills if product has configured sizes */}
+                        {hasConfiguredSizes ? (
+                          <div className="flex flex-wrap items-center gap-2">
+                            {product.sizes.map((s) => {
+                              const isOutOfStock = s.available === false
+                              const isSelected = selectedSize === s.label
+                              return (
+                                <button
+                                  key={s.label}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedSize(s.label)
+                                    setSizeError(null)
+                                    setAlertFeedback(null)
+                                    setAlertError(null)
+                                  }}
+                                  className={`min-w-[44px] h-10 px-3.5 rounded-xl text-xs font-mono font-bold uppercase transition-all cursor-pointer border flex items-center justify-center gap-1.5 relative ${
+                                    isSelected
+                                      ? isOutOfStock
+                                        ? 'border-[#A65332] bg-[#A65332] text-[#FFFDF8] shadow-2xs ring-2 ring-[#A65332]/30'
+                                        : 'border-[#34452F] bg-[#34452F] text-[#FFFDF8] shadow-2xs ring-2 ring-[#34452F]/30'
+                                      : isOutOfStock
+                                      ? 'border-[#DED7CA] bg-[#FAF7F0]/80 text-[#85857A] hover:border-[#A65332]/60 hover:text-[#1F211C]'
+                                      : 'border-[#DED7CA] bg-[#FAF7F0] text-[#1F211C] hover:border-[#85857A] hover:bg-[#EEE7DC]'
+                                  }`}
+                                  title={isOutOfStock ? `${s.label} - Out of stock (Click to request alert)` : `${s.label} - In stock`}
+                                >
+                                  <span>{s.label}</span>
+                                  {isOutOfStock && (
+                                    <span
+                                      className={`text-[9px] font-sans font-semibold uppercase px-1 py-0.5 rounded leading-none ${
+                                        isSelected
+                                          ? 'bg-white/25 text-[#FFFDF8]'
+                                          : 'bg-[#B7473A]/10 text-[#B7473A]'
+                                      }`}
+                                    >
+                                      Out
+                                    </span>
+                                  )}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-[#5F6057] italic">
+                            Standard sizing reference available in Size Guide above.
+                          </p>
+                        )}
+
+                        {sizeError && (
+                          <p className="text-xs font-medium text-[#A65332]" role="alert">
+                            {sizeError}
+                          </p>
                         )}
                       </div>
                     )}
 
-                    {/* Action Buttons: Add to Cart (Primary) & Buy Now (Secondary) */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
-                      {/* Add to Cart - Primary Action */}
-                      <button
-                        type="button"
-                        onClick={handleAddToCart}
-                        disabled={!isAvailable || addingToCart}
-                        className="flex-1 min-h-[48px] inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#34452F] hover:bg-[#263722] px-7 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FFFDF8] transition-all duration-300 active:scale-97 disabled:opacity-40 disabled:hover:bg-[#34452F] disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F] shadow-xs"
-                      >
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          aria-hidden="true"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-                          />
-                        </svg>
-                        <span>{addingToCart ? 'Adding...' : 'Add to Cart'}</span>
-                      </button>
+                    {/* Back-in-Stock Alert UI for Out of Stock Selection */}
+                    {isCurrentSelectionOutOfStock ? (
+                      <div className="rounded-2xl border border-[#DED7CA] bg-[#FAF7F0] p-5 sm:p-6 space-y-4 shadow-xs">
+                        <div className="flex items-start gap-3.5">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#A65332]/10 text-[#A65332] border border-[#A65332]/20">
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-serif text-base font-bold text-[#1F211C]">
+                              Back-in-Stock Alert
+                            </h3>
+                            <p className="mt-0.5 text-xs text-[#5F6057] leading-relaxed">
+                              {isSelectedSizeOutOfStock
+                                ? `Size ${selectedSize} is currently unavailable. Request an alert to know when it restocks.`
+                                : 'This piece is currently out of stock. Subscribe to receive an alert the moment it returns.'}
+                            </p>
+                          </div>
+                        </div>
 
-                      {/* Buy Now - Secondary Action */}
-                      <button
-                        type="button"
-                        onClick={handleBuyNow}
-                        disabled={!isAvailable || addingToCart}
-                        className="flex-1 min-h-[48px] inline-flex items-center justify-center rounded-xl border border-[#34452F] bg-transparent hover:bg-[#34452F]/10 text-[#34452F] px-7 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all duration-300 active:scale-97 disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
-                      >
-                        Buy Now
-                      </button>
-                    </div>
+                        {/* Alert Feedback Banner */}
+                        {alertFeedback && (
+                          <div
+                            role="status"
+                            className="rounded-xl border border-[#3F6B45]/30 bg-[#3F6B45]/10 p-3.5 text-xs font-medium text-[#3F6B45] flex items-center gap-2"
+                          >
+                            <svg className="h-4 w-4 shrink-0 text-[#3F6B45]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                            <span>{alertFeedback}</span>
+                          </div>
+                        )}
+
+                        {/* Alert Error Banner */}
+                        {alertError && (
+                          <div
+                            role="alert"
+                            className="rounded-xl border border-[#B7473A]/30 bg-[#B7473A]/10 p-3.5 text-xs font-medium text-[#B7473A] flex items-center gap-2"
+                          >
+                            <svg className="h-4 w-4 shrink-0 text-[#B7473A]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                            </svg>
+                            <span>{alertError}</span>
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        {isAuthenticated ? (
+                          alertSubscribed ? (
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
+                              <div className="flex-1 min-h-[46px] inline-flex items-center justify-center gap-2 rounded-xl border border-[#3F6B45]/30 bg-[#3F6B45]/10 px-5 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#3F6B45]">
+                                <span className="h-2 w-2 rounded-full bg-[#3F6B45] animate-pulse" aria-hidden="true" />
+                                <span>Alert Active</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={handleCancelAlert}
+                                disabled={alertLoading}
+                                className="min-h-[46px] inline-flex items-center justify-center rounded-xl border border-[#DED7CA] bg-[#FFFDF8] hover:bg-[#EEE7DC] px-6 py-3 text-xs font-bold uppercase tracking-wider text-[#5F6057] hover:text-[#1F211C] transition-all cursor-pointer disabled:opacity-50"
+                              >
+                                {alertLoading ? 'Cancelling...' : 'Cancel Alert'}
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={handleSubscribeAlert}
+                              disabled={alertLoading}
+                              className="w-full min-h-[48px] inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#34452F] hover:bg-[#263722] px-7 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FFFDF8] transition-all duration-300 active:scale-97 disabled:opacity-50 cursor-pointer shadow-xs"
+                            >
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                              </svg>
+                              <span>
+                                {alertLoading
+                                  ? 'Subscribing...'
+                                  : isSelectedSizeOutOfStock
+                                  ? `Notify Me When Size ${selectedSize} Is Back`
+                                  : 'Notify Me When Available'}
+                              </span>
+                            </button>
+                          )
+                        ) : (
+                          <div className="pt-1">
+                            <Link
+                              to="/login"
+                              className="w-full min-h-[48px] inline-flex items-center justify-center gap-2 rounded-xl bg-[#34452F] hover:bg-[#263722] px-7 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FFFDF8] transition-all duration-300 shadow-xs"
+                            >
+                              <span>
+                                {isSelectedSizeOutOfStock
+                                  ? `Sign In to Get Notified for Size ${selectedSize}`
+                                  : 'Sign In to Get Notified When Available'}
+                              </span>
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        {/* Quantity Selector */}
+                        <div>
+                          <label
+                            htmlFor="quantity-input"
+                            className="block text-xs font-bold uppercase tracking-wider text-[#5F6057] mb-2.5"
+                          >
+                            Quantity
+                          </label>
+                          <div className="inline-flex items-center rounded-xl border border-[#DED7CA] bg-[#FAF7F0] p-1">
+                            <button
+                              type="button"
+                              onClick={handleDecrement}
+                              disabled={!isAvailable || quantity <= 1}
+                              aria-label="Decrease quantity"
+                              className="flex h-9 w-9 items-center justify-center rounded-lg text-[#1F211C] hover:bg-[#EEE7DC] transition-colors disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
+                            >
+                              <svg
+                                className="h-3.5 w-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                aria-hidden="true"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15" />
+                              </svg>
+                            </button>
+
+                            <span
+                              id="quantity-input"
+                              aria-live="polite"
+                              className="w-12 text-center text-sm font-bold text-[#1F211C] select-none"
+                            >
+                              {quantity}
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={handleIncrement}
+                              disabled={!isAvailable || quantity >= maxAllowedQuantity}
+                              aria-label="Increase quantity"
+                              className="flex h-9 w-9 items-center justify-center rounded-lg text-[#1F211C] hover:bg-[#EEE7DC] transition-colors disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
+                            >
+                              <svg
+                                className="h-3.5 w-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M12 4.5v15m7.5-7.5h-15"
+                                />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Cart Feedback Alerts */}
+                        {cartSuccessMessage && (
+                          <div
+                            role="status"
+                            className="rounded-xl border border-[#3F6B45]/30 bg-[#3F6B45]/10 p-4 text-xs font-medium text-[#3F6B45] flex items-center justify-between gap-4"
+                          >
+                            <div className="flex items-center gap-2">
+                              <svg
+                                className="h-4 w-4 shrink-0 text-[#3F6B45]"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M4.5 12.75l6 6 9-13.5"
+                                />
+                              </svg>
+                              <span>{cartSuccessMessage}</span>
+                            </div>
+                            <Link
+                              to="/cart"
+                              className="font-bold underline underline-offset-2 hover:text-[#263722] shrink-0"
+                            >
+                              View Cart →
+                            </Link>
+                          </div>
+                        )}
+
+                        {cartErrorMessage && (
+                          <div
+                            role="alert"
+                            className="rounded-xl border border-[#B7473A]/30 bg-[#B7473A]/10 p-4 text-xs font-medium text-[#B7473A] flex items-center justify-between gap-4"
+                          >
+                            <div className="flex items-center gap-2">
+                              <svg
+                                className="h-4 w-4 shrink-0 text-[#B7473A]"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+                                />
+                              </svg>
+                              <span>{cartErrorMessage}</span>
+                            </div>
+                            {!isAuthenticated && (
+                              <Link
+                                to="/login"
+                                className="font-bold underline underline-offset-2 hover:text-[#1F211C] shrink-0"
+                              >
+                                Sign In →
+                              </Link>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Action Buttons: Add to Cart (Primary) & Buy Now (Secondary) */}
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
+                          {/* Add to Cart - Primary Action */}
+                          <button
+                            type="button"
+                            onClick={handleAddToCart}
+                            disabled={!isAvailable || addingToCart}
+                            className="flex-1 min-h-[48px] inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#34452F] hover:bg-[#263722] px-7 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FFFDF8] transition-all duration-300 active:scale-97 disabled:opacity-40 disabled:hover:bg-[#34452F] disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F] shadow-xs"
+                          >
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              aria-hidden="true"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
+                              />
+                            </svg>
+                            <span>{addingToCart ? 'Adding...' : 'Add to Cart'}</span>
+                          </button>
+
+                          {/* Buy Now - Secondary Action */}
+                          <button
+                            type="button"
+                            onClick={handleBuyNow}
+                            disabled={!isAvailable || addingToCart}
+                            className="flex-1 min-h-[48px] inline-flex items-center justify-center rounded-xl border border-[#34452F] bg-transparent hover:bg-[#34452F]/10 text-[#34452F] px-7 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all duration-300 active:scale-97 disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34452F]"
+                          >
+                            Buy Now
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
             </article>
+
+            {/* =====================================================================
+                6.5. PRODUCT REVIEWS & RATINGS
+               ===================================================================== */}
+            <ProductReviews productId={product._id} productName={product.name} />
 
             {/* =====================================================================
                 7. RELATED PRODUCTS
@@ -938,9 +1351,32 @@ function ProductDetailsPage() {
                 </div>
               </section>
             )}
+
+            {/* =====================================================================
+                8. RECENTLY VIEWED PRODUCTS
+               ===================================================================== */}
+            <RecentlyViewed currentProductId={product._id} />
           </div>
         )}
       </div>
+
+      {/* Modals for Size Guide & Deterministic Recommendation */}
+      <SizeGuideModal
+        isOpen={sizeGuideOpen}
+        onClose={() => setSizeGuideOpen(false)}
+        initialDepartment={product?.department}
+        initialSubcategory={product?.subcategory}
+      />
+      <SizeRecommendationModal
+        isOpen={sizeRecommendOpen}
+        onClose={() => setSizeRecommendOpen(false)}
+        product={product}
+        onSelectSize={(size) => {
+          setSelectedSize(size)
+          setSizeError(null)
+        }}
+        onOpenSizeGuide={() => setSizeGuideOpen(true)}
+      />
     </div>
   )
 }

@@ -36,68 +36,68 @@ function CartPage() {
   }, [dispatch, initialized])
 
   // Handle quantity modification
-  const handleUpdateQuantity = async (productId, newQuantity) => {
-    if (!productId || newQuantity < 1) return
+  const handleUpdateQuantity = async (targetId, newQuantity) => {
+    if (!targetId || newQuantity < 1) return
 
-    setUpdatingItemIds((prev) => ({ ...prev, [productId]: true }))
+    setUpdatingItemIds((prev) => ({ ...prev, [targetId]: true }))
     setItemErrors((prev) => {
       const next = { ...prev }
-      delete next[productId]
+      delete next[targetId]
       return next
     })
 
     try {
       const resultAction = await dispatch(
-        updateCartItemQuantity({ productId, quantity: newQuantity })
+        updateCartItemQuantity({ itemId: targetId, quantity: newQuantity })
       )
       if (updateCartItemQuantity.rejected.match(resultAction)) {
         setItemErrors((prev) => ({
           ...prev,
-          [productId]: resultAction.payload || 'Failed to update quantity.',
+          [targetId]: resultAction.payload || 'Failed to update quantity.',
         }))
       }
     } catch {
       setItemErrors((prev) => ({
         ...prev,
-        [productId]: 'Failed to update quantity. Please try again.',
+        [targetId]: 'Failed to update quantity. Please try again.',
       }))
     } finally {
       setUpdatingItemIds((prev) => {
         const next = { ...prev }
-        delete next[productId]
+        delete next[targetId]
         return next
       })
     }
   }
 
   // Handle removing a single item
-  const handleRemoveItem = async (productId) => {
-    if (!productId) return
+  const handleRemoveItem = async (targetId) => {
+    if (!targetId) return
 
-    setUpdatingItemIds((prev) => ({ ...prev, [productId]: true }))
+    setUpdatingItemIds((prev) => ({ ...prev, [targetId]: true }))
     setItemErrors((prev) => {
       const next = { ...prev }
-      delete next[productId]
+      delete next[targetId]
       return next
     })
 
     try {
-      const resultAction = await dispatch(removeCartItem(productId))
+      const resultAction = await dispatch(removeCartItem(targetId))
       if (removeCartItem.rejected.match(resultAction)) {
         setItemErrors((prev) => ({
           ...prev,
-          [productId]: resultAction.payload || 'Failed to remove item.',
+          [targetId]: resultAction.payload || 'Failed to remove item.',
         }))
       }
     } catch {
       setItemErrors((prev) => ({
         ...prev,
-        [productId]: 'Failed to remove item. Please try again.',
+        [targetId]: 'Failed to remove item. Please try again.',
       }))
     } finally {
       setUpdatingItemIds((prev) => {
         const next = { ...prev }
-        delete next[productId]
+        delete next[targetId]
         return next
       })
     }
@@ -343,13 +343,13 @@ function CartPage() {
               {/* Left Column: Cart Items List */}
               <div className="lg:col-span-8 space-y-4">
                 {items.map((item) => {
-                  const productId = item.product?._id || item._id
+                  const itemId = item._id || item.product?._id
                   return (
                     <CartItem
-                      key={item._id || productId}
+                      key={item._id || `${item.product?._id}_${item.size || ''}`}
                       item={item}
-                      isUpdating={Boolean(updatingItemIds[productId])}
-                      itemError={itemErrors[productId]}
+                      isUpdating={Boolean(updatingItemIds[itemId])}
+                      itemError={itemErrors[itemId]}
                       onUpdateQuantity={handleUpdateQuantity}
                       onRemove={handleRemoveItem}
                     />

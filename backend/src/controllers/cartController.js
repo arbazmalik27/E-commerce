@@ -23,6 +23,7 @@ const formatCart = (cart) => {
 
       return {
         _id: item._id,
+        size: item.size || null,
         product: {
           _id: item.product._id,
           name: item.product.name,
@@ -32,6 +33,7 @@ const formatCart = (cart) => {
           brand: item.product.brand,
           stock: item.product.stock,
           isActive: item.product.isActive,
+          sizes: item.product.sizes || [],
         },
         quantity: item.quantity,
         itemTotal,
@@ -55,7 +57,7 @@ const getCart = async (req, res) => {
   try {
     const cart = await Cart.findOne({ user: req.user.id }).populate(
       'items.product',
-      'name price images category brand stock isActive'
+      'name price images category brand stock isActive sizes'
     )
 
     if (!cart) {
@@ -91,7 +93,7 @@ const addToCart = async (req, res) => {
     return res.status(400).json({ success: false, errors })
   }
 
-  const { productId, quantity } = sanitized
+  const { productId, quantity, size } = sanitized
 
   try {
     const product = await Product.findById(productId)
@@ -108,6 +110,32 @@ const addToCart = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Product is out of stock' })
     }
 
+    let selectedSize = null
+    if (Array.isArray(product.sizes) && product.sizes.length > 0) {
+      if (!size) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please select a size for this product',
+        })
+      }
+      const matched = product.sizes.find(
+        (s) => s.label.toLowerCase() === size.toLowerCase()
+      )
+      if (!matched) {
+        return res.status(400).json({
+          success: false,
+          message: `Size "${size}" is not valid for this product`,
+        })
+      }
+      if (matched.available === false) {
+        return res.status(400).json({
+          success: false,
+          message: `Size "${matched.label}" is currently out of stock`,
+        })
+      }
+      selectedSize = matched.label
+    }
+
     let cart = await Cart.findOne({ user: req.user.id })
 
     if (!cart) {
@@ -118,36 +146,37 @@ const addToCart = async (req, res) => {
     }
 
     const existingItemIndex = cart.items.findIndex(
-      (item) => item.product && item.product.toString() === productId.toString()
+      (item) =>
+        item.product &&
+        item.product.toString() === productId.toString() &&
+        (item.size || null) === (selectedSize || null)
     )
 
+    const otherQty = cart.items
+      .filter((item, idx) => item.product && item.product.toString() === productId.toString() && idx !== existingItemIndex)
+      .reduce((sum, item) => sum + item.quantity, 0)
+
+    const targetQty = (existingItemIndex > -1 ? cart.items[existingItemIndex].quantity : 0) + quantity
+
+    if (otherQty + targetQty > product.stock) {
+      return res.status(400).json({
+        success: false,
+        message: `Requested quantity exceeds available stock (${product.stock})`,
+      })
+    }
+
     if (existingItemIndex > -1) {
-      const combinedQuantity = cart.items[existingItemIndex].quantity + quantity
-
-      if (combinedQuantity > product.stock) {
-        return res.status(400).json({
-          success: false,
-          message: `Requested quantity exceeds available stock (${product.stock})`,
-        })
-      }
-
-      cart.items[existingItemIndex].quantity = combinedQuantity
+      cart.items[existingItemIndex].quantity = targetQty
     } else {
-      if (quantity > product.stock) {
-        return res.status(400).json({
-          success: false,
-          message: `Requested quantity exceeds available stock (${product.stock})`,
-        })
-      }
-
       cart.items.push({
         product: productId,
         quantity,
+        size: selectedSize,
       })
     }
 
     await cart.save()
-    await cart.populate('items.product', 'name price images category brand stock isActive')
+    await cart.populate('items.product', 'name price images category brand stock isActive sizes')
 
     return res.status(200).json({
       success: true,
@@ -181,14 +210,17 @@ const updateCartItem = async (req, res) => {
     }
 
     const itemIndex = cart.items.findIndex(
-      (item) => item.product && item.product.toString() === productId.toString()
+      (item) =>
+        (item._id && item._id.toString() === productId.toString()) ||
+        (item.product && item.product.toString() === productId.toString() && (!req.query.size || item.size === req.query.size))
     )
 
     if (itemIndex === -1) {
       return res.status(404).json({ success: false, message: 'Product not found in cart' })
     }
 
-    const product = await Product.findById(productId)
+    const targetItem = cart.items[itemIndex]
+    const product = await Product.findById(targetItem.product)
 
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' })
@@ -198,7 +230,11 @@ const updateCartItem = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Product is inactive' })
     }
 
-    if (quantity > product.stock) {
+    const otherQty = cart.items
+      .filter((item, idx) => item.product && item.product.toString() === targetItem.product.toString() && idx !== itemIndex)
+      .reduce((sum, item) => sum + item.quantity, 0)
+
+    if (otherQty + quantity > product.stock) {
       return res.status(400).json({
         success: false,
         message: `Requested quantity exceeds available stock (${product.stock})`,
@@ -207,7 +243,7 @@ const updateCartItem = async (req, res) => {
 
     cart.items[itemIndex].quantity = quantity
     await cart.save()
-    await cart.populate('items.product', 'name price images category brand stock isActive')
+    await cart.populate('items.product', 'name price images category brand stock isActive sizes')
 
     return res.status(200).json({
       success: true,
@@ -233,7 +269,9 @@ const removeCartItem = async (req, res) => {
     }
 
     const itemIndex = cart.items.findIndex(
-      (item) => item.product && item.product.toString() === productId.toString()
+      (item) =>
+        (item._id && item._id.toString() === productId.toString()) ||
+        (item.product && item.product.toString() === productId.toString() && (!req.query.size || item.size === req.query.size))
     )
 
     if (itemIndex === -1) {
@@ -242,7 +280,7 @@ const removeCartItem = async (req, res) => {
 
     cart.items.splice(itemIndex, 1)
     await cart.save()
-    await cart.populate('items.product', 'name price images category brand stock isActive')
+    await cart.populate('items.product', 'name price images category brand stock isActive sizes')
 
     return res.status(200).json({
       success: true,

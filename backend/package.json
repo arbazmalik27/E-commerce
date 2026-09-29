@@ -7,8 +7,12 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node scripts/test_taxonomy_kids.js",
+    "test:search": "node scripts/test_advanced_search_filters.js",
     "test:featured": "node scripts/test_featured_products.js",
-    "test:all": "node scripts/test_taxonomy_kids.js && node scripts/test_pagination.js && node scripts/test_featured_products.js"
+    "test:reviews": "node scripts/test_reviews.js",
+    "test:size": "node scripts/test_size_guide.js",
+    "test:alerts": "node scripts/test_back_in_stock_alerts.js",
+    "test:all": "node scripts/test_taxonomy_kids.js && node scripts/test_pagination.js && node scripts/test_featured_products.js && node scripts/test_advanced_search_filters.js && node scripts/test_reviews.js && node scripts/test_size_guide.js && node scripts/test_back_in_stock_alerts.js"
   },
   "keywords": [],
   "author": "",

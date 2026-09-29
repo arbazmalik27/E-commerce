@@ -36,5 +36,29 @@ const paymentLimiter = rateLimit({
   statusCode: 429,
 })
 
-module.exports = { authLimiter, newsletterLimiter, paymentLimiter }
+const reviewLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 30 : 500,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many review requests, please try again later',
+  },
+  statusCode: 429,
+})
+
+const stockAlertLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 40 : 500,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many stock alert requests, please try again later',
+  },
+  statusCode: 429,
+})
+
+module.exports = { authLimiter, newsletterLimiter, paymentLimiter, reviewLimiter, stockAlertLimiter }
 

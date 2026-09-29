@@ -1,8 +1,36 @@
 const {
+  TAXONOMY,
   isValidCategory,
   isValidDepartment,
   isValidSubcategory,
 } = require('../constants/taxonomy')
+
+// Helper for sizes validation
+const validateSizesArray = (rawSizes) => {
+  if (!Array.isArray(rawSizes)) {
+    return { valid: false, error: 'Sizes must be an array' }
+  }
+  const result = []
+  for (const item of rawSizes) {
+    if (typeof item === 'string') {
+      const label = item.trim()
+      if (!label || label.length > 20) {
+        return { valid: false, error: 'Size label must be between 1 and 20 characters' }
+      }
+      result.push({ label, available: true })
+    } else if (item && typeof item === 'object' && !Array.isArray(item)) {
+      const label = typeof item.label === 'string' ? item.label.trim() : ''
+      if (!label || label.length > 20) {
+        return { valid: false, error: 'Size label must be between 1 and 20 characters' }
+      }
+      const available = typeof item.available === 'boolean' ? item.available : true
+      result.push({ label, available })
+    } else {
+      return { valid: false, error: 'Invalid size item format' }
+    }
+  }
+  return { valid: true, sanitized: result }
+}
 
 const validateCreateProductInput = (body = {}) => {
   const errors = {}
@@ -15,7 +43,17 @@ const validateCreateProductInput = (body = {}) => {
     }
   }
 
-  const { name, description, price, category, department, subcategory, brand, stock, images, isActive, ageRange } = body
+  const { name, description, price, category, department, subcategory, brand, stock, images, isActive, ageRange, sizes } = body
+
+  let sanitizedSizes = []
+  if (sizes !== undefined && sizes !== null) {
+    const sizeRes = validateSizesArray(sizes)
+    if (!sizeRes.valid) {
+      errors.sizes = sizeRes.error
+    } else {
+      sanitizedSizes = sizeRes.sanitized
+    }
+  }
 
   // 1. Name validation
   if (name === undefined || name === null || typeof name !== 'string' || name.trim() === '') {
@@ -124,6 +162,7 @@ const validateCreateProductInput = (body = {}) => {
     images: Array.isArray(images) ? images.map((img) => (typeof img === 'string' ? img.trim() : img)) : [],
     isActive: typeof isActive === 'boolean' ? isActive : true,
     ageRange: trimmedAgeRange,
+    sizes: sanitizedSizes,
   }
 
   return {
@@ -145,6 +184,7 @@ const ALLOWED_UPDATE_FIELDS = [
   'stock',
   'isActive',
   'ageRange',
+  'sizes',
 ]
 
 const validateUpdateProductInput = (body = {}, existingProduct = null) => {
@@ -172,7 +212,7 @@ const validateUpdateProductInput = (body = {}, existingProduct = null) => {
     errors.fields = `Unapproved field(s): ${unapprovedFields.join(', ')}`
   }
 
-  const { name, description, price, category, department, subcategory, brand, stock, images, isActive, ageRange } = body
+  const { name, description, price, category, department, subcategory, brand, stock, images, isActive, ageRange, sizes } = body
   const sanitized = {}
 
   if (name !== undefined) {
@@ -304,6 +344,19 @@ const validateUpdateProductInput = (body = {}, existingProduct = null) => {
     }
   }
 
+  if (sizes !== undefined) {
+    if (sizes === null || (Array.isArray(sizes) && sizes.length === 0)) {
+      sanitized.sizes = []
+    } else {
+      const sizeRes = validateSizesArray(sizes)
+      if (!sizeRes.valid) {
+        errors.sizes = sizeRes.error
+      } else {
+        sanitized.sizes = sizeRes.sanitized
+      }
+    }
+  }
+
   return {
     isValid: Object.keys(errors).length === 0,
     errors,
@@ -311,4 +364,141 @@ const validateUpdateProductInput = (body = {}, existingProduct = null) => {
   }
 }
 
-module.exports = { validateCreateProductInput, validateUpdateProductInput }
+/**
+ * Validate and sanitize query parameters for product listing, search, filtering, and pagination.
+ * Protects against NoSQL injection, malformed taxonomy values, and invalid parameters.
+ */
+const validateProductQueryParams = (query = {}) => {
+  const sanitized = {}
+
+  if (!query || typeof query !== 'object') {
+    return {
+      page: 1,
+      limit: 12,
+      sort: 'newest',
+    }
+  }
+
+  // 1. Pagination: page & limit
+  const rawPage = parseInt(query.page, 10)
+  sanitized.page = !isNaN(rawPage) && rawPage > 0 ? rawPage : 1
+
+  const rawLimit = parseInt(query.limit, 10)
+  sanitized.limit = !isNaN(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 100) : 12
+
+  // 2. Category
+  if (query.category && typeof query.category === 'string' && query.category.trim()) {
+    const trimmedCat = query.category.trim().toLowerCase()
+    if (trimmedCat !== 'all') {
+      if (isValidCategory(trimmedCat)) {
+        sanitized.category = trimmedCat
+      } else {
+        sanitized.category = '__INVALID__'
+      }
+    }
+  }
+
+  // 3. Department
+  if (query.department && typeof query.department === 'string' && query.department.trim()) {
+    let trimmedDept = query.department.trim().toLowerCase()
+    if (trimmedDept === 'mens') trimmedDept = 'men'
+    if (trimmedDept === 'womens') trimmedDept = 'women'
+    const effectiveCategory = sanitized.category || 'fashion'
+    if (isValidDepartment(effectiveCategory, trimmedDept)) {
+      sanitized.department = trimmedDept
+    } else {
+      sanitized.department = '__INVALID__'
+    }
+  }
+
+  // 4. Subcategory
+  if (query.subcategory && typeof query.subcategory === 'string' && query.subcategory.trim()) {
+    const trimmedSub = query.subcategory.trim().toLowerCase()
+    const effectiveCategory = sanitized.category || 'fashion'
+    if (sanitized.department && sanitized.department !== '__INVALID__') {
+      if (isValidSubcategory(effectiveCategory, sanitized.department, trimmedSub)) {
+        sanitized.subcategory = trimmedSub
+      } else {
+        sanitized.subcategory = '__INVALID__'
+      }
+    } else if (!sanitized.department) {
+      const deptMatches = Object.keys(TAXONOMY[effectiveCategory]?.departments || {}).filter((d) =>
+        isValidSubcategory(effectiveCategory, d, trimmedSub)
+      )
+      if (deptMatches.length > 0) {
+        sanitized.subcategory = trimmedSub
+      } else {
+        sanitized.subcategory = '__INVALID__'
+      }
+    } else {
+      sanitized.subcategory = '__INVALID__'
+    }
+  }
+
+  // 5. Search
+  if (query.search && typeof query.search === 'string' && query.search.trim()) {
+    sanitized.search = query.search.trim().slice(0, 100)
+  }
+
+  // 6. Brand
+  if (query.brand && typeof query.brand === 'string' && query.brand.trim()) {
+    sanitized.brand = query.brand.trim().slice(0, 100)
+  }
+
+  // 7. Price range
+  if (query.minPrice !== undefined && query.minPrice !== null && String(query.minPrice).trim() !== '') {
+    const num = Number(query.minPrice)
+    if (!isNaN(num) && num >= 0 && num <= 10000000) {
+      sanitized.minPrice = num
+    }
+  }
+
+  if (query.maxPrice !== undefined && query.maxPrice !== null && String(query.maxPrice).trim() !== '') {
+    const num = Number(query.maxPrice)
+    if (!isNaN(num) && num >= 0 && num <= 10000000) {
+      sanitized.maxPrice = num
+    }
+  }
+
+  // 8. Stock / Availability
+  const avail = (query.availability || query.stock || '').toString().trim().toLowerCase()
+  if (query.inStock === 'true' || avail === 'in-stock') {
+    sanitized.availability = 'in-stock'
+  } else if (query.inStock === 'false' || avail === 'out-of-stock') {
+    sanitized.availability = 'out-of-stock'
+  }
+
+  // 9. Sort
+  const allowedSorts = ['newest', 'price-asc', 'price-desc', 'relevance', 'default']
+  if (query.sort && typeof query.sort === 'string' && allowedSorts.includes(query.sort.trim().toLowerCase())) {
+    sanitized.sort = query.sort.trim().toLowerCase()
+  } else {
+    sanitized.sort = 'newest'
+  }
+
+  // 10. Specific IDs filter (e.g. for batch fetching or recently viewed)
+  if (query.ids !== undefined && query.ids !== null) {
+    let rawIds = []
+    if (typeof query.ids === 'string') {
+      rawIds = query.ids.split(',')
+    } else if (Array.isArray(query.ids)) {
+      rawIds = query.ids
+    }
+    const validIds = rawIds
+      .map((id) => (typeof id === 'string' ? id.trim() : ''))
+      .filter((id) => /^[0-9a-fA-F]{24}$/.test(id))
+      .slice(0, 50)
+    if (validIds.length > 0) {
+      sanitized.ids = validIds
+    }
+  }
+
+  return sanitized
+}
+
+module.exports = {
+  validateCreateProductInput,
+  validateUpdateProductInput,
+  validateProductQueryParams,
+}
+

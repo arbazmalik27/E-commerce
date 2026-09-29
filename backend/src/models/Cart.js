@@ -7,6 +7,11 @@ const cartItemSchema = new mongoose.Schema(
       ref: 'Product',
       required: [true, 'Product reference is required'],
     },
+    size: {
+      type: String,
+      trim: true,
+      default: null,
+    },
     quantity: {
       type: Number,
       required: [true, 'Quantity is required'],
@@ -36,12 +41,13 @@ const cartSchema = new mongoose.Schema(
       validate: {
         validator: function (items) {
           if (!Array.isArray(items)) return false
-          const productIds = items.map((item) =>
-            item.product && item.product._id
+          const itemKeys = items.map((item) => {
+            const pId = item.product && item.product._id
               ? item.product._id.toString()
               : item.product.toString()
-          )
-          return new Set(productIds).size === productIds.length
+            return `${pId}_${item.size || ''}`
+          })
+          return new Set(itemKeys).size === itemKeys.length
         },
         message: 'Duplicate product entries in the same cart are not allowed',
       },

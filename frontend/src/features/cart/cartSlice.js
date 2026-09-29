@@ -18,9 +18,9 @@ export const fetchCart = createAsyncThunk(
 
 export const addToCart = createAsyncThunk(
   'cart/addToCart',
-  async ({ productId, quantity }, { rejectWithValue }) => {
+  async ({ productId, quantity, size }, { rejectWithValue }) => {
     try {
-      const response = await api.post('/cart/items', { productId, quantity })
+      const response = await api.post('/cart/items', { productId, quantity, size })
       return response.data
     } catch (err) {
       const message =
@@ -35,9 +35,10 @@ export const addToCart = createAsyncThunk(
 
 export const updateCartItemQuantity = createAsyncThunk(
   'cart/updateCartItemQuantity',
-  async ({ productId, quantity }, { rejectWithValue }) => {
+  async ({ productId, itemId, quantity }, { rejectWithValue }) => {
     try {
-      const response = await api.patch(`/cart/items/${productId}`, { quantity })
+      const targetId = itemId || productId
+      const response = await api.patch(`/cart/items/${targetId}`, { quantity })
       return response.data
     } catch (err) {
       const message =
@@ -52,9 +53,9 @@ export const updateCartItemQuantity = createAsyncThunk(
 
 export const removeCartItem = createAsyncThunk(
   'cart/removeCartItem',
-  async (productId, { rejectWithValue }) => {
+  async (targetId, { rejectWithValue }) => {
     try {
-      const response = await api.delete(`/cart/items/${productId}`)
+      const response = await api.delete(`/cart/items/${targetId}`)
       return response.data
     } catch (err) {
       const message =
