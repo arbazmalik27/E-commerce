@@ -9,7 +9,7 @@ import ForgotPasswordPage from '../pages/ForgotPasswordPage'
 import ResetPasswordPage from '../pages/ResetPasswordPage'
 import OrdersPage from '../pages/OrdersPage'
 import OrderDetailsPage from '../pages/OrderDetailsPage'
-import ProfilePage from '../pages/ProfilePage'
+import AccountDashboardPage from '../pages/AccountDashboardPage'
 import CartPage from '../pages/CartPage'
 import WishlistPage from '../pages/WishlistPage'
 import CheckoutPage from '../pages/CheckoutPage'
@@ -110,10 +110,18 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/account"
+          element={
+            <ProtectedRoute>
+              <AccountDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/profile"
           element={
             <ProtectedRoute>
-              <ProfilePage />
+              <AccountDashboardPage defaultTab="settings" />
             </ProtectedRoute>
           }
         />

@@ -247,8 +247,8 @@ function Navbar() {
 
             {/* Account / User Link */}
             <Link
-              to={isAuthenticated ? '/profile' : '/login'}
-              aria-label={isAuthenticated ? `Profile (${user?.name})` : 'Sign in to your account'}
+              to={isAuthenticated ? '/account' : '/login'}
+              aria-label={isAuthenticated ? `Account Center (${user?.name})` : 'Sign in to your account'}
               className="h-10 w-10 flex items-center justify-center rounded-full text-[#5F6057] hover:text-[#1F211C] hover:bg-[#FAF7F0] transition-colors"
             >
               <User className="h-4.5 w-4.5" strokeWidth={1.75} aria-hidden="true" />
@@ -399,7 +399,7 @@ function Navbar() {
               Shop Collection
             </Link>
             <Link
-              to={isAuthenticated ? '/orders' : '/login'}
+              to={isAuthenticated ? '/account' : '/login'}
               onClick={() => setMobileMenuOpen(false)}
               className="px-3 py-2 rounded-lg hover:bg-[#FAF7F0] transition-colors"
             >
@@ -433,7 +433,7 @@ function Navbar() {
             <ThemeToggle variant="mobile-row" />
 
             <Link
-              to={isAuthenticated ? '/profile' : '/login'}
+              to={isAuthenticated ? '/account?tab=settings' : '/login'}
               onClick={() => setMobileMenuOpen(false)}
               className="px-3 py-2 rounded-lg hover:bg-[#FAF7F0] transition-colors flex items-center justify-between"
             >

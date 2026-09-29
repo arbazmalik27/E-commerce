@@ -37,7 +37,7 @@ const PAYMENT_STATUS_STYLES = {
   failed:  { bg: 'bg-[#A65332]/10', border: 'border-[#A65332]/20', text: 'text-[#A65332]', label: 'Failed'  },
 }
 
-function OrderStatusBadge({ status }) {
+export function OrderStatusBadge({ status }) {
   const s = ORDER_STATUS_STYLES[status] || ORDER_STATUS_STYLES.pending
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold border ${s.bg} ${s.border} ${s.text}`}>
@@ -47,7 +47,7 @@ function OrderStatusBadge({ status }) {
   )
 }
 
-function PaymentStatusBadge({ status }) {
+export function PaymentStatusBadge({ status }) {
   const s = PAYMENT_STATUS_STYLES[status] || PAYMENT_STATUS_STYLES.pending
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border ${s.bg} ${s.border} ${s.text}`}>
@@ -58,7 +58,7 @@ function PaymentStatusBadge({ status }) {
 
 // ─── Item Row ─────────────────────────────────────────────────────────────────
 
-function ItemRow({ item, isPaid }) {
+export function ItemRow({ item, isPaid }) {
   const [imgError, setImgError] = useState(false)
   const imgSrc = !imgError ? getProductImage(item) : null
 
@@ -106,7 +106,7 @@ function ItemRow({ item, isPaid }) {
 
 // ─── Order Card ───────────────────────────────────────────────────────────────
 
-function OrderCard({ order }) {
+export function OrderCard({ order }) {
   const allItems = order.items || []
   const previewItems = allItems.slice(0, 3)
   const remainingCount = allItems.length - previewItems.length
@@ -191,7 +191,7 @@ function OrderCard({ order }) {
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
-function OrderSkeleton() {
+export function OrderSkeleton() {
   return (
     <div className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] overflow-hidden animate-pulse">
       <div className="px-5 sm:px-6 py-4 sm:py-5 flex items-start justify-between gap-3 border-b border-[#DED7CA]/70">
