@@ -18,6 +18,11 @@ import {
   selectWishlistInitialized,
   selectWishlistTotalItems,
 } from '../features/wishlist/wishlistSlice'
+import {
+  fetchUnreadCount,
+  selectNotificationsInitialized,
+} from '../features/notifications/notificationSlice'
+import NotificationBell from './notifications/NotificationBell'
 
 function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -33,6 +38,7 @@ function Navbar() {
   const cartInitialized = useSelector(selectCartInitialized)
   const wishlistTotalItems = useSelector(selectWishlistTotalItems)
   const wishlistInitialized = useSelector(selectWishlistInitialized)
+  const notificationsInitialized = useSelector(selectNotificationsInitialized)
 
   useEffect(() => {
     if (isAuthenticated && !cartInitialized) {
@@ -41,7 +47,10 @@ function Navbar() {
     if (isAuthenticated && !wishlistInitialized) {
       dispatch(fetchWishlist())
     }
-  }, [dispatch, isAuthenticated, cartInitialized, wishlistInitialized])
+    if (isAuthenticated && !notificationsInitialized) {
+      dispatch(fetchUnreadCount())
+    }
+  }, [dispatch, isAuthenticated, cartInitialized, wishlistInitialized, notificationsInitialized])
 
   // Auto-close drawers on route change (React recommended render-time state adjustment)
   const [prevPathname, setPrevPathname] = useState(location.pathname)
@@ -215,6 +224,9 @@ function Navbar() {
             {/* Theme Toggle Button */}
             <ThemeToggle />
 
+            {/* Notifications Bell */}
+            {isAuthenticated && <NotificationBell />}
+
             {/* Wishlist Icon */}
             {isAuthenticated && (
               <Link
@@ -307,9 +319,10 @@ function Navbar() {
             TrendVolt
           </Link>
 
-          {/* Mobile Utility Actions: Theme, Search, Wishlist, Cart */}
+          {/* Mobile Utility Actions: Theme, Notifications, Search, Wishlist, Cart */}
           <div className="flex items-center gap-1">
             <ThemeToggle className="h-9 w-9" />
+            {isAuthenticated && <NotificationBell className="h-9 w-9" />}
             <button
               type="button"
               aria-label="Search catalog"

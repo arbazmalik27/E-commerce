@@ -72,6 +72,18 @@ const couponLimiter = rateLimit({
   statusCode: 429,
 })
 
+const notificationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 60 : 500,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many notification requests, please try again later',
+  },
+  statusCode: 429,
+})
+
 module.exports = {
   authLimiter,
   newsletterLimiter,
@@ -79,5 +91,6 @@ module.exports = {
   reviewLimiter,
   stockAlertLimiter,
   couponLimiter,
+  notificationLimiter,
 }
 

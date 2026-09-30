@@ -9,6 +9,7 @@ const {
   validateCreatePaymentOrderInput,
   validateVerifyPaymentInput,
 } = require('../validators/paymentValidator')
+const { createOrderConfirmedNotification } = require('../services/notificationService')
 
 const createRazorpayOrder = async (req, res) => {
   const { isValid, errors, sanitized } = validateCreatePaymentOrderInput(req.body)
@@ -219,6 +220,16 @@ const verifyPayment = async (req, res) => {
     order.paymentStatus = 'paid'
     order.orderStatus = 'confirmed'
     await order.save()
+
+    // Trigger order_confirmed customer notification (non-fatal side effect)
+    try {
+      await createOrderConfirmedNotification({
+        user: req.user.id,
+        order,
+      })
+    } catch (notifErr) {
+      console.error('Non-fatal error creating order confirmed notification:', notifErr.message)
+    }
 
     // Record verified payment
     await Payment.create({

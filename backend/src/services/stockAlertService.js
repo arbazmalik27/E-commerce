@@ -1,5 +1,6 @@
 const BackInStockAlert = require('../models/BackInStockAlert')
 const { sendBackInStockEmail } = require('./emailService')
+const { createBackInStockNotification } = require('./notificationService')
 
 /**
  * Evaluates whether inventory transitions on a product make any registered
@@ -83,6 +84,17 @@ const processBackInStockAlerts = async ({ product, previousProduct = null }) => 
     // Skip if user account is disabled or missing email
     if (!alert.user || !alert.user.email || alert.user.isActive === false) {
       continue
+    }
+
+    // Dispatch in-app customer notification (non-fatal side effect)
+    try {
+      await createBackInStockNotification({
+        user: alert.user._id,
+        product,
+        size: alert.size || null,
+      })
+    } catch (notifErr) {
+      console.error('Non-fatal error creating back-in-stock notification:', notifErr.message)
     }
 
     try {

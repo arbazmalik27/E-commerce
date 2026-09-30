@@ -10,6 +10,7 @@ const {
 } = require('../validators/orderValidator')
 const { validateCouponEligibility } = require('../services/couponService')
 const { getEffectiveProductPrice } = require('../services/pricingService')
+const { createOrderStatusNotification } = require('../services/notificationService')
 
 const createOrder = async (req, res) => {
   const { isValid, errors, sanitized } = validateCreateOrderInput(req.body)
@@ -210,8 +211,23 @@ const updateOrderStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' })
     }
 
+    const previousStatus = order.orderStatus
     order.orderStatus = sanitized.status
     await order.save()
+
+    // Trigger order_status_updated customer notification (non-fatal side effect)
+    if (previousStatus !== sanitized.status) {
+      try {
+        await createOrderStatusNotification({
+          user: order.user,
+          order,
+          previousStatus,
+          newStatus: sanitized.status,
+        })
+      } catch (notifErr) {
+        console.error('Non-fatal error creating order status notification:', notifErr.message)
+      }
+    }
 
     return res.status(200).json({
       success: true,
