@@ -16,6 +16,7 @@ const stockAlertRoutes = require('./routes/stockAlertRoutes')
 const couponRoutes = require('./routes/couponRoutes')
 const flashSaleRoutes = require('./routes/flashSaleRoutes')
 const notificationRoutes = require('./routes/notificationRoutes')
+const analyticsRoutes = require('./routes/analyticsRoutes')
 
 const app = express()
 
@@ -71,6 +72,7 @@ app.use('/api/stock-alerts', stockAlertRoutes)
 app.use('/api/coupons', couponRoutes)
 app.use('/api/flash-sales', flashSaleRoutes)
 app.use('/api/notifications', notificationRoutes)
+app.use('/api/analytics', analyticsRoutes)
 
 // 404 handler for undefined routes
 app.use((_req, res) => {

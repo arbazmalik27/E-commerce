@@ -14,6 +14,7 @@ import CartPage from '../pages/CartPage'
 import WishlistPage from '../pages/WishlistPage'
 import CheckoutPage from '../pages/CheckoutPage'
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage'
+import AdminAnalyticsPage from '../pages/admin/AdminAnalyticsPage'
 import AdminProductsPage from '../pages/admin/AdminProductsPage'
 import AdminOrdersPage from '../pages/admin/AdminOrdersPage'
 import AdminUsersPage from '../pages/admin/AdminUsersPage'
@@ -140,6 +141,14 @@ function AppRoutes() {
           element={
             <AdminRoute>
               <AdminDashboardPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/analytics"
+          element={
+            <AdminRoute>
+              <AdminAnalyticsPage />
             </AdminRoute>
           }
         />
