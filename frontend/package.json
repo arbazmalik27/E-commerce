@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "test": "node src/tests/test_recently_viewed_unit.js && node src/tests/test_dark_mode_unit.js && node src/tests/test_account_dashboard_unit.js && node src/tests/test_notifications_unit.js && node src/tests/test_analytics_unit.js && node src/tests/test_sales_insights_unit.js",
+    "test": "node src/tests/test_recently_viewed_unit.js && node src/tests/test_dark_mode_unit.js && node src/tests/test_account_dashboard_unit.js && node src/tests/test_notifications_unit.js && node src/tests/test_analytics_unit.js && node src/tests/test_sales_insights_unit.js && node src/tests/test_coupons_admin_unit.js",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -22,7 +22,29 @@ function formatDate(iso) {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
+    timeZone: 'Asia/Kolkata',
   })
+}
+
+// Formats an HTML5 date input string (YYYY-MM-DD) to ISO at 00:00:00.000 IST (+05:30)
+function formatIstStartsAt(dateStr) {
+  if (!dateStr) return null
+  const dateOnly = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr
+  return new Date(`${dateOnly}T00:00:00.000+05:30`).toISOString()
+}
+
+// Formats an HTML5 date input string (YYYY-MM-DD) to ISO at 23:59:59.999 IST (+05:30)
+function formatIstExpiresAt(dateStr) {
+  if (!dateStr) return null
+  const dateOnly = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr
+  return new Date(`${dateOnly}T23:59:59.999+05:30`).toISOString()
+}
+
+// Extracts the IST calendar date (YYYY-MM-DD) for HTML5 date input
+function toIstDateInput(iso) {
+  if (!iso) return ''
+  const istDate = new Date(new Date(iso).getTime() + 5.5 * 60 * 60 * 1000)
+  return istDate.toISOString().split('T')[0]
 }
 
 function AdminCouponsPage() {
@@ -113,8 +135,8 @@ function AdminCouponsPage() {
       maximumDiscount: coupon.maximumDiscount != null ? coupon.maximumDiscount : '',
       usageLimit: coupon.usageLimit != null ? coupon.usageLimit : '',
       perUserLimit: coupon.perUserLimit != null ? coupon.perUserLimit : '',
-      startsAt: coupon.startsAt ? new Date(coupon.startsAt).toISOString().split('T')[0] : '',
-      expiresAt: coupon.expiresAt ? new Date(coupon.expiresAt).toISOString().split('T')[0] : '',
+      startsAt: toIstDateInput(coupon.startsAt),
+      expiresAt: toIstDateInput(coupon.expiresAt),
       isActive: coupon.isActive !== false,
     })
     setFormErrors({})
@@ -159,32 +181,46 @@ function AdminCouponsPage() {
 
     if (formData.type === 'percentage') {
       payload.value = Number(formData.value)
+      payload.buyQuantity = null
+      payload.freeQuantity = null
     } else if (formData.type === 'fixed') {
       payload.value = Number(formData.value)
+      payload.buyQuantity = null
+      payload.freeQuantity = null
     } else if (formData.type === 'buy_x_get_y') {
       payload.buyQuantity = Number(formData.buyQuantity)
       payload.freeQuantity = Number(formData.freeQuantity)
       payload.value = 0
     }
 
-    if (formData.minimumOrderValue !== '') {
-      payload.minimumOrderValue = Number(formData.minimumOrderValue)
+    // Minimum Order Value: for BOGO requires >= 10000; for others can be 0
+    if (formData.type === 'buy_x_get_y') {
+      payload.minimumOrderValue = Math.max(10000, Number(formData.minimumOrderValue) || 10000)
+    } else {
+      payload.minimumOrderValue =
+        formData.minimumOrderValue !== '' && formData.minimumOrderValue !== null
+          ? Number(formData.minimumOrderValue)
+          : 0
     }
-    if (formData.maximumDiscount !== '') {
-      payload.maximumDiscount = Number(formData.maximumDiscount)
-    }
-    if (formData.usageLimit !== '') {
-      payload.usageLimit = Number(formData.usageLimit)
-    }
-    if (formData.perUserLimit !== '') {
-      payload.perUserLimit = Number(formData.perUserLimit)
-    }
-    if (formData.startsAt) {
-      payload.startsAt = new Date(formData.startsAt).toISOString()
-    }
-    if (formData.expiresAt) {
-      payload.expiresAt = new Date(formData.expiresAt).toISOString()
-    }
+
+    // Optional fields: explicitly send null when cleared
+    payload.maximumDiscount =
+      formData.maximumDiscount !== '' && formData.maximumDiscount !== null
+        ? Number(formData.maximumDiscount)
+        : null
+
+    payload.usageLimit =
+      formData.usageLimit !== '' && formData.usageLimit !== null
+        ? Number(formData.usageLimit)
+        : null
+
+    payload.perUserLimit =
+      formData.perUserLimit !== '' && formData.perUserLimit !== null
+        ? Number(formData.perUserLimit)
+        : null
+
+    payload.startsAt = formData.startsAt ? formatIstStartsAt(formData.startsAt) : null
+    payload.expiresAt = formData.expiresAt ? formatIstExpiresAt(formData.expiresAt) : null
 
     try {
       if (editingCoupon) {
@@ -578,7 +614,15 @@ function AdminCouponsPage() {
                                 <Edit2 className="h-4 w-4" />
                               </button>
 
-                              {deleteConfirmId === coupon._id ? (
+                              {coupon.usedCount > 0 ? (
+                                <span
+                                  className="p-1.5 rounded-lg text-[#85857A]/40 cursor-not-allowed inline-flex"
+                                  title="Cannot delete: coupon has already been used in customer orders. Deactivate it instead to preserve audit records."
+                                  aria-label="Cannot delete used coupon. Deactivate instead."
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </span>
+                              ) : deleteConfirmId === coupon._id ? (
                                 <div className="inline-flex items-center gap-1 ml-1 bg-[#A65332]/10 p-1 rounded-lg">
                                   <button
                                     type="button"

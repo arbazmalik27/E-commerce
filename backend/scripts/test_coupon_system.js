@@ -2,7 +2,8 @@ const http = require('http')
 const assert = require('assert')
 const mongoose = require('mongoose')
 const jwt = require('jsonwebtoken')
-require('dotenv').config()
+const path = require('path')
+require('dotenv').config({ path: path.join(__dirname, '../.env') })
 
 const app = require('../src/app')
 const Coupon = require('../src/models/Coupon')
@@ -502,8 +503,111 @@ async function runTests() {
     }, { code: 'ONEPERUSER' })
     testAssert(check2.status === 400 && check2.data.message.includes('already used'), 'Per-user limit enforced: user rejected after reaching limit')
 
+    // ----------------------------------------------------
+    // TEST SUITE 12: ADMIN COUPON LIFECYCLE & DELETE SAFETY
+    // ----------------------------------------------------
+    console.log('\n--- 12. ADMIN COUPON LIFECYCLE & DELETE SAFETY ---')
+
+    // A. Admin create coupon
+    const createRes = await request({
+      path: '/api/coupons/admin',
+      method: 'POST',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    }, {
+      code: 'ADMINTEST10',
+      type: 'percentage',
+      value: 10,
+      maximumDiscount: 200,
+      usageLimit: 100,
+      perUserLimit: 2,
+      startsAt: new Date(Date.now() - 3600000).toISOString(),
+      expiresAt: new Date(Date.now() + 86400000).toISOString(),
+      isActive: true,
+    })
+    testAssert(createRes.status === 201 && createRes.data.success, 'Admin can create coupon (201)')
+    const createdCouponId = createRes.data.coupon._id
+
+    // B. Admin update coupon: update value
+    const updateRes = await request({
+      path: `/api/coupons/admin/${createdCouponId}`,
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    }, {
+      value: 15,
+    })
+    testAssert(updateRes.status === 200 && updateRes.data.coupon.value === 15, 'Admin can update coupon value (200)')
+
+    // C. Clear optional fields using null
+    const clearRes = await request({
+      path: `/api/coupons/admin/${createdCouponId}`,
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    }, {
+      maximumDiscount: null,
+      usageLimit: null,
+      perUserLimit: null,
+      startsAt: null,
+      expiresAt: null,
+    })
+    testAssert(clearRes.status === 200, 'Admin can clear optional fields using null (200)')
+    testAssert(clearRes.data.coupon.maximumDiscount === null, 'maximumDiscount cleared to null')
+    testAssert(clearRes.data.coupon.usageLimit === null, 'usageLimit cleared to null')
+    testAssert(clearRes.data.coupon.perUserLimit === null, 'perUserLimit cleared to null')
+    testAssert(clearRes.data.coupon.startsAt === null, 'startsAt cleared to null')
+    testAssert(clearRes.data.coupon.expiresAt === null, 'expiresAt cleared to null')
+
+    // D. Admin status toggle
+    const toggleRes = await request({
+      path: `/api/coupons/admin/${createdCouponId}/status`,
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    }, { isActive: false })
+    testAssert(toggleRes.status === 200 && toggleRes.data.coupon.isActive === false, 'Admin can deactivate coupon (200)')
+
+    const toggleBackRes = await request({
+      path: `/api/coupons/admin/${createdCouponId}/status`,
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    })
+    testAssert(toggleBackRes.status === 200 && toggleBackRes.data.coupon.isActive === true, 'Admin can toggle coupon back to active (200)')
+
+    // E. Delete unused coupon succeeds
+    const deleteUnusedRes = await request({
+      path: `/api/coupons/admin/${createdCouponId}`,
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    })
+    testAssert(deleteUnusedRes.status === 200 && deleteUnusedRes.data.success, 'Delete unused coupon succeeds (200)')
+    const checkDeleted = await Coupon.findById(createdCouponId)
+    testAssert(checkDeleted === null, 'Unused coupon verified removed from database')
+
+    // F. Delete used coupon fails with 400 and preserves coupon in MongoDB
+    const usedCoupon = await Coupon.create({
+      code: 'USEDCOUPON99',
+      type: 'fixed',
+      value: 100,
+      usedCount: 5, // simulates redeemed coupon
+      isActive: true,
+    })
+    const deleteUsedRes = await request({
+      path: `/api/coupons/admin/${usedCoupon._id}`,
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    })
+    testAssert(deleteUsedRes.status === 400, 'Delete used coupon is REJECTED with HTTP 400')
+    testAssert(
+      deleteUsedRes.data.message ===
+        'Cannot delete a coupon that has already been used in customer orders. Deactivate it instead to preserve audit records.',
+      'Delete rejection includes exact required error message'
+    )
+    const checkUsedStillExists = await Coupon.findById(usedCoupon._id)
+    testAssert(checkUsedStillExists !== null, 'Used coupon still exists in MongoDB (audit record preserved)')
+
+    // Clean up test fixtures
+    await Coupon.findByIdAndDelete(usedCoupon._id)
+
     // Cleanup test products, coupons, orders
-    await Coupon.deleteMany({ code: { $in: ['TESTNORM50', 'LIVEBUY2GET3', 'INACTIVE50', 'EXPIRED10', 'MAXEDOUT', 'ONEPERUSER'] } })
+    await Coupon.deleteMany({ code: { $in: ['TESTNORM50', 'LIVEBUY2GET3', 'INACTIVE50', 'EXPIRED10', 'MAXEDOUT', 'ONEPERUSER', 'ADMINTEST10', 'USEDCOUPON99'] } })
     await Product.findByIdAndDelete(testProduct._id)
     await Order.deleteMany({ user: testCustomer._id })
     await Payment.deleteMany({ user: testCustomer._id })

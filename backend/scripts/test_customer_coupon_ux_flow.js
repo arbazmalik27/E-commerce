@@ -1,7 +1,8 @@
 const http = require('http')
 const mongoose = require('mongoose')
 const jwt = require('jsonwebtoken')
-require('dotenv').config()
+const path = require('path')
+require('dotenv').config({ path: path.join(__dirname, '../.env') })
 
 const app = require('../src/app')
 const Coupon = require('../src/models/Coupon')

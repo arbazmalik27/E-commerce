@@ -297,10 +297,20 @@ const deleteCoupon = async (req, res) => {
   }
 
   try {
-    const coupon = await Coupon.findByIdAndDelete(id)
+    const coupon = await Coupon.findById(id)
     if (!coupon) {
       return res.status(404).json({ success: false, message: 'Coupon not found' })
     }
+
+    if (coupon.usedCount > 0) {
+      return res.status(400).json({
+        success: false,
+        message:
+          'Cannot delete a coupon that has already been used in customer orders. Deactivate it instead to preserve audit records.',
+      })
+    }
+
+    await coupon.deleteOne()
 
     return res.status(200).json({
       success: true,
