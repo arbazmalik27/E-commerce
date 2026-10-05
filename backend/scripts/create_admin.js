@@ -2,7 +2,11 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 require('dotenv').config();
 
-const uri = process.env.MONGODB_URI || 'mongodb+srv://malikarbaz084_db_user:Arbaz%40010703@e-commercecluster0.alu2e4z.mongodb.net/?appName=E-commerceCluster0';
+const uri = process.env.MONGODB_URI;
+if (!uri) {
+  console.error('Error: MONGODB_URI environment variable is required.');
+  process.exit(1);
+}
 
 async function createAdmin() {
   await mongoose.connect(uri);

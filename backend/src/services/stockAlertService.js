@@ -76,7 +76,7 @@ const processBackInStockAlerts = async ({ product, previousProduct = null }) => 
     return { eligibleCount: 0, notifiedCount: 0, errors: [] }
   }
 
-  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173'
+  const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').trim().replace(/\/+$/, '')
   const productUrl = `${clientUrl}/products/${product._id}`
 
   // Process eligible alerts

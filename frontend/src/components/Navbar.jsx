@@ -98,17 +98,17 @@ function Navbar() {
         <span>Complimentary Express Shipping on Orders Over ₹2,999</span>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 xl:px-8">
         {/* =========================================================================
             DESKTOP & LAPTOP NAVBAR: Balanced Editorial 3-Zone Architecture
            ========================================================================= */}
-        <div className="hidden lg:flex items-center justify-between h-20">
+        <div className="hidden xl:flex items-center justify-between h-20">
           {/* Left: Editorial Serif Brand Wordmark */}
           <div className="flex items-center">
             <Link
               to="/"
               aria-label="TrendVolt Home"
-              className="font-serif text-2xl lg:text-3xl font-bold tracking-[0.2em] uppercase text-[#1F211C] hover:text-[#34452F] transition-colors inline-block"
+              className="font-serif text-2xl xl:text-3xl font-bold tracking-[0.2em] uppercase text-[#1F211C] hover:text-[#34452F] transition-colors inline-block"
             >
               TrendVolt
             </Link>
@@ -192,7 +192,7 @@ function Navbar() {
                   value={navSearchQuery}
                   onChange={(e) => setNavSearchQuery(e.target.value)}
                   placeholder="Search catalog..."
-                  className="w-36 lg:w-48 px-3 py-1.5 text-xs rounded-full bg-[#FAF7F0] border border-[#DED7CA] text-[#1F211C] placeholder-[#85857A] focus:outline-none focus:border-[#34452F]"
+                  className="w-36 xl:w-48 px-3 py-1.5 text-xs rounded-full bg-[#FAF7F0] border border-[#DED7CA] text-[#1F211C] placeholder-[#85857A] focus:outline-none focus:border-[#34452F]"
                 />
                 <button
                   type="submit"
@@ -293,7 +293,7 @@ function Navbar() {
         {/* =========================================================================
             MOBILE & TABLET NAVBAR: Clean [ ☰   TRENDVOLT   🔍  🛒 ] Ivory Bar + Slide Drawer
            ========================================================================= */}
-        <div className="lg:hidden flex items-center justify-between h-16">
+        <div className="xl:hidden flex items-center justify-between h-16">
           {/* Hamburger Menu Toggle */}
           <button
             type="button"
@@ -372,7 +372,7 @@ function Navbar() {
           <form
             onSubmit={handleNavSearchSubmit}
             role="search"
-            className="md:hidden pb-3 pt-1 flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200"
+            className="xl:hidden pb-3 pt-1 flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200"
           >
             <input
               type="search"
@@ -394,7 +394,7 @@ function Navbar() {
 
         {/* Mobile Drawer Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-[#DED7CA] py-4 flex flex-col gap-1 text-sm text-[#1F211C] animate-in fade-in duration-200">
+          <div className="xl:hidden border-t border-[#DED7CA] py-4 flex flex-col gap-1 text-sm text-[#1F211C] animate-in fade-in duration-200">
             <Link
               to="/"
               onClick={() => setMobileMenuOpen(false)}

@@ -18,15 +18,21 @@ const flashSaleRoutes = require('./routes/flashSaleRoutes')
 const notificationRoutes = require('./routes/notificationRoutes')
 const analyticsRoutes = require('./routes/analyticsRoutes')
 const salesInsightsRoutes = require('./routes/salesInsightsRoutes')
+const inventoryRoutes = require('./routes/inventoryRoutes')
 
 const app = express()
 
 // Security
 app.use(helmet())
 
-// CORS — allow requests from configured frontend origin and local development origins
+// CORS — allow requests from configured frontend origin(s) and local development origins
+const clientOrigins = (process.env.CLIENT_URL || '')
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/+$/, ''))
+  .filter(Boolean)
+
 const allowedOrigins = [
-  process.env.CLIENT_URL,
+  ...clientOrigins,
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:5175',
@@ -35,12 +41,17 @@ const allowedOrigins = [
   'http://127.0.0.1:5174',
   'http://127.0.0.1:5175',
   'http://127.0.0.1:3000',
-].filter(Boolean)
+]
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      if (!origin) return callback(null, true)
+      const cleanOrigin = origin.replace(/\/+$/, '')
+      if (
+        allowedOrigins.includes(cleanOrigin) ||
+        (process.env.NODE_ENV !== 'production' && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(cleanOrigin))
+      ) {
         callback(null, true)
       } else {
         const corsErr = new Error(`Origin ${origin} not allowed by CORS`)
@@ -75,6 +86,7 @@ app.use('/api/flash-sales', flashSaleRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/sales-insights', salesInsightsRoutes)
+app.use('/api/admin/inventory', inventoryRoutes)
 
 // 404 handler for undefined routes
 app.use((_req, res) => {

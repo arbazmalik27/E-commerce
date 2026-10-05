@@ -17,6 +17,7 @@ import AdminDashboardPage from '../pages/admin/AdminDashboardPage'
 import AdminAnalyticsPage from '../pages/admin/AdminAnalyticsPage'
 import AdminSalesInsightsPage from '../pages/admin/AdminSalesInsightsPage'
 import AdminProductsPage from '../pages/admin/AdminProductsPage'
+import AdminInventoryPage from '../pages/admin/AdminInventoryPage'
 import AdminOrdersPage from '../pages/admin/AdminOrdersPage'
 import AdminUsersPage from '../pages/admin/AdminUsersPage'
 import AdminReviewsPage from '../pages/admin/AdminReviewsPage'
@@ -166,6 +167,14 @@ function AppRoutes() {
           element={
             <AdminRoute>
               <AdminProductsPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/inventory"
+          element={
+            <AdminRoute>
+              <AdminInventoryPage />
             </AdminRoute>
           }
         />

@@ -7,7 +7,7 @@ const {
   validateForgotPasswordInput,
   validateResetPasswordInput,
 } = require('../validators/authValidator')
-const { signToken, setTokenCookie, COOKIE_NAME } = require('../utils/jwt')
+const { signToken, setTokenCookie, clearTokenCookie, COOKIE_NAME } = require('../utils/jwt')
 const { sendPasswordResetEmail } = require('../services/emailService')
 
 const BCRYPT_SALT_ROUNDS = 12
@@ -107,12 +107,7 @@ const getMe = (req, res) => {
 }
 
 const logout = (req, res) => {
-  res.clearCookie(COOKIE_NAME, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    path: '/',
-  })
+  clearTokenCookie(res)
 
   return res.status(200).json({
     success: true,
@@ -143,7 +138,8 @@ const forgotPassword = async (req, res) => {
       user.passwordResetExpires = Date.now() + 15 * 60 * 1000 // 15 minutes
       await user.save()
 
-      const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password?token=${rawToken}`
+      const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').trim().replace(/\/+$/, '')
+      const resetUrl = `${clientUrl}/reset-password?token=${rawToken}`
       try {
         const result = await sendPasswordResetEmail({ to: user.email, resetUrl })
         if (result && result.delivered === false && process.env.EMAIL_SERVICE_ENABLED === 'true') {
@@ -198,12 +194,7 @@ const resetPassword = async (req, res) => {
     await user.save()
 
     // Clear existing session cookie if any
-    res.clearCookie(COOKIE_NAME, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/',
-    })
+    clearTokenCookie(res)
 
     return res.status(200).json({
       success: true,

@@ -33,7 +33,7 @@ const User = require('../src/models/User')
 const Product = require('../src/models/Product')
 const Order = require('../src/models/Order')
 
-const TEST_SECRET = process.env.JWT_SECRET || 'trendvolt_dev_secret_jwt_key_2026'
+const TEST_SECRET = process.env.JWT_SECRET
 
 let server
 let port
@@ -106,10 +106,11 @@ async function runTestSuite() {
   console.log('STARTING SALES & PRODUCT INSIGHTS BACKEND TEST SUITE')
   console.log('========================================================\n')
 
-  await mongoose.connect(
-    process.env.MONGODB_URI ||
-      'mongodb+srv://malikarbaz084_db_user:Arbaz%40010703@e-commercecluster0.alu2e4z.mongodb.net/?appName=E-commerceCluster0'
-  )
+  if (!process.env.MONGODB_URI) {
+    console.error('Error: MONGODB_URI environment variable is required.')
+    process.exit(1)
+  }
+  await mongoose.connect(process.env.MONGODB_URI)
 
   await new Promise((resolve) => {
     server = app.listen(0, () => {
