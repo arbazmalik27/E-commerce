@@ -1,6 +1,8 @@
+import { Suspense } from 'react'
 import { Outlet } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import RouteLoadingFallback from '../components/RouteLoadingFallback'
 
 function RootLayout() {
   return (
@@ -13,7 +15,9 @@ function RootLayout() {
       </a>
       <Navbar />
       <main id="main-content" className="flex-1 focus:outline-none">
-        <Outlet />
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <Outlet />
+        </Suspense>
       </main>
       <Footer />
     </div>
