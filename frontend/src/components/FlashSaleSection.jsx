@@ -10,23 +10,29 @@ function FlashSaleSection() {
   const [flashSales, setFlashSales] = useState([])
   const [loading, setLoading] = useState(true)
 
-  const fetchActiveSales = async () => {
-    try {
-      const response = await api.get('/flash-sales')
-      if (response.data?.success && Array.isArray(response.data.flashSales)) {
-        setFlashSales(response.data.flashSales)
-      } else {
-        setFlashSales([])
-      }
-    } catch {
-      setFlashSales([])
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    fetchActiveSales()
+    let isMounted = true
+    api
+      .get('/flash-sales')
+      .then((response) => {
+        if (!isMounted) return
+        if (response.data?.success && Array.isArray(response.data.flashSales)) {
+          setFlashSales(response.data.flashSales)
+        } else {
+          setFlashSales([])
+        }
+      })
+      .catch(() => {
+        if (!isMounted) return
+        setFlashSales([])
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   // If no active flash sales exist in DB, do not render an empty section

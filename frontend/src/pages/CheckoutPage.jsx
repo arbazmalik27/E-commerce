@@ -473,13 +473,17 @@ function CheckoutPage() {
 
   // Revalidate coupon when cart contents or subtotal change
   useEffect(() => {
+    let isMounted = true
     if (!appliedCoupon) return
     if (!items || items.length === 0) {
-      handleRemoveCoupon()
+      queueMicrotask(() => {
+        if (isMounted) {
+          handleRemoveCoupon()
+        }
+      })
       return
     }
 
-    let isMounted = true
     api
       .post('/coupons/validate', { code: appliedCoupon.code })
       .then((res) => {
@@ -503,7 +507,7 @@ function CheckoutPage() {
     return () => {
       isMounted = false
     }
-  }, [items, totalAmount])
+  }, [items, totalAmount, appliedCoupon])
 
   // Handle order submission & trigger payment
   const handleSubmit = async (e) => {

@@ -12,7 +12,11 @@ function WishlistRecommendations({ wishlistLength = 0 }) {
     if (wishlistLength === 0) return
 
     let isMounted = true
-    setLoading(true)
+    queueMicrotask(() => {
+      if (isMounted) {
+        setLoading(true)
+      }
+    })
 
     api
       .get('/products/wishlist-recommendations?limit=4')

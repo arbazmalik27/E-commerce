@@ -115,13 +115,17 @@ function AdminAnalyticsPage() {
 
   useEffect(() => {
     if (selectedRange !== 'custom') {
-      fetchAnalytics(false)
+      queueMicrotask(() => {
+        fetchAnalytics(false)
+      })
     }
   }, [selectedRange, fetchAnalytics])
 
   useEffect(() => {
     if (selectedRange === 'custom' && appliedCustomDates) {
-      fetchAnalytics(false)
+      queueMicrotask(() => {
+        fetchAnalytics(false)
+      })
     }
   }, [appliedCustomDates, selectedRange, fetchAnalytics])
 

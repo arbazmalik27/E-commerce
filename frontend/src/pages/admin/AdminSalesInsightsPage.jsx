@@ -115,13 +115,17 @@ export default function AdminSalesInsightsPage() {
 
   useEffect(() => {
     if (selectedRange !== 'custom') {
-      fetchSalesInsights(false)
+      queueMicrotask(() => {
+        fetchSalesInsights(false)
+      })
     }
   }, [selectedRange, fetchSalesInsights])
 
   useEffect(() => {
     if (selectedRange === 'custom' && appliedCustomDates) {
-      fetchSalesInsights(false)
+      queueMicrotask(() => {
+        fetchSalesInsights(false)
+      })
     }
   }, [appliedCustomDates, selectedRange, fetchSalesInsights])
 

@@ -48,6 +48,7 @@ function toIstDateInput(iso) {
 }
 
 function AdminCouponsPage() {
+  const [now] = useState(() => Date.now())
   const [coupons, setCoupons] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -484,7 +485,7 @@ function AdminCouponsPage() {
                   <tbody className="divide-y divide-[#DED7CA]/60">
                     {coupons.map((coupon) => {
                       const isBogo = coupon.type === 'buy_x_get_y'
-                      const isExpired = coupon.expiresAt && new Date(coupon.expiresAt).getTime() < Date.now()
+                      const isExpired = coupon.expiresAt && new Date(coupon.expiresAt).getTime() < now
 
                       return (
                         <tr key={coupon._id} className="hover:bg-[#FAF7F0]/50 transition-colors">

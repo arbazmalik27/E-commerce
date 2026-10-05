@@ -108,8 +108,10 @@ function AdminFlashSalesPage() {
   }, [])
 
   useEffect(() => {
-    fetchSales()
-    fetchProducts()
+    queueMicrotask(() => {
+      fetchSales()
+      fetchProducts()
+    })
   }, [fetchSales, fetchProducts])
 
   // Open Create Modal

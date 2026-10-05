@@ -105,8 +105,10 @@ function AccountDashboardPage({ defaultTab = 'overview' }) {
 
   // Initial parallel load
   useEffect(() => {
-    loadOrders()
-    loadAddresses()
+    queueMicrotask(() => {
+      loadOrders()
+      loadAddresses()
+    })
 
     if (!wishlistInitialized) {
       dispatch(fetchWishlist())

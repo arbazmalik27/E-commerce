@@ -32,7 +32,6 @@ function testAssert(condition, message) {
     passed++
   } else {
     console.error(`  ✗ FAIL: ${message}`)
-    passed && (passed = passed) // maintain counter
     failed++
   }
 }
