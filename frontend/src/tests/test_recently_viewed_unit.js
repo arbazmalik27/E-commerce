@@ -11,76 +11,17 @@ global.window = {
   },
 }
 
+import {
+  isValidProductId,
+  getRecentlyViewedIds,
+  addRecentlyViewedId,
+  removeRecentlyViewedId,
+  syncRecentlyViewedIds,
+  clearRecentlyViewed,
+  MAX_RECENT_ITEMS,
+} from '../utils/recentlyViewed.js'
+
 const STORAGE_KEY = 'trendvolt_recently_viewed'
-const MAX_RECENT_ITEMS = 8
-
-const isValidProductId = (id) => {
-  return typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id.trim())
-}
-
-const getRecentlyViewedIds = () => {
-  if (typeof window === 'undefined' || !window.localStorage) return []
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return []
-    const validIds = parsed
-      .map((item) => (typeof item === 'string' ? item.trim() : ''))
-      .filter((id) => isValidProductId(id))
-    return Array.from(new Set(validIds)).slice(0, MAX_RECENT_ITEMS)
-  } catch {
-    return []
-  }
-}
-
-const addRecentlyViewedId = (productId) => {
-  if (!isValidProductId(productId)) return getRecentlyViewedIds()
-  const cleanId = productId.trim()
-  const existing = getRecentlyViewedIds()
-  const filtered = existing.filter((id) => id !== cleanId)
-  const updated = [cleanId, ...filtered].slice(0, MAX_RECENT_ITEMS)
-  try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-    }
-  } catch {}
-  return updated
-}
-
-const removeRecentlyViewedId = (productId) => {
-  if (!isValidProductId(productId)) return getRecentlyViewedIds()
-  const cleanId = productId.trim()
-  const existing = getRecentlyViewedIds()
-  const updated = existing.filter((id) => id !== cleanId)
-  try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-    }
-  } catch {}
-  return updated
-}
-
-const syncRecentlyViewedIds = (validBackendIds) => {
-  if (!Array.isArray(validBackendIds)) return getRecentlyViewedIds()
-  const validSet = new Set(validBackendIds.map((id) => (typeof id === 'string' ? id.trim() : '')))
-  const current = getRecentlyViewedIds()
-  const pruned = current.filter((id) => validSet.has(id))
-  try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(pruned))
-    }
-  } catch {}
-  return pruned
-}
-
-const clearRecentlyViewed = () => {
-  try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.removeItem(STORAGE_KEY)
-    }
-  } catch {}
-}
 
 let passed = 0
 function test(desc, fn) {
@@ -182,7 +123,7 @@ test('History is capped at MAX_RECENT_ITEMS (8)', () => {
   ]
   fakeIds.forEach((id) => addRecentlyViewedId(id))
   const stored = getRecentlyViewedIds()
-  assert.strictEqual(stored.length, 8)
+  assert.strictEqual(stored.length, MAX_RECENT_ITEMS)
   assert.strictEqual(stored[0], 'aaaaaaaaaaaaaaaaaaaaaaaa') // newest
   assert.strictEqual(stored[1], '999999999999999999999999')
   assert.strictEqual(stored[7], '333333333333333333333333') // oldest kept
