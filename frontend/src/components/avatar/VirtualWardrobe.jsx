@@ -10,6 +10,8 @@ import {
   AlertCircle,
   Loader2,
   Trash2,
+  BookmarkPlus,
+  BookmarkCheck,
 } from 'lucide-react'
 import api from '../../services/api'
 import {
@@ -22,6 +24,13 @@ import { getProductImage } from '../../utils/productImageMap'
 import { addToCart } from '../../features/cart/cartSlice'
 import OutfitMatchPanel from './OutfitMatchPanel'
 import { analyzeOutfitColorMatch } from '../../utils/outfitColorMatcher'
+import {
+  validatePresetName,
+  createOutfitSnapshot,
+  getOccupiedSlots,
+  loadPresetsFromStorage,
+  savePresetsToStorage,
+} from '../../utils/outfitPresets'
 
 export default function VirtualWardrobe({
   outfit = { top: null, bottom: null, shoes: null, accessories: [] },
@@ -29,6 +38,7 @@ export default function VirtualWardrobe({
   onSelectProduct,
   onRemoveItem,
   onClearOutfit,
+  onApplyOutfit,
   onAnalysisChange,
   className = '',
 }) {
@@ -41,6 +51,60 @@ export default function VirtualWardrobe({
   const [error, setError] = useState(null)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
   const [cartFeedback, setCartFeedback] = useState(null)
+
+  // Outfit Presets state
+  const [savedPresets, setSavedPresets] = useState(() => loadPresetsFromStorage())
+  const [isNamingPreset, setIsNamingPreset] = useState(false)
+  const [presetNameInput, setPresetNameInput] = useState('')
+  const [presetError, setPresetError] = useState(null)
+  const [presetFeedback, setPresetFeedback] = useState(null)
+
+  // Save current outfit as a named preset
+  const handleSavePreset = () => {
+    const validation = validatePresetName(presetNameInput, savedPresets, outfit)
+    if (!validation.valid) {
+      setPresetError(validation.error)
+      return
+    }
+
+    const newPreset = createOutfitSnapshot(validation.trimmedName, outfit)
+    const updatedPresets = [newPreset, ...savedPresets]
+
+    setSavedPresets(updatedPresets)
+    savePresetsToStorage(updatedPresets)
+
+    setIsNamingPreset(false)
+    setPresetNameInput('')
+    setPresetError(null)
+
+    setPresetFeedback(`Outfit "${validation.trimmedName}" saved!`)
+    setTimeout(() => setPresetFeedback(null), 3500)
+  }
+
+  // Apply a saved preset to active outfit
+  const handleApplyPreset = (preset) => {
+    if (!preset || !preset.outfit) return
+    const cloned = {
+      top: preset.outfit.top ? JSON.parse(JSON.stringify(preset.outfit.top)) : null,
+      bottom: preset.outfit.bottom ? JSON.parse(JSON.stringify(preset.outfit.bottom)) : null,
+      shoes: preset.outfit.shoes ? JSON.parse(JSON.stringify(preset.outfit.shoes)) : null,
+      accessories: Array.isArray(preset.outfit.accessories)
+        ? JSON.parse(JSON.stringify(preset.outfit.accessories))
+        : [],
+    }
+    if (onApplyOutfit) {
+      onApplyOutfit(cloned)
+    }
+    setPresetFeedback(`Applied "${preset.name}".`)
+    setTimeout(() => setPresetFeedback(null), 3000)
+  }
+
+  // Delete a saved preset
+  const handleDeletePreset = (presetId) => {
+    const updatedPresets = savedPresets.filter((p) => p.id !== presetId)
+    setSavedPresets(updatedPresets)
+    savePresetsToStorage(updatedPresets)
+  }
 
   // Handle adding all selected outfit items to cart
   const handleAddToCartOutfit = async () => {
@@ -230,18 +294,99 @@ export default function VirtualWardrobe({
               {totalOutfitItems} {totalOutfitItems === 1 ? 'Piece' : 'Pieces'}
             </span>
           </div>
-          {totalOutfitItems > 0 && (
-            <button
-              type="button"
-              onClick={onClearOutfit}
-              aria-label="Clear all outfit items"
-              className="inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-[#A65332] hover:text-[#8b4226] cursor-pointer transition-colors"
-            >
-              <Trash2 className="w-3 h-3" />
-              <span>Clear Outfit</span>
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {totalOutfitItems > 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsNamingPreset((prev) => !prev)
+                    setPresetError(null)
+                  }}
+                  aria-label="Save Outfit"
+                  className="inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-[#34452F] hover:text-[#263722] font-bold cursor-pointer transition-colors"
+                >
+                  <BookmarkPlus className="w-3.5 h-3.5" />
+                  <span>Save Outfit</span>
+                </button>
+                <span className="text-[#DED7CA] select-none">•</span>
+                <button
+                  type="button"
+                  onClick={onClearOutfit}
+                  aria-label="Clear all outfit items"
+                  className="inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-[#A65332] hover:text-[#8b4226] cursor-pointer transition-colors"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Clear Outfit</span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
+
+        {/* Save Preset Inline Input */}
+        {isNamingPreset && (
+          <div className="mb-4 p-3.5 rounded-xl border border-[#34452F]/25 bg-[#FAF7F0] space-y-2 animate-fade-in">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-mono uppercase tracking-wider text-[11px] font-bold text-[#1F211C]">
+                Save Outfit Preset
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsNamingPreset(false)
+                  setPresetNameInput('')
+                  setPresetError(null)
+                }}
+                aria-label="Cancel saving preset"
+                className="text-[#85857A] hover:text-[#1F211C] p-0.5 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder="e.g. Summer Linen, Autumn Olive..."
+                value={presetNameInput}
+                onChange={(e) => {
+                  setPresetNameInput(e.target.value)
+                  if (presetError) setPresetError(null)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSavePreset()
+                  if (e.key === 'Escape') {
+                    setIsNamingPreset(false)
+                    setPresetError(null)
+                  }
+                }}
+                className="flex-1 px-3 py-1.5 rounded-lg text-xs bg-white border border-[#DED7CA] text-[#1F211C] placeholder-[#85857A] focus:outline-hidden focus:border-[#34452F]"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={handleSavePreset}
+                className="px-3.5 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider font-bold bg-[#34452F] hover:bg-[#263722] text-[#FFFDF8] cursor-pointer transition-colors shadow-2xs"
+              >
+                Save
+              </button>
+            </div>
+            {presetError && (
+              <p role="alert" className="text-[11px] text-[#A65332] font-medium animate-fade-in">
+                {presetError}
+              </p>
+            )}
+          </div>
+        )}
+
+        {presetFeedback && (
+          <div
+            role="status"
+            className="mb-4 p-2.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs flex items-center justify-between animate-fade-in"
+          >
+            <span>{presetFeedback}</span>
+          </div>
+        )}
 
         {/* Outfit Slots Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -498,6 +643,80 @@ export default function VirtualWardrobe({
                 </>
               )}
             </button>
+          </div>
+        )}
+      </section>
+
+      {/* =========================================================================
+          1.2. SAVED OUTFITS PRESETS
+         ========================================================================= */}
+      <section
+        aria-label="Saved Outfits"
+        className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-4 sm:p-5 shadow-xs transition-all space-y-3"
+      >
+        <div className="flex items-center justify-between border-b border-[#DED7CA] pb-2.5">
+          <div className="flex items-center gap-2">
+            <BookmarkCheck className="w-4 h-4 text-[#34452F]" />
+            <h3 className="font-serif text-sm font-bold text-[#1F211C] uppercase tracking-wider">
+              Saved Outfits
+            </h3>
+            {savedPresets.length > 0 && (
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#34452F]/10 text-[#34452F] font-bold">
+                {savedPresets.length}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {savedPresets.length === 0 ? (
+          <div className="p-4 rounded-xl border border-dashed border-[#DED7CA] bg-[#FAF7F0]/60 text-center">
+            <p className="text-xs text-[#85857A]">No saved outfits yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {savedPresets.map((preset) => {
+              const occupied = getOccupiedSlots(preset.outfit)
+              return (
+                <div
+                  key={preset.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] hover:border-[#85857A] transition-colors"
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-[#1F211C] truncate">{preset.name}</p>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                      {occupied.map((slot) => (
+                        <span
+                          key={slot}
+                          className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-[#FFFDF8] border border-[#DED7CA] font-semibold text-[#5F6057]"
+                        >
+                          {slot}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                    <button
+                      type="button"
+                      onClick={() => handleApplyPreset(preset)}
+                      aria-label={`Apply ${preset.name}`}
+                      className="px-3 py-1 rounded-lg text-[10px] font-mono uppercase font-bold bg-[#34452F] hover:bg-[#263722] text-[#FFFDF8] cursor-pointer transition-colors shadow-2xs"
+                    >
+                      Apply
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeletePreset(preset.id)}
+                      aria-label={`Delete ${preset.name}`}
+                      title="Delete preset"
+                      className="p-1 text-[#85857A] hover:text-[#A65332] cursor-pointer transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </section>

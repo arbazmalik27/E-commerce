@@ -191,6 +191,19 @@ export default function AvatarWardrobePage() {
     setGarmentErrors({ top: null, bottom: null })
   }
 
+  // Restore preset into canonical outfit state
+  const handleApplyOutfit = (newOutfit) => {
+    if (!newOutfit) return
+    setOutfit({
+      top: newOutfit.top || null,
+      bottom: newOutfit.bottom || null,
+      shoes: newOutfit.shoes || null,
+      accessories: Array.isArray(newOutfit.accessories) ? [...newOutfit.accessories] : [],
+    })
+    setGarmentLoading({ top: false, bottom: false })
+    setGarmentErrors({ top: null, bottom: null })
+  }
+
   // Runtime callbacks from AvatarViewer GarmentLayer
   const handleGarmentStartLoad = (slot) => {
     setGarmentLoading((prev) => ({ ...prev, [slot]: true }))
@@ -496,6 +509,7 @@ export default function AvatarWardrobePage() {
                 onSelectProduct={handleSelectProduct}
                 onRemoveItem={handleRemoveItem}
                 onClearOutfit={handleClearOutfit}
+                onApplyOutfit={handleApplyOutfit}
                 onAnalysisChange={setOutfitAnalysis}
               />
             </div>
