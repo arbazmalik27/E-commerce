@@ -19,6 +19,7 @@ const notificationRoutes = require('./routes/notificationRoutes')
 const analyticsRoutes = require('./routes/analyticsRoutes')
 const salesInsightsRoutes = require('./routes/salesInsightsRoutes')
 const inventoryRoutes = require('./routes/inventoryRoutes')
+const avatarRoutes = require('./routes/avatarRoutes')
 
 const app = express()
 
@@ -87,6 +88,7 @@ app.use('/api/notifications', notificationRoutes)
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/sales-insights', salesInsightsRoutes)
 app.use('/api/admin/inventory', inventoryRoutes)
+app.use('/api/avatar', avatarRoutes)
 
 // 404 handler for undefined routes
 app.use((_req, res) => {

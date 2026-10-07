@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const uri = process.env.MONGODB_URI;
 if (!uri) {
@@ -14,14 +15,15 @@ async function createAdmin() {
   const existing = await users.findOne({ email: 'admin@trendvolt.com' });
   const hash = await bcrypt.hash('AdminPass123!', 12);
   if (existing) {
-    await users.updateOne({ email: 'admin@trendvolt.com' }, { $set: { password: hash, role: 'admin' } });
-    console.log('Updated existing admin@trendvolt.com to role: admin');
+    await users.updateOne({ email: 'admin@trendvolt.com' }, { $set: { password: hash, role: 'admin', isActive: true } });
+    console.log('Updated existing admin@trendvolt.com to role: admin with isActive: true');
   } else {
     await users.insertOne({
       name: 'TrendVolt Admin',
       email: 'admin@trendvolt.com',
       password: hash,
       role: 'admin',
+      isActive: true,
       createdAt: new Date(),
       updatedAt: new Date()
     });

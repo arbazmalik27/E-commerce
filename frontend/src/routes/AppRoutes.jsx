@@ -41,6 +41,10 @@ const NotFoundPage = lazy(() => import('../pages/NotFoundPage'))
 const PolicyPage = lazy(() => import('../pages/PolicyPage'))
 const BlogPage = lazy(() => import('../pages/BlogPage'))
 const ContactPage = lazy(() => import('../pages/ContactPage'))
+const AvatarPocPage = lazy(() => import('../pages/AvatarPocPage'))
+const AvatarStudioPage = lazy(() => import('../pages/AvatarStudioPage'))
+const AvatarWardrobePage = lazy(() => import('../pages/AvatarWardrobePage'))
+const TryOnPage = lazy(() => import('../pages/TryOnPage'))
 
 function AppRoutes() {
   return (
@@ -55,6 +59,10 @@ function AppRoutes() {
         <Route path="/privacy" element={<PolicyPage />} />
         <Route path="/terms" element={<PolicyPage />} />
         <Route path="/shipping" element={<PolicyPage />} />
+        <Route path="/avatar" element={<AvatarStudioPage />} />
+        <Route path="/avatar/wardrobe" element={<AvatarWardrobePage />} />
+        <Route path="/avatar-poc" element={<AvatarPocPage />} />
+        <Route path="/try-on/:productId" element={<TryOnPage />} />
 
         {/* Public Only (Login / Register / Password Recovery) */}
         <Route

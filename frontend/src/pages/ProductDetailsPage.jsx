@@ -14,13 +14,16 @@ import {
   removeFromWishlist,
   selectIsInWishlist,
 } from '../features/wishlist/wishlistSlice'
+import { Sparkles, ShoppingBag } from 'lucide-react'
 import api from '../services/api'
 import {
   getCategoryLabel,
   getDepartmentLabel,
   getSubcategoryLabel,
 } from '../constants/taxonomy'
+import { determineProductWardrobeSlot } from '../constants/wardrobeConstants'
 import { getProductImage } from '../utils/productImageMap'
+import { isProductTryOnActive } from '../utils/garmentAssetResolver'
 import { addRecentlyViewedId } from '../utils/recentlyViewed'
 import SizeGuideModal from '../components/SizeGuideModal'
 import SizeRecommendationModal from '../components/SizeRecommendationModal'
@@ -1042,6 +1045,20 @@ function ProductDetailsPage() {
                               </svg>
                               <span>Find My Size</span>
                             </button>
+
+                            {product?.tryOn?.enabled && isProductTryOnActive(product) && (
+                              <>
+                                <span className="text-[#DED7CA]">|</span>
+                                <button
+                                  type="button"
+                                  onClick={() => navigate(`/try-on/${product._id}`)}
+                                  className="inline-flex items-center gap-1.5 font-semibold text-[#34452F] hover:text-[#263722] hover:underline transition-colors cursor-pointer"
+                                >
+                                  <Sparkles className="h-3.5 w-3.5 text-[#A65332]" />
+                                  <span>3D Try-On</span>
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
 
@@ -1364,6 +1381,31 @@ function ProductDetailsPage() {
                             Buy Now
                           </button>
                         </div>
+
+                        {/* 3D Avatar Try-On & Virtual Wardrobe CTAs */}
+                        {((product?.tryOn?.enabled && isProductTryOnActive(product)) || determineProductWardrobeSlot(product)) && (
+                          <div className="pt-2 space-y-2">
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/try-on/${product._id}`)}
+                              className="w-full min-h-[48px] inline-flex items-center justify-center gap-2.5 rounded-xl border-2 border-[#34452F] bg-[#34452F]/5 hover:bg-[#34452F] text-[#34452F] hover:text-[#FFFDF8] px-6 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer shadow-xs group"
+                            >
+                              <Sparkles className="h-4 w-4 text-[#A65332] group-hover:text-[#FFFDF8] transition-colors" />
+                              <span>Try On Your 3D Avatar</span>
+                              <span className="text-[10px] font-mono font-bold lowercase px-2 py-0.5 rounded-full bg-[#34452F]/10 group-hover:bg-white/20 text-[#34452F] group-hover:text-white transition-colors">
+                                preview
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/avatar/wardrobe?selectProduct=${product._id}`)}
+                              className="w-full min-h-[42px] inline-flex items-center justify-center gap-2 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] hover:bg-[#EEE7DC] text-[#1F211C] px-5 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                            >
+                              <ShoppingBag className="h-3.5 w-3.5 text-[#34452F]" />
+                              <span>Style in Virtual Wardrobe</span>
+                            </button>
+                          </div>
+                        )}
                       </>
                     )}
                   </div>

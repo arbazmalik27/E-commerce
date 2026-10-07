@@ -112,6 +112,37 @@ const productSchema = new mongoose.Schema(
       default: 0,
       min: [0, 'Review count cannot be negative'],
     },
+    tryOn: {
+      enabled: {
+        type: Boolean,
+        default: false,
+      },
+      garmentType: {
+        type: String,
+        trim: true,
+        lowercase: true,
+        enum: {
+          values: ['top', 'bottom', null],
+          message: '{VALUE} is not a valid garment type',
+        },
+        default: null,
+      },
+      assetUrl: {
+        type: String,
+        trim: true,
+        default: null,
+      },
+      assetStatus: {
+        type: String,
+        trim: true,
+        lowercase: true,
+        enum: {
+          values: ['active', 'pending', 'placeholder', null],
+          message: '{VALUE} is not a valid garment asset status',
+        },
+        default: null,
+      },
+    },
   },
   { timestamps: true }
 )
@@ -120,6 +151,7 @@ productSchema.index({ category: 1, department: 1, subcategory: 1, isActive: 1 })
 productSchema.index({ brand: 1 })
 productSchema.index({ price: 1 })
 productSchema.index({ stock: 1 })
+productSchema.index({ 'tryOn.enabled': 1 })
 
 const Product = mongoose.model('Product', productSchema)
 

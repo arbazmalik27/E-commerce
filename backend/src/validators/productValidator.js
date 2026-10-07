@@ -43,7 +43,7 @@ const validateCreateProductInput = (body = {}) => {
     }
   }
 
-  const { name, description, price, category, department, subcategory, brand, stock, images, isActive, ageRange, sizes } = body
+  const { name, description, price, category, department, subcategory, brand, stock, images, isActive, ageRange, sizes, tryOn } = body
 
   let sanitizedSizes = []
   if (sizes !== undefined && sizes !== null) {
@@ -150,6 +150,60 @@ const validateCreateProductInput = (body = {}) => {
     }
   }
 
+  // 12. tryOn capability validation
+  let sanitizedTryOn = { enabled: false, garmentType: null, assetUrl: null, assetStatus: null }
+  if (tryOn !== undefined && tryOn !== null) {
+    if (typeof tryOn !== 'object' || Array.isArray(tryOn)) {
+      errors.tryOn = 'tryOn must be a JSON object'
+    } else {
+      const enabled = Boolean(tryOn.enabled)
+      let garmentType = null
+      if (tryOn.garmentType !== undefined && tryOn.garmentType !== null) {
+        const rawType = String(tryOn.garmentType).trim().toLowerCase()
+        if (!['top', 'bottom'].includes(rawType)) {
+          errors['tryOn.garmentType'] = 'Garment type must be either "top" or "bottom"'
+        } else {
+          garmentType = rawType
+        }
+      }
+      if (enabled && !garmentType && !errors['tryOn.garmentType']) {
+        errors['tryOn.garmentType'] = 'Garment type ("top" or "bottom") is required when tryOn is enabled'
+      }
+
+      const rawAssetRef = tryOn.assetUrl !== undefined ? tryOn.assetUrl : tryOn.assetReference
+      let assetUrl = null
+      if (rawAssetRef !== undefined && rawAssetRef !== null) {
+        if (typeof rawAssetRef !== 'string') {
+          errors['tryOn.assetUrl'] = 'assetUrl must be a string'
+        } else {
+          const trimmedUrl = rawAssetRef.trim()
+          assetUrl = trimmedUrl.length > 0 ? trimmedUrl : null
+        }
+      }
+
+      let assetStatus = null
+      if (tryOn.assetStatus !== undefined && tryOn.assetStatus !== null) {
+        const rawStatus = String(tryOn.assetStatus).trim().toLowerCase()
+        if (!['active', 'pending', 'placeholder'].includes(rawStatus)) {
+          errors['tryOn.assetStatus'] = 'assetStatus must be "active", "pending", or "placeholder"'
+        } else if (rawStatus === 'active' && !assetUrl) {
+          errors['tryOn.assetStatus'] = 'Active Try-On requires a valid production garment asset reference'
+        } else {
+          assetStatus = rawStatus
+        }
+      } else if (enabled) {
+        assetStatus = assetUrl ? 'active' : 'pending'
+      }
+
+      sanitizedTryOn = {
+        enabled,
+        garmentType: enabled ? garmentType : null,
+        assetUrl: enabled ? assetUrl : null,
+        assetStatus: enabled ? assetStatus : null,
+      }
+    }
+  }
+
   const sanitized = {
     name: typeof name === 'string' ? name.trim() : name,
     description: typeof description === 'string' ? description.trim() : description,
@@ -163,6 +217,7 @@ const validateCreateProductInput = (body = {}) => {
     isActive: typeof isActive === 'boolean' ? isActive : true,
     ageRange: trimmedAgeRange,
     sizes: sanitizedSizes,
+    tryOn: sanitizedTryOn,
   }
 
   return {
@@ -185,6 +240,7 @@ const ALLOWED_UPDATE_FIELDS = [
   'isActive',
   'ageRange',
   'sizes',
+  'tryOn',
 ]
 
 const validateUpdateProductInput = (body = {}, existingProduct = null) => {
@@ -212,7 +268,7 @@ const validateUpdateProductInput = (body = {}, existingProduct = null) => {
     errors.fields = `Unapproved field(s): ${unapprovedFields.join(', ')}`
   }
 
-  const { name, description, price, category, department, subcategory, brand, stock, images, isActive, ageRange, sizes } = body
+  const { name, description, price, category, department, subcategory, brand, stock, images, isActive, ageRange, sizes, tryOn } = body
   const sanitized = {}
 
   if (name !== undefined) {
@@ -357,6 +413,62 @@ const validateUpdateProductInput = (body = {}, existingProduct = null) => {
     }
   }
 
+  if (tryOn !== undefined) {
+    if (tryOn === null) {
+      sanitized.tryOn = { enabled: false, garmentType: null, assetUrl: null, assetStatus: null }
+    } else if (typeof tryOn !== 'object' || Array.isArray(tryOn)) {
+      errors.tryOn = 'tryOn must be a JSON object'
+    } else {
+      const enabled = Boolean(tryOn.enabled)
+      let garmentType = null
+      if (tryOn.garmentType !== undefined && tryOn.garmentType !== null) {
+        const rawType = String(tryOn.garmentType).trim().toLowerCase()
+        if (!['top', 'bottom'].includes(rawType)) {
+          errors['tryOn.garmentType'] = 'Garment type must be either "top" or "bottom"'
+        } else {
+          garmentType = rawType
+        }
+      }
+      if (enabled && !garmentType && !errors['tryOn.garmentType']) {
+        errors['tryOn.garmentType'] = 'Garment type ("top" or "bottom") is required when tryOn is enabled'
+      }
+
+      const rawAssetRef = tryOn.assetUrl !== undefined ? tryOn.assetUrl : tryOn.assetReference
+      let assetUrl = null
+      if (rawAssetRef !== undefined && rawAssetRef !== null) {
+        if (typeof rawAssetRef !== 'string') {
+          errors['tryOn.assetUrl'] = 'assetUrl must be a string'
+        } else {
+          const trimmedUrl = rawAssetRef.trim()
+          assetUrl = trimmedUrl.length > 0 ? trimmedUrl : null
+        }
+      } else if (existingProduct?.tryOn?.assetUrl) {
+        assetUrl = existingProduct.tryOn.assetUrl
+      }
+
+      let assetStatus = null
+      if (tryOn.assetStatus !== undefined && tryOn.assetStatus !== null) {
+        const rawStatus = String(tryOn.assetStatus).trim().toLowerCase()
+        if (!['active', 'pending', 'placeholder'].includes(rawStatus)) {
+          errors['tryOn.assetStatus'] = 'assetStatus must be "active", "pending", or "placeholder"'
+        } else if (rawStatus === 'active' && !assetUrl) {
+          errors['tryOn.assetStatus'] = 'Active Try-On requires a valid production garment asset reference'
+        } else {
+          assetStatus = rawStatus
+        }
+      } else if (enabled) {
+        assetStatus = assetUrl ? (existingProduct?.tryOn?.assetStatus || 'active') : 'pending'
+      }
+
+      sanitized.tryOn = {
+        enabled,
+        garmentType: enabled ? garmentType : null,
+        assetUrl: enabled ? assetUrl : null,
+        assetStatus: enabled ? assetStatus : null,
+      }
+    }
+  }
+
   return {
     isValid: Object.keys(errors).length === 0,
     errors,
@@ -496,6 +608,11 @@ const validateProductQueryParams = (query = {}) => {
   // 11. Flash Sale filter
   if (query.flashSale === 'true' || query.flashSale === true) {
     sanitized.flashSale = true
+  }
+
+  // 12. Try-On filter
+  if (query.tryOn === 'true' || query.tryOn === true) {
+    sanitized.tryOn = true
   }
 
   return sanitized

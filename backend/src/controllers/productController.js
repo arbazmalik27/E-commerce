@@ -69,6 +69,11 @@ const getProducts = async (req, res) => {
       filter.subcategory = sanitizedQuery.subcategory
     }
 
+    // Try-On capability filter
+    if (sanitizedQuery.tryOn) {
+      filter['tryOn.enabled'] = true
+    }
+
     // Specific IDs filter (e.g. for batch fetching or recently viewed)
     if (sanitizedQuery.ids && sanitizedQuery.ids.length > 0) {
       filter._id = { $in: sanitizedQuery.ids }

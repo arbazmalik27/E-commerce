@@ -18,7 +18,9 @@
     "test:sales-insights": "node scripts/test_sales_insights.js",
     "test:inventory": "node scripts/test_inventory_management.js",
     "test:env": "node scripts/test_env_validation.js",
-    "test:all": "node scripts/test_env_validation.js && node scripts/test_taxonomy_kids.js && node scripts/test_pagination.js && node scripts/test_featured_products.js && node scripts/test_advanced_search_filters.js && node scripts/test_reviews.js && node scripts/test_size_guide.js && node scripts/test_back_in_stock_alerts.js && node scripts/test_coupon_system.js && node scripts/test_flash_sales.js && node scripts/test_analytics.js && node scripts/test_sales_insights.js && node scripts/test_inventory_management.js"
+    "test:avatar": "node scripts/test_avatar_backend.js",
+    "test:product-tryon": "node scripts/test_product_tryon.js",
+    "test:all": "node scripts/test_env_validation.js && node scripts/test_taxonomy_kids.js && node scripts/test_pagination.js && node scripts/test_featured_products.js && node scripts/test_advanced_search_filters.js && node scripts/test_reviews.js && node scripts/test_size_guide.js && node scripts/test_back_in_stock_alerts.js && node scripts/test_coupon_system.js && node scripts/test_flash_sales.js && node scripts/test_analytics.js && node scripts/test_sales_insights.js && node scripts/test_inventory_management.js && node scripts/test_avatar_backend.js && node scripts/test_product_tryon.js"
   },
   "keywords": [],
   "author": "",

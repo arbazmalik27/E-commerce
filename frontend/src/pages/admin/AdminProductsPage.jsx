@@ -24,6 +24,8 @@ const INITIAL_FORM = {
   images: [],
   sizes: [],
   isActive: true,
+  tryOnEnabled: false,
+  tryOnGarmentType: 'top',
 }
 
 // Client-side image processor: ensures clean JPEG/PNG encoding and optimizes large photos for web
@@ -319,6 +321,8 @@ function AdminProductsPage() {
       images: Array.isArray(product.images) ? product.images : [],
       sizes: Array.isArray(product.sizes) ? product.sizes : [],
       isActive: product.isActive !== false,
+      tryOnEnabled: Boolean(product.tryOn?.enabled),
+      tryOnGarmentType: product.tryOn?.garmentType || 'top',
     })
     if (Array.isArray(product.images) && product.images.length > 0) {
       setImagePreview(product.images[0])
@@ -451,6 +455,10 @@ function AdminProductsPage() {
         images: finalImageUrl ? [finalImageUrl] : [],
         sizes: Array.isArray(formData.sizes) ? formData.sizes : [],
         isActive: formData.isActive,
+        tryOn: {
+          enabled: Boolean(formData.tryOnEnabled),
+          garmentType: formData.tryOnEnabled ? (formData.tryOnGarmentType || 'top') : null,
+        },
       }
 
       if (modalMode === 'add') {
@@ -1043,17 +1051,24 @@ function AdminProductsPage() {
                         </span>
                       </td>
 
-                      {/* Active Status */}
+                      {/* Active Status & Try-On */}
                       <td className="py-4 px-3">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider border ${
-                            product.isActive !== false
-                              ? 'bg-[#34452F]/10 text-[#34452F] border-[#34452F]/25'
-                              : 'bg-[#FAF7F0] text-[#85857A] border-[#DED7CA]'
-                          }`}
-                        >
-                          {product.isActive !== false ? 'Active' : 'Inactive'}
-                        </span>
+                        <div className="flex flex-col gap-1 items-start">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider border ${
+                              product.isActive !== false
+                                ? 'bg-[#34452F]/10 text-[#34452F] border-[#34452F]/25'
+                                : 'bg-[#FAF7F0] text-[#85857A] border-[#DED7CA]'
+                            }`}
+                          >
+                            {product.isActive !== false ? 'Active' : 'Inactive'}
+                          </span>
+                          {product.tryOn?.enabled && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono uppercase tracking-wider font-bold bg-[#A65332]/10 text-[#A65332] border border-[#A65332]/30">
+                              ⚡ Try-On: {product.tryOn.garmentType || 'top'}
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Actions */}
@@ -1648,6 +1663,62 @@ function AdminProductsPage() {
                 <label htmlFor="form-is-active" className="text-sm font-medium text-[#1F211C] cursor-pointer">
                   Product Active (Visible in Storefront)
                 </label>
+              </div>
+
+              {/* 3D Avatar Try-On Capability */}
+              <div className="rounded-2xl border border-[#DED7CA] bg-[#FAF7F0] p-4 sm:p-5 space-y-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#34452F]">
+                        3D Avatar Try-On Capability
+                      </span>
+                      <span className="rounded-full bg-[#34452F]/10 px-2 py-0.5 text-[10px] font-mono font-bold text-[#34452F]">
+                        Product-Driven
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-[#5F6057] leading-relaxed">
+                      Enable customers to visualize this product on their persistent 3D avatar using authoritative product sizes and sizing recommendations.
+                    </p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(formData.tryOnEnabled)}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          tryOnEnabled: e.target.checked,
+                          tryOnGarmentType: e.target.checked ? (formData.tryOnGarmentType || 'top') : 'top',
+                        })
+                      }
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-[#DED7CA] peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#34452F]"></div>
+                  </label>
+                </div>
+
+                {formData.tryOnEnabled && (
+                  <div className="pt-3 border-t border-[#DED7CA]/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <label htmlFor="form-garment-type" className="block text-xs font-mono uppercase tracking-wider text-[#5F6057] font-semibold">
+                        Garment Type
+                      </label>
+                      <p className="text-[11px] text-[#85857A]">
+                        Determines the avatar layer hierarchy and sizing anchoring (top or bottom).
+                      </p>
+                    </div>
+                    <select
+                      id="form-garment-type"
+                      value={formData.tryOnGarmentType || 'top'}
+                      onChange={(e) => setFormData({ ...formData, tryOnGarmentType: e.target.value })}
+                      className="min-h-[40px] rounded-xl border border-[#DED7CA] bg-[#FFFDF8] px-3.5 text-xs font-bold uppercase tracking-wider text-[#1F211C] focus:border-[#34452F] focus:outline-hidden"
+                    >
+                      <option value="top">Top (Shirt, Hoodie, Top)</option>
+                      <option value="bottom">Bottom (Trouser, Jeans, Skirt)</option>
+                    </select>
+                  </div>
+                )}
               </div>
             </form>
           </div>

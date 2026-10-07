@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "test": "node src/tests/test_recently_viewed_unit.js && node src/tests/test_dark_mode_unit.js && node src/tests/test_account_dashboard_unit.js && node src/tests/test_notifications_unit.js && node src/tests/test_analytics_unit.js && node src/tests/test_sales_insights_unit.js && node src/tests/test_coupons_admin_unit.js && node src/tests/test_flash_sales_admin_unit.js && node src/tests/test_inventory_admin_unit.js",
+    "test": "node src/tests/test_recently_viewed_unit.js && node src/tests/test_dark_mode_unit.js && node src/tests/test_account_dashboard_unit.js && node src/tests/test_notifications_unit.js && node src/tests/test_analytics_unit.js && node src/tests/test_sales_insights_unit.js && node src/tests/test_coupons_admin_unit.js && node src/tests/test_flash_sales_admin_unit.js && node src/tests/test_inventory_admin_unit.js && node src/tests/test_avatar_poc_unit.js && node src/tests/test_avatar_studio_unit.js && node src/tests/test_avatar_photo_unit.js && node src/tests/test_avatar_tryon_unit.js && node src/tests/test_virtual_wardrobe_unit.js && node src/tests/test_outfit_color_matcher_unit.js && node src/tests/test_outfit_visualization_runtime_unit.js && node src/tests/test_avatar_wardrobe_experience_polish_unit.js && node src/tests/test_avatar_visual_quality_unit.js && node src/tests/test_production_avatar_asset_unit.js && node src/tests/test_avatar_experience_completion_unit.js",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -18,7 +18,8 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-redux": "^9.3.0",
-    "react-router-dom": "^7.18.4"
+    "react-router-dom": "^7.18.4",
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

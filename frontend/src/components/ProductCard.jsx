@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
-import { Heart, ShoppingBag, Check } from 'lucide-react'
+import { Heart, ShoppingBag, Check, Sparkles } from 'lucide-react'
 import { selectIsAuthenticated } from '../features/auth/authSlice'
 import { addToCart } from '../features/cart/cartSlice'
 import {
@@ -10,6 +10,7 @@ import {
   selectIsInWishlist,
 } from '../features/wishlist/wishlistSlice'
 import { getProductImage } from '../utils/productImageMap'
+import { isProductTryOnActive } from '../utils/garmentAssetResolver'
 
 function ProductCard({
   product,
@@ -150,6 +151,21 @@ function ProductCard({
               <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-mono font-bold tracking-wider uppercase bg-[#A65332] text-white shadow-xs">
                 ⚡ Flash Sale
               </span>
+            )}
+            {product.tryOn?.enabled && isProductTryOnActive(product) && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  navigate(`/try-on/${product._id}`)
+                }}
+                title="Try on with 3D Avatar"
+                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-mono font-bold tracking-wider uppercase bg-[#34452F] hover:bg-[#263722] text-[#FFFDF8] shadow-xs cursor-pointer transition-colors"
+              >
+                <Sparkles className="w-2.5 h-2.5 text-[#DDB088]" />
+                <span>Try-On</span>
+              </button>
             )}
           </div>
 
@@ -312,6 +328,21 @@ function ProductCard({
             <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-mono font-bold tracking-wider uppercase bg-[#A65332] text-white shadow-xs">
               ⚡ Flash Sale
             </span>
+          )}
+          {product.tryOn?.enabled && isProductTryOnActive(product) && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                navigate(`/try-on/${product._id}`)
+              }}
+              title="Try on with 3D Avatar"
+              className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-mono font-bold tracking-wider uppercase bg-[#34452F] hover:bg-[#263722] text-[#FFFDF8] shadow-xs cursor-pointer transition-colors"
+            >
+              <Sparkles className="w-2.5 h-2.5 text-[#DDB088]" />
+              <span>Try-On</span>
+            </button>
           )}
         </div>
 
