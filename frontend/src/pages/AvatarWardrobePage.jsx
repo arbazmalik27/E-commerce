@@ -494,6 +494,7 @@ export default function AvatarWardrobePage() {
             <div className="lg:col-span-7">
               <VirtualWardrobe
                 outfit={outfit}
+                avatarProfile={avatarProfile}
                 garmentStatuses={{
                   top: garmentLoading.top
                     ? 'loading'

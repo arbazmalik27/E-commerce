@@ -26,6 +26,10 @@ import OutfitMatchPanel from './OutfitMatchPanel'
 import { analyzeOutfitColorMatch } from '../../utils/outfitColorMatcher'
 import { getOutfitRecommendations } from '../../utils/outfitRecommendationEngine'
 import {
+  getProductSizeRecommendation,
+  resolveEffectiveSize,
+} from '../../utils/outfitSizeGuidance'
+import {
   validatePresetName,
   createOutfitSnapshot,
   getOccupiedSlots,
@@ -35,6 +39,7 @@ import {
 
 export default function VirtualWardrobe({
   outfit = { top: null, bottom: null, shoes: null, accessories: [] },
+  avatarProfile = null,
   garmentStatuses = { top: null, bottom: null },
   onSelectProduct,
   onRemoveItem,
@@ -59,6 +64,17 @@ export default function VirtualWardrobe({
   const [presetNameInput, setPresetNameInput] = useState('')
   const [presetError, setPresetError] = useState(null)
   const [presetFeedback, setPresetFeedback] = useState(null)
+
+  // Phase 9: Manually selected sizes per product ID { [productId]: sizeLabel }
+  const [selectedSizes, setSelectedSizes] = useState({})
+
+  const handleSelectSize = (productId, sizeLabel) => {
+    if (!productId) return
+    setSelectedSizes((prev) => ({
+      ...prev,
+      [productId]: sizeLabel,
+    }))
+  }
 
   // Save current outfit as a named preset
   const handleSavePreset = () => {
@@ -125,8 +141,9 @@ export default function VirtualWardrobe({
     let lastError = null
 
     for (const item of itemsToAdd) {
-      let chosenSize = undefined
-      if (Array.isArray(item.sizes) && item.sizes.length > 0) {
+      const rec = getProductSizeRecommendation(item, avatarProfile)
+      let chosenSize = resolveEffectiveSize(item, selectedSizes[item._id], rec)
+      if (!chosenSize && Array.isArray(item.sizes) && item.sizes.length > 0) {
         const avail = item.sizes.find((s) => s.available !== false)
         chosenSize = avail ? avail.label : item.sizes[0].label
       }
@@ -275,6 +292,33 @@ export default function VirtualWardrobe({
     return getOutfitRecommendations(outfit, products, { maxPerSlot: 4 })
   }, [outfit, products])
 
+  // Phase 9: Deterministic Outfit Size Guidance for selected pieces
+  const topSizeRec = useMemo(
+    () => getProductSizeRecommendation(outfit.top, avatarProfile),
+    [outfit.top, avatarProfile]
+  )
+  const bottomSizeRec = useMemo(
+    () => getProductSizeRecommendation(outfit.bottom, avatarProfile),
+    [outfit.bottom, avatarProfile]
+  )
+  const shoesSizeRec = useMemo(
+    () => getProductSizeRecommendation(outfit.shoes, avatarProfile),
+    [outfit.shoes, avatarProfile]
+  )
+
+  const topEffectiveSize = useMemo(
+    () => resolveEffectiveSize(outfit.top, selectedSizes[outfit.top?._id], topSizeRec),
+    [outfit.top, selectedSizes, topSizeRec]
+  )
+  const bottomEffectiveSize = useMemo(
+    () => resolveEffectiveSize(outfit.bottom, selectedSizes[outfit.bottom?._id], bottomSizeRec),
+    [outfit.bottom, selectedSizes, bottomSizeRec]
+  )
+  const shoesEffectiveSize = useMemo(
+    () => resolveEffectiveSize(outfit.shoes, selectedSizes[outfit.shoes?._id], shoesSizeRec),
+    [outfit.shoes, selectedSizes, shoesSizeRec]
+  )
+
   useEffect(() => {
     if (onAnalysisChange) {
       onAnalysisChange(colorMatchAnalysis)
@@ -397,60 +441,106 @@ export default function VirtualWardrobe({
         {/* Outfit Slots Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* TOP SLOT */}
-          <div className="flex items-center gap-3 p-3 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] relative group">
-            <span className="text-[10px] font-mono uppercase font-bold text-[#85857A] absolute top-2 right-2">
-              Top
-            </span>
+          <div className="flex flex-col justify-between p-3 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] relative group">
             {outfit.top ? (
               <>
-                <img
-                  src={getProductImage(outfit.top)}
-                  alt={outfit.top.name}
-                  className="w-12 h-14 object-cover rounded-lg bg-white border border-[#DED7CA] shrink-0"
-                />
-                <div className="min-w-0 flex-1 pr-6">
-                  <p className="text-xs font-bold text-[#1F211C] truncate">{outfit.top.name}</p>
-                  <p className="text-xs text-[#A65332] font-semibold mt-0.5">
-                    ₹{Number(outfit.top.price).toLocaleString('en-IN')}
-                  </p>
-                  <div className="flex items-center gap-1 mt-1">
-                    {garmentStatuses?.top === 'loading' ? (
-                      <span className="inline-flex items-center gap-1 text-[9px] font-mono text-[#34452F] font-bold">
-                        <Loader2 className="w-2.5 h-2.5 animate-spin text-[#34452F]" />
-                        Loading 3D garment…
-                      </span>
-                    ) : garmentStatuses?.top === 'error' ? (
-                      <span className="text-[9px] font-mono text-amber-700 dark:text-amber-400 font-medium">
-                        Unable to load this 3D preview.
-                      </span>
-                    ) : isProductTryOnActive(outfit.top) ? (
-                      <span className="inline-flex items-center gap-1 text-[9px] font-mono text-[#34452F] font-bold">
-                        <Sparkles className="w-2.5 h-2.5 text-[#DDB088]" />
-                        3D Active
-                      </span>
-                    ) : (
-                      <span className="text-[9px] font-mono text-[#85857A]">
-                        3D preview unavailable for this product.
-                      </span>
-                    )}
+                <div className="flex items-center gap-3">
+                  <img
+                    src={getProductImage(outfit.top)}
+                    alt={outfit.top.name}
+                    className="w-12 h-14 object-cover rounded-lg bg-white border border-[#DED7CA] shrink-0"
+                  />
+                  <div className="min-w-0 flex-1 pr-6">
+                    <span className="text-[10px] font-mono uppercase font-bold text-[#85857A] block">
+                      Top
+                    </span>
+                    <p className="text-xs font-bold text-[#1F211C] truncate">{outfit.top.name}</p>
+                    <p className="text-xs text-[#A65332] font-semibold mt-0.5">
+                      ₹{Number(outfit.top.price).toLocaleString('en-IN')}
+                    </p>
+                    <div className="flex items-center gap-1 mt-1">
+                      {garmentStatuses?.top === 'loading' ? (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-mono text-[#34452F] font-bold">
+                          <Loader2 className="w-2.5 h-2.5 animate-spin text-[#34452F]" />
+                          Loading 3D garment…
+                        </span>
+                      ) : garmentStatuses?.top === 'error' ? (
+                        <span className="text-[9px] font-mono text-amber-700 dark:text-amber-400 font-medium">
+                          Unable to load this 3D preview.
+                        </span>
+                      ) : isProductTryOnActive(outfit.top) ? (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-mono text-[#34452F] font-bold">
+                          <Sparkles className="w-2.5 h-2.5 text-[#DDB088]" />
+                          3D Active
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-mono text-[#85857A]">
+                          3D preview unavailable for this product.
+                        </span>
+                      )}
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveItem?.(WARDROBE_SLOTS.TOP)}
+                    title="Remove top from outfit"
+                    aria-label="Remove top from outfit"
+                    className="absolute top-2 right-2 p-1 text-[#85857A] hover:text-[#A65332] transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onRemoveItem?.(WARDROBE_SLOTS.TOP)}
-                  title="Remove top from outfit"
-                  aria-label="Remove top from outfit"
-                  className="absolute bottom-2 right-2 p-1 text-[#85857A] hover:text-[#A65332] transition-colors cursor-pointer"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+
+                {/* Phase 9 Size Guidance & Selection */}
+                {Array.isArray(outfit.top.sizes) && outfit.top.sizes.length > 0 && (
+                  <div className="mt-2.5 pt-2 border-t border-[#DED7CA]/70 flex flex-col gap-1">
+                    <div className="flex items-center justify-between text-[10px] font-mono leading-tight">
+                      <span className="text-[#5F6057] font-medium truncate">
+                        {topSizeRec.message}
+                      </span>
+                      {topEffectiveSize && (
+                        <span className="shrink-0 text-[#1F211C] font-bold pl-1">
+                          Selected: <span className="text-[#34452F]">{topEffectiveSize}</span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                      {outfit.top.sizes.map((s) => {
+                        const isRec = topSizeRec.recommendedSize === s.label
+                        const isSelected = topEffectiveSize === s.label
+                        const isAvail = s.available !== false
+
+                        return (
+                          <button
+                            key={s.label}
+                            type="button"
+                            disabled={!isAvail}
+                            onClick={() => handleSelectSize(outfit.top._id, s.label)}
+                            title={`${s.label}${isRec ? ' (Recommended size)' : ''}${!isAvail ? ' (Unavailable)' : ''}`}
+                            aria-label={`Select top size ${s.label}${isRec ? ' (Recommended)' : ''}`}
+                            className={`px-1.5 py-0.5 rounded text-[9px] font-mono transition-all cursor-pointer border ${
+                              isSelected
+                                ? 'bg-[#34452F] text-white border-[#34452F] font-bold shadow-2xs'
+                                : isRec
+                                ? 'bg-[#FAF7F0] text-[#34452F] border-[#34452F]/40 font-semibold hover:border-[#34452F]'
+                                : 'bg-white text-[#5F6057] border-[#DED7CA] hover:border-[#85857A]'
+                            } ${!isAvail ? 'opacity-40 cursor-not-allowed line-through' : ''}`}
+                          >
+                            {s.label}
+                            {isRec && <span className="ml-0.5 text-[8px] opacity-75">★</span>}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <button
                 type="button"
                 onClick={() => setActiveFilter('tops')}
                 aria-label="Add a top"
-                className="flex items-center justify-center w-full py-3 text-center text-xs text-[#85857A] hover:text-[#34452F] transition-colors cursor-pointer group"
+                className="flex items-center justify-center w-full py-5 text-center text-xs text-[#85857A] hover:text-[#34452F] transition-colors cursor-pointer group"
               >
                 <span className="font-medium group-hover:underline">+ Add a top</span>
               </button>
@@ -458,60 +548,106 @@ export default function VirtualWardrobe({
           </div>
 
           {/* BOTTOM SLOT */}
-          <div className="flex items-center gap-3 p-3 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] relative group">
-            <span className="text-[10px] font-mono uppercase font-bold text-[#85857A] absolute top-2 right-2">
-              Bottom
-            </span>
+          <div className="flex flex-col justify-between p-3 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] relative group">
             {outfit.bottom ? (
               <>
-                <img
-                  src={getProductImage(outfit.bottom)}
-                  alt={outfit.bottom.name}
-                  className="w-12 h-14 object-cover rounded-lg bg-white border border-[#DED7CA] shrink-0"
-                />
-                <div className="min-w-0 flex-1 pr-6">
-                  <p className="text-xs font-bold text-[#1F211C] truncate">{outfit.bottom.name}</p>
-                  <p className="text-xs text-[#A65332] font-semibold mt-0.5">
-                    ₹{Number(outfit.bottom.price).toLocaleString('en-IN')}
-                  </p>
-                  <div className="flex items-center gap-1 mt-1">
-                    {garmentStatuses?.bottom === 'loading' ? (
-                      <span className="inline-flex items-center gap-1 text-[9px] font-mono text-[#34452F] font-bold">
-                        <Loader2 className="w-2.5 h-2.5 animate-spin text-[#34452F]" />
-                        Loading 3D garment…
-                      </span>
-                    ) : garmentStatuses?.bottom === 'error' ? (
-                      <span className="text-[9px] font-mono text-amber-700 dark:text-amber-400 font-medium">
-                        Unable to load this 3D preview.
-                      </span>
-                    ) : isProductTryOnActive(outfit.bottom) ? (
-                      <span className="inline-flex items-center gap-1 text-[9px] font-mono text-[#34452F] font-bold">
-                        <Sparkles className="w-2.5 h-2.5 text-[#DDB088]" />
-                        3D Active
-                      </span>
-                    ) : (
-                      <span className="text-[9px] font-mono text-[#85857A]">
-                        3D preview unavailable for this product.
-                      </span>
-                    )}
+                <div className="flex items-center gap-3">
+                  <img
+                    src={getProductImage(outfit.bottom)}
+                    alt={outfit.bottom.name}
+                    className="w-12 h-14 object-cover rounded-lg bg-white border border-[#DED7CA] shrink-0"
+                  />
+                  <div className="min-w-0 flex-1 pr-6">
+                    <span className="text-[10px] font-mono uppercase font-bold text-[#85857A] block">
+                      Bottom
+                    </span>
+                    <p className="text-xs font-bold text-[#1F211C] truncate">{outfit.bottom.name}</p>
+                    <p className="text-xs text-[#A65332] font-semibold mt-0.5">
+                      ₹{Number(outfit.bottom.price).toLocaleString('en-IN')}
+                    </p>
+                    <div className="flex items-center gap-1 mt-1">
+                      {garmentStatuses?.bottom === 'loading' ? (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-mono text-[#34452F] font-bold">
+                          <Loader2 className="w-2.5 h-2.5 animate-spin text-[#34452F]" />
+                          Loading 3D garment…
+                        </span>
+                      ) : garmentStatuses?.bottom === 'error' ? (
+                        <span className="text-[9px] font-mono text-amber-700 dark:text-amber-400 font-medium">
+                          Unable to load this 3D preview.
+                        </span>
+                      ) : isProductTryOnActive(outfit.bottom) ? (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-mono text-[#34452F] font-bold">
+                          <Sparkles className="w-2.5 h-2.5 text-[#DDB088]" />
+                          3D Active
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-mono text-[#85857A]">
+                          3D preview unavailable for this product.
+                        </span>
+                      )}
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveItem?.(WARDROBE_SLOTS.BOTTOM)}
+                    title="Remove bottom from outfit"
+                    aria-label="Remove bottom from outfit"
+                    className="absolute top-2 right-2 p-1 text-[#85857A] hover:text-[#A65332] transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onRemoveItem?.(WARDROBE_SLOTS.BOTTOM)}
-                  title="Remove bottom from outfit"
-                  aria-label="Remove bottom from outfit"
-                  className="absolute bottom-2 right-2 p-1 text-[#85857A] hover:text-[#A65332] transition-colors cursor-pointer"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+
+                {/* Phase 9 Size Guidance & Selection */}
+                {Array.isArray(outfit.bottom.sizes) && outfit.bottom.sizes.length > 0 && (
+                  <div className="mt-2.5 pt-2 border-t border-[#DED7CA]/70 flex flex-col gap-1">
+                    <div className="flex items-center justify-between text-[10px] font-mono leading-tight">
+                      <span className="text-[#5F6057] font-medium truncate">
+                        {bottomSizeRec.message}
+                      </span>
+                      {bottomEffectiveSize && (
+                        <span className="shrink-0 text-[#1F211C] font-bold pl-1">
+                          Selected: <span className="text-[#34452F]">{bottomEffectiveSize}</span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                      {outfit.bottom.sizes.map((s) => {
+                        const isRec = bottomSizeRec.recommendedSize === s.label
+                        const isSelected = bottomEffectiveSize === s.label
+                        const isAvail = s.available !== false
+
+                        return (
+                          <button
+                            key={s.label}
+                            type="button"
+                            disabled={!isAvail}
+                            onClick={() => handleSelectSize(outfit.bottom._id, s.label)}
+                            title={`${s.label}${isRec ? ' (Recommended size)' : ''}${!isAvail ? ' (Unavailable)' : ''}`}
+                            aria-label={`Select bottom size ${s.label}${isRec ? ' (Recommended)' : ''}`}
+                            className={`px-1.5 py-0.5 rounded text-[9px] font-mono transition-all cursor-pointer border ${
+                              isSelected
+                                ? 'bg-[#34452F] text-white border-[#34452F] font-bold shadow-2xs'
+                                : isRec
+                                ? 'bg-[#FAF7F0] text-[#34452F] border-[#34452F]/40 font-semibold hover:border-[#34452F]'
+                                : 'bg-white text-[#5F6057] border-[#DED7CA] hover:border-[#85857A]'
+                            } ${!isAvail ? 'opacity-40 cursor-not-allowed line-through' : ''}`}
+                          >
+                            {s.label}
+                            {isRec && <span className="ml-0.5 text-[8px] opacity-75">★</span>}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <button
                 type="button"
                 onClick={() => setActiveFilter('bottoms')}
                 aria-label="Add bottoms"
-                className="flex items-center justify-center w-full py-3 text-center text-xs text-[#85857A] hover:text-[#34452F] transition-colors cursor-pointer group"
+                className="flex items-center justify-center w-full py-5 text-center text-xs text-[#85857A] hover:text-[#34452F] transition-colors cursor-pointer group"
               >
                 <span className="font-medium group-hover:underline">+ Add bottoms</span>
               </button>
@@ -519,40 +655,86 @@ export default function VirtualWardrobe({
           </div>
 
           {/* SHOES SLOT */}
-          <div className="flex items-center gap-3 p-3 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] relative group">
-            <span className="text-[10px] font-mono uppercase font-bold text-[#85857A] absolute top-2 right-2">
-              Shoes
-            </span>
+          <div className="flex flex-col justify-between p-3 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] relative group">
             {outfit.shoes ? (
               <>
-                <img
-                  src={getProductImage(outfit.shoes)}
-                  alt={outfit.shoes.name}
-                  className="w-12 h-14 object-cover rounded-lg bg-white border border-[#DED7CA] shrink-0"
-                />
-                <div className="min-w-0 flex-1 pr-6">
-                  <p className="text-xs font-bold text-[#1F211C] truncate">{outfit.shoes.name}</p>
-                  <p className="text-xs text-[#A65332] font-semibold mt-0.5">
-                    ₹{Number(outfit.shoes.price).toLocaleString('en-IN')}
-                  </p>
-                  <p className="text-[9px] font-mono text-[#85857A] mt-1">Catalog Piece</p>
+                <div className="flex items-center gap-3">
+                  <img
+                    src={getProductImage(outfit.shoes)}
+                    alt={outfit.shoes.name}
+                    className="w-12 h-14 object-cover rounded-lg bg-white border border-[#DED7CA] shrink-0"
+                  />
+                  <div className="min-w-0 flex-1 pr-6">
+                    <span className="text-[10px] font-mono uppercase font-bold text-[#85857A] block">
+                      Shoes
+                    </span>
+                    <p className="text-xs font-bold text-[#1F211C] truncate">{outfit.shoes.name}</p>
+                    <p className="text-xs text-[#A65332] font-semibold mt-0.5">
+                      ₹{Number(outfit.shoes.price).toLocaleString('en-IN')}
+                    </p>
+                    <p className="text-[9px] font-mono text-[#85857A] mt-1">Catalog Piece</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveItem?.(WARDROBE_SLOTS.SHOES)}
+                    title="Remove shoes from outfit"
+                    aria-label="Remove shoes from outfit"
+                    className="absolute top-2 right-2 p-1 text-[#85857A] hover:text-[#A65332] transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onRemoveItem?.(WARDROBE_SLOTS.SHOES)}
-                  title="Remove shoes from outfit"
-                  aria-label="Remove shoes from outfit"
-                  className="absolute bottom-2 right-2 p-1 text-[#85857A] hover:text-[#A65332] transition-colors cursor-pointer"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+
+                {/* Phase 9 Size Guidance & Selection */}
+                {Array.isArray(outfit.shoes.sizes) && outfit.shoes.sizes.length > 0 && (
+                  <div className="mt-2.5 pt-2 border-t border-[#DED7CA]/70 flex flex-col gap-1">
+                    <div className="flex items-center justify-between text-[10px] font-mono leading-tight">
+                      <span className="text-[#5F6057] font-medium truncate">
+                        {shoesSizeRec.message}
+                      </span>
+                      {shoesEffectiveSize && (
+                        <span className="shrink-0 text-[#1F211C] font-bold pl-1">
+                          Selected: <span className="text-[#34452F]">{shoesEffectiveSize}</span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                      {outfit.shoes.sizes.map((s) => {
+                        const isRec = shoesSizeRec.recommendedSize === s.label
+                        const isSelected = shoesEffectiveSize === s.label
+                        const isAvail = s.available !== false
+
+                        return (
+                          <button
+                            key={s.label}
+                            type="button"
+                            disabled={!isAvail}
+                            onClick={() => handleSelectSize(outfit.shoes._id, s.label)}
+                            title={`${s.label}${isRec ? ' (Recommended size)' : ''}${!isAvail ? ' (Unavailable)' : ''}`}
+                            aria-label={`Select shoe size ${s.label}${isRec ? ' (Recommended)' : ''}`}
+                            className={`px-1.5 py-0.5 rounded text-[9px] font-mono transition-all cursor-pointer border ${
+                              isSelected
+                                ? 'bg-[#34452F] text-white border-[#34452F] font-bold shadow-2xs'
+                                : isRec
+                                ? 'bg-[#FAF7F0] text-[#34452F] border-[#34452F]/40 font-semibold hover:border-[#34452F]'
+                                : 'bg-white text-[#5F6057] border-[#DED7CA] hover:border-[#85857A]'
+                            } ${!isAvail ? 'opacity-40 cursor-not-allowed line-through' : ''}`}
+                          >
+                            {s.label}
+                            {isRec && <span className="ml-0.5 text-[8px] opacity-75">★</span>}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <button
                 type="button"
                 onClick={() => setActiveFilter('shoes')}
                 aria-label="Add shoes"
-                className="flex items-center justify-center w-full py-3 text-center text-xs text-[#85857A] hover:text-[#34452F] transition-colors cursor-pointer group"
+                className="flex items-center justify-center w-full py-5 text-center text-xs text-[#85857A] hover:text-[#34452F] transition-colors cursor-pointer group"
               >
                 <span className="font-medium group-hover:underline">+ Add shoes</span>
               </button>
@@ -560,35 +742,79 @@ export default function VirtualWardrobe({
           </div>
 
           {/* ACCESSORIES SLOT */}
-          <div className="flex items-center gap-3 p-3 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] relative group">
-            <span className="text-[10px] font-mono uppercase font-bold text-[#85857A] absolute top-2 right-2">
+          <div className="flex flex-col justify-between p-3 rounded-xl border border-[#DED7CA] bg-[#FAF7F0] relative group">
+            <span className="text-[10px] font-mono uppercase font-bold text-[#85857A] block mb-1">
               Acc.
             </span>
             {Array.isArray(outfit.accessories) && outfit.accessories.length > 0 ? (
-              <div className="w-full space-y-1.5 pr-2">
-                {outfit.accessories.map((acc) => (
-                  <div key={acc._id} className="flex items-center justify-between text-xs">
-                    <span className="truncate max-w-[120px] font-medium text-[#1F211C]">
-                      {acc.name}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => onRemoveItem?.(WARDROBE_SLOTS.ACCESSORIES, acc._id)}
-                      title={`Remove ${acc.name} from accessories`}
-                      aria-label={`Remove ${acc.name} from accessories`}
-                      className="text-[#85857A] hover:text-[#A65332] p-0.5 cursor-pointer"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
+              <div className="w-full space-y-2 pr-1">
+                {outfit.accessories.map((acc) => {
+                  const accRec = getProductSizeRecommendation(acc, avatarProfile)
+                  const accEff = resolveEffectiveSize(acc, selectedSizes[acc._id], accRec)
+                  return (
+                    <div key={acc._id} className="flex flex-col gap-1 border-b border-[#DED7CA]/50 pb-1.5 last:border-b-0 last:pb-0">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="truncate max-w-[120px] font-medium text-[#1F211C]">
+                          {acc.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => onRemoveItem?.(WARDROBE_SLOTS.ACCESSORIES, acc._id)}
+                          title={`Remove ${acc.name} from accessories`}
+                          aria-label={`Remove ${acc.name} from accessories`}
+                          className="text-[#85857A] hover:text-[#A65332] p-0.5 cursor-pointer"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      {Array.isArray(acc.sizes) && acc.sizes.length > 0 && (
+                        <div className="flex flex-col gap-0.5 mt-0.5">
+                          <div className="flex items-center justify-between text-[9px] font-mono">
+                            <span className="text-[#5F6057] truncate">{accRec.message}</span>
+                            {accEff && (
+                              <span className="font-bold text-[#1F211C]">
+                                Sel: <span className="text-[#34452F]">{accEff}</span>
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                            {acc.sizes.map((s) => {
+                              const isRec = accRec.recommendedSize === s.label
+                              const isSel = accEff === s.label
+                              const isAvail = s.available !== false
+                              return (
+                                <button
+                                  key={s.label}
+                                  type="button"
+                                  disabled={!isAvail}
+                                  onClick={() => handleSelectSize(acc._id, s.label)}
+                                  aria-label={`Select ${acc.name} size ${s.label}`}
+                                  className={`px-1 py-0.2 rounded text-[8px] font-mono border ${
+                                    isSel
+                                      ? 'bg-[#34452F] text-white border-[#34452F] font-bold'
+                                      : isRec
+                                      ? 'bg-[#FAF7F0] text-[#34452F] border-[#34452F]/40'
+                                      : 'bg-white text-[#5F6057] border-[#DED7CA]'
+                                  } ${!isAvail ? 'opacity-40 line-through' : ''}`}
+                                >
+                                  {s.label}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             ) : (
               <button
                 type="button"
                 onClick={() => setActiveFilter('accessories')}
                 aria-label="Add accessories"
-                className="flex items-center justify-center w-full py-3 text-center text-xs text-[#85857A] hover:text-[#34452F] transition-colors cursor-pointer group"
+                className="flex items-center justify-center w-full py-5 text-center text-xs text-[#85857A] hover:text-[#34452F] transition-colors cursor-pointer group"
               >
                 <span className="font-medium group-hover:underline">+ Add accessories</span>
               </button>
@@ -607,6 +833,10 @@ export default function VirtualWardrobe({
                 ₹{totalOutfitPrice.toLocaleString('en-IN')}
               </span>
             </div>
+
+            <p className="text-[10px] font-mono text-[#85857A]">
+              Advisory size guidance only — visual avatar is not a physical fit guarantee.
+            </p>
 
             {/* Cart Feedback Notification */}
             {cartFeedback && (
