@@ -24,6 +24,7 @@ import { getProductImage } from '../../utils/productImageMap'
 import { addToCart } from '../../features/cart/cartSlice'
 import OutfitMatchPanel from './OutfitMatchPanel'
 import { analyzeOutfitColorMatch } from '../../utils/outfitColorMatcher'
+import { getOutfitRecommendations } from '../../utils/outfitRecommendationEngine'
 import {
   validatePresetName,
   createOutfitSnapshot,
@@ -267,6 +268,11 @@ export default function VirtualWardrobe({
   // Deterministic Outfit Color & Style Match Analysis
   const colorMatchAnalysis = useMemo(() => {
     return analyzeOutfitColorMatch(outfit, products)
+  }, [outfit, products])
+
+  // Deterministic Phase 8 Outfit Recommendations ("Complete This Look")
+  const outfitRecommendations = useMemo(() => {
+    return getOutfitRecommendations(outfit, products, { maxPerSlot: 4 })
   }, [outfit, products])
 
   useEffect(() => {
@@ -733,6 +739,138 @@ export default function VirtualWardrobe({
           }
         }}
       />
+
+      {/* =========================================================================
+          1.6. COMPLETE THIS LOOK (PHASE 8 OUTFIT RECOMMENDATIONS)
+         ========================================================================= */}
+      <section
+        aria-label="Complete This Look"
+        className="rounded-2xl border border-[#DED7CA] bg-[#FFFDF8] p-4 sm:p-5 shadow-xs transition-all space-y-4"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#DED7CA] pb-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[#34452F]" />
+            <h3 className="font-serif text-sm font-bold text-[#1F211C] uppercase tracking-wider">
+              Complete This Look
+            </h3>
+            {totalOutfitItems > 0 && outfitRecommendations.length > 0 && (
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#34452F]/10 text-[#34452F] font-bold">
+                {outfitRecommendations.reduce((acc, r) => acc + r.products.length, 0)} Recommended
+              </span>
+            )}
+          </div>
+          <span className="text-[11px] font-mono text-[#85857A]">
+            {totalOutfitItems === 0
+              ? 'Add an item to start building your outfit.'
+              : 'Works well with your current selection'}
+          </span>
+        </div>
+
+        {/* Empty State: No current outfit items selected */}
+        {totalOutfitItems === 0 && (
+          <div className="p-4 rounded-xl border border-dashed border-[#DED7CA] bg-[#FAF7F0]/60 text-center">
+            <p className="text-xs text-[#85857A]">
+              Add an item to start building your outfit.
+            </p>
+          </div>
+        )}
+
+        {/* Empty State: Outfit selected, but no matching compatible products found */}
+        {totalOutfitItems > 0 && outfitRecommendations.length === 0 && (
+          <div className="p-4 rounded-xl border border-dashed border-[#DED7CA] bg-[#FAF7F0]/60 text-center">
+            <p className="text-xs text-[#85857A]">No matching pieces found.</p>
+          </div>
+        )}
+
+        {/* Recommendations Grid grouped by target slot */}
+        {totalOutfitItems > 0 && outfitRecommendations.length > 0 && (
+          <div className="space-y-4">
+            {outfitRecommendations.map((slotRec) => (
+              <div key={slotRec.slot} className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-mono uppercase tracking-wider font-bold text-[#34452F]">
+                    {slotRec.label}
+                  </h4>
+                  <span className="text-[10px] font-mono text-[#85857A]">
+                    {slotRec.hasColorMatch
+                      ? 'Recommended for your outfit'
+                      : 'More options available'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {slotRec.products.map((product) => {
+                    const has3D = isProductTryOnActive(product)
+                    const selected = isSelectedInOutfit(product)
+
+                    return (
+                      <article
+                        key={product._id || product.id}
+                        className="flex flex-col justify-between rounded-xl border border-[#DED7CA] bg-[#FAF7F0] p-2.5 transition-all duration-200 hover:border-[#85857A] hover:shadow-2xs"
+                      >
+                        <div>
+                          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-white mb-2 border border-[#DED7CA]">
+                            <img
+                              src={getProductImage(product)}
+                              alt={product.name}
+                              loading="lazy"
+                              className="h-full w-full object-cover object-center transition-transform duration-300 hover:scale-105"
+                            />
+                            {has3D ? (
+                              <span className="absolute top-1.5 left-1.5 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-mono font-bold uppercase tracking-wider bg-[#34452F] text-[#FFFDF8]">
+                                <Sparkles className="w-2 h-2 text-[#DDB088]" />
+                                <span>3D</span>
+                              </span>
+                            ) : (
+                              <span className="absolute top-1.5 left-1.5 rounded-full bg-[#FFFDF8]/90 px-1.5 py-0.5 text-[8px] font-mono font-medium text-[#85857A] border border-[#DED7CA]">
+                                Catalog
+                              </span>
+                            )}
+                          </div>
+
+                          {product.brand && (
+                            <p className="text-[9px] font-mono uppercase tracking-wider text-[#85857A] truncate">
+                              {product.brand}
+                            </p>
+                          )}
+                          <h5 className="text-xs font-bold text-[#1F211C] leading-snug line-clamp-1 mt-0.5">
+                            {product.name}
+                          </h5>
+                        </div>
+
+                        <div className="mt-2.5 pt-2 border-t border-[#DED7CA] flex flex-col gap-2">
+                          <span className="text-xs font-bold text-[#1F211C]">
+                            ₹{Number(product.price).toLocaleString('en-IN')}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => onSelectProduct?.(product)}
+                            aria-label={`Add ${product.name} to outfit`}
+                            className={`w-full py-1.5 px-2 rounded-lg text-[10px] font-mono uppercase font-bold tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                              selected
+                                ? 'bg-[#34452F] text-[#FFFDF8]'
+                                : 'bg-[#FFFDF8] hover:bg-[#34452F] text-[#1F211C] hover:text-[#FFFDF8] border border-[#DED7CA] hover:border-[#34452F]'
+                            }`}
+                          >
+                            {selected ? (
+                              <>
+                                <Check className="w-2.5 h-2.5" />
+                                <span>In Outfit</span>
+                              </>
+                            ) : (
+                              <span>Add to Outfit</span>
+                            )}
+                          </button>
+                        </div>
+                      </article>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* =========================================================================
           2. CATALOG BROWSER & WARDROBE FILTER CONTROLS
