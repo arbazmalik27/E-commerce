@@ -170,22 +170,24 @@ export function resolveEffectiveSize(product, manuallySelectedSize, sizeRecommen
     return null
   }
 
-  // 1. Explicit user selection takes highest priority
+  // 1. Explicit user selection always wins
   if (manuallySelectedSize) {
     const matched = product.sizes.find((s) => s.label === manuallySelectedSize)
     if (matched) return matched.label
   }
 
-  // 2. Available recommended size
-  if (sizeRecommendation?.status === 'recommended' && sizeRecommendation.isAvailable && sizeRecommendation.recommendedSize) {
-    const isPresent = product.sizes.some((s) => s.label === sizeRecommendation.recommendedSize && s.available !== false)
+  // 2. Otherwise use the valid recommendation
+  if (
+    sizeRecommendation?.status === 'recommended' &&
+    sizeRecommendation.isAvailable &&
+    sizeRecommendation.recommendedSize
+  ) {
+    const isPresent = product.sizes.some(
+      (s) => s.label === sizeRecommendation.recommendedSize && s.available !== false
+    )
     if (isPresent) return sizeRecommendation.recommendedSize
   }
 
-  // 3. First in-stock size
-  const firstAvailable = product.sizes.find((s) => s.available !== false)
-  if (firstAvailable) return firstAvailable.label
-
-  // 4. Fallback to first configured size
-  return product.sizes[0]?.label || null
+  // 3. Otherwise return unavailable
+  return null
 }

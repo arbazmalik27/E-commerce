@@ -1,16 +1,33 @@
 /**
- * TrendVolt Phase 5 — Production Avatar Asset Resolver & Runtime Contract
+ * TrendVolt Phase 12 — Production Human Avatar Asset Contract & Runtime Resolver
  *
- * Defines the authoritative production avatar asset contract, runtime validation,
- * demographic asset resolution, morph target mapping, and strict POC separation.
+ * Authoritative production avatar asset contract, runtime validation, demographic
+ * asset resolution, morph target mapping, and strict POC separation.
  *
- * Core Invariants:
- * 1. Explicit separation between production avatar assets and POC mannequin.
- * 2. POC asset ('/models/base_avatar_poc.glb') is strictly classified as 'poc-avatar'.
- * 3. Never fake production facial geometry, hair geometry, or facial-hair geometry.
- * 4. Sizing remains backend-authoritative; visual morphs are non-measurement shapes.
- * 5. Safe fallback hierarchy: (1) verified production asset -> (2) technical POC fallback.
- * 6. Youth demographics (boys, girls, kids) strictly preserve zero-photo youth policy.
+ * Production Adult Avatar Contract:
+ * ---------------------------------
+ * 1. Demographic Models: One adult male (AVATAR_ASSETS.production.men) and
+ *    one adult female (AVATAR_ASSETS.production.women). Both slots remain null
+ *    pending commissioned GLB delivery.
+ * 2. Three.js GLTFLoader compatibility: Binary GLTF 2.0 (.glb) format.
+ * 3. Spatial & Transform Convention:
+ *    - Coordinate System: Right-handed Y-up, +Z forward facing.
+ *    - Scale: 1 Three.js unit = 1 meter (Male base height ~1.78m, Female ~1.68m).
+ *    - Ground Placement: Model origin (0, 0, 0) situated squarely at floor plane (feet at y = 0).
+ * 4. Required Hierarchy & Mesh Names:
+ *    - Primary Deformable Mesh: "Avatar_Body" or "Body_Mesh" containing morphTargetDictionary.
+ *    - Hairstyle Socket: "Head_Socket" empty Object3D/Group anchored at skull crown.
+ * 5. Required Materials:
+ *    - Skin Material: "Mat_Skin_Body", "M_Avatar_Skin", or material containing "skin"/"body"/"avatar"/"head".
+ *    - Eye Materials: "Mat_Eye_Left", "Mat_Eye_Right", "M_Eye_Iris", or containing "eye"/"iris"/"cornea".
+ * 6. Canonical 5 Body Shape Keys:
+ *    - chestScale, waistScale, hipScale, legLength, torsoDepth (with case-insensitive / snake_case aliases).
+ * 7. Canonical 8 Facial Blendshapes:
+ *    - faceWidth, jawWidth, chinLength, noseWidth, eyeSpacing, cheekFullness, lipFullness, eyeSize.
+ * 8. Invariants:
+ *    - base_avatar_poc.glb is strictly classified as 'poc-avatar', NEVER 'production-avatar'.
+ *    - Male selection resolves male production asset; female resolves female production asset.
+ *    - Missing assets fail gracefully to technical POC or explicit unavailable state.
  */
 
 export const AVATAR_ASSET_TYPE = {
@@ -133,8 +150,7 @@ export function validateAvatarAsset(assetInput, { isProductionCandidate = false 
     cleanUrl.includes('base_avatar_poc') ||
     (!isProductionCandidate && !cleanUrl.includes('BaseAvatar_Adult'))
 
-  if (isPocPath && !isProductionCandidate) {
-    result.valid = true
+  if (isPocPath) {
     result.assetType = AVATAR_ASSET_TYPE.POC
     // POC asset natively provides the 5 body morphs and skin material slot
     result.capabilities.bodyMorphs = {
@@ -145,6 +161,16 @@ export function validateAvatarAsset(assetInput, { isProductionCandidate = false 
       torsoDepth: true,
     }
     result.capabilities.skinMaterial = true
+
+    if (isProductionCandidate) {
+      result.valid = false
+      result.errors.push(
+        'base_avatar_poc.glb is strictly a technical POC mannequin and cannot be classified as a production human avatar'
+      )
+      return result
+    }
+
+    result.valid = true
     result.warnings.push('Active asset is Technical POC Mannequin; facial blendshapes and modular hair are gated')
     return result
   }
@@ -359,6 +385,31 @@ export function introspectAvatarScene(scene, assetType = AVATAR_ASSET_TYPE.POC) 
   })
 
   report.hasFacialSupport = Object.keys(report.facialMorphMap).length > 0
+
+  // Derive authoritative runtime capability matrix
+  report.capabilities = {
+    bodyMorphs: {
+      chestScale: Boolean(report.bodyMorphMap.chestScale !== undefined),
+      waistScale: Boolean(report.bodyMorphMap.waistScale !== undefined),
+      hipScale: Boolean(report.bodyMorphMap.hipScale !== undefined),
+      legLength: Boolean(report.bodyMorphMap.legLength !== undefined),
+      torsoDepth: Boolean(report.bodyMorphMap.torsoDepth !== undefined),
+    },
+    facialMorphs: {
+      faceWidth: Boolean(report.facialMorphMap.faceWidth !== undefined),
+      jawWidth: Boolean(report.facialMorphMap.jawWidth !== undefined),
+      chinLength: Boolean(report.facialMorphMap.chinLength !== undefined),
+      noseWidth: Boolean(report.facialMorphMap.noseWidth !== undefined),
+      eyeSpacing: Boolean(report.facialMorphMap.eyeSpacing !== undefined),
+      cheekFullness: Boolean(report.facialMorphMap.cheekFullness !== undefined),
+      lipFullness: Boolean(report.facialMorphMap.lipFullness !== undefined),
+      eyeSize: Boolean(report.facialMorphMap.eyeSize !== undefined),
+    },
+    hair: Boolean(report.hasHairSocket),
+    facialHair: Boolean(report.hasFacialSupport),
+    skinMaterial: Boolean(report.skinMaterials.length > 0),
+    eyeMaterial: Boolean(report.eyeMaterials.length > 0),
+  }
 
   return report
 }

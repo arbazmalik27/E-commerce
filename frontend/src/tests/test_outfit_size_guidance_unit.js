@@ -303,9 +303,9 @@ async function runTests() {
   const cartSizeL = resolveEffectiveSize(menShirt, 'L', menTopRec)
   assert(cartSizeL === 'L', 'Cart flow uses user-selected size "L" without silent override')
 
-  // If recommendation is out of stock, user selection or first in-stock is used
+  // If recommendation is out of stock and no manual selection, resolveEffectiveSize returns null (unavailable)
   const effectiveOosDefault = resolveEffectiveSize(productOutOfStockSize, null, oosRec)
-  assert(effectiveOosDefault === 'S', 'Falls back to first in-stock size when recommendation is unavailable')
+  assert(effectiveOosDefault === null, 'Returns null (unavailable) when recommendation is unavailable and no manual selection is made')
 
   // TEST 12: No duplicate sizing logic verification
   console.log('\nTest 12: Architecture & no duplicate sizing engine')

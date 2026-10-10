@@ -60,6 +60,7 @@ function AppRoutes() {
         <Route path="/terms" element={<PolicyPage />} />
         <Route path="/shipping" element={<PolicyPage />} />
         <Route path="/avatar" element={<AvatarStudioPage />} />
+        <Route path="/avatar/studio" element={<AvatarStudioPage />} />
         <Route path="/avatar/wardrobe" element={<AvatarWardrobePage />} />
         <Route path="/avatar-poc" element={<AvatarPocPage />} />
         <Route path="/try-on/:productId" element={<TryOnPage />} />

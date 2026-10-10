@@ -76,6 +76,7 @@ async function runTests() {
   assert(fs.existsSync(tryOnPath), 'TryOnPage.jsx exists')
 
   const viewerContent = fs.readFileSync(viewerPath, 'utf8')
+  const studioContent = fs.readFileSync(studioPath, 'utf8')
   const faceContent = fs.readFileSync(faceControlsPath, 'utf8')
   const appearanceContent = fs.readFileSync(appearanceControlsPath, 'utf8')
   const validatorContent = fs.readFileSync(validatorPath, 'utf8')
@@ -382,10 +383,101 @@ async function runTests() {
     'AvatarViewer displays simple, customer-friendly error without exposing GLTF/Three.js internals'
   )
 
+  // =========================================================================
+  // 19. PHASE 12: PRODUCTION ADULT AVATAR CONTRACT & STRICT SEPARATION
+  // =========================================================================
+  console.log('\n[19] Phase 12 Production Human Avatar Contract & Separation:')
+
+  // Strict invariant: base_avatar_poc.glb is NEVER accepted as a production candidate
+  const pocAsProduction = validateAvatarAsset('/models/base_avatar_poc.glb', { isProductionCandidate: true })
+  assert(pocAsProduction.valid === false, 'base_avatar_poc.glb is strictly rejected as a production candidate')
+  assert(pocAsProduction.assetType === AVATAR_ASSET_TYPE.POC, 'POC asset is classified as AVATAR_ASSET_TYPE.POC')
+  assert(pocAsProduction.errors.length > 0, 'Produces explicit rejection error for POC mannequin candidate')
+
+  // Independent male and female production resolution slots
+  assert(AVATAR_ASSETS.production.men === null, 'Production adult male asset slot is configured and awaits canonical GLB')
+  assert(AVATAR_ASSETS.production.women === null, 'Production adult female asset slot is configured and awaits canonical GLB')
+
+  // Distinct demographic resolution paths
+  const maleResolution = resolveAvatarAsset('men', { customProductionPath: '/models/BaseAvatar_Adult_Male.glb' })
+  const femaleResolution = resolveAvatarAsset('women', { customProductionPath: '/models/BaseAvatar_Adult_Female.glb' })
+  assert(maleResolution.demographic === 'men' && maleResolution.url.includes('Male'), 'Male demographic resolves distinct male asset path')
+  assert(femaleResolution.demographic === 'women' && femaleResolution.url.includes('Female'), 'Female demographic resolves distinct female asset path')
+  assert(maleResolution.url !== femaleResolution.url, 'Male and female models resolve separate, distinct assets (no mannequin substitution)')
+
+  // Missing asset handling without POC fallback
+  const missingAssetResolution = resolveAvatarAsset('women', { allowPocFallback: false })
+  assert(missingAssetResolution.url === null, 'Missing asset resolves to null when POC fallback is disallowed')
+  assert(missingAssetResolution.status === AVATAR_ASSET_STATUS.UNAVAILABLE, 'Status is marked as UNAVAILABLE')
+  assert(missingAssetResolution.warnings.length > 0, 'Produces descriptive warning for missing demographic asset')
+
+  // =========================================================================
+  // 20. PHASE 12: RUNTIME CAPABILITY MATRIX & INTROSPECTION
+  // =========================================================================
+  console.log('\n[20] Phase 12 Runtime Capability Matrix & Introspection:')
+
+  // Scene without Head_Socket or facial morphs (like POC)
+  const pocLikeScene = {
+    traverse: (fn) => {
+      fn({
+        isMesh: true,
+        name: 'Body_Mesh',
+        morphTargetDictionary: { chestScale: 0, waistScale: 1, hipScale: 2, legLength: 3, torsoDepth: 4 },
+        material: { name: 'Mat_Skin' },
+      })
+    },
+  }
+  const pocIntrospection = introspectAvatarScene(pocLikeScene, AVATAR_ASSET_TYPE.POC)
+  assert(pocIntrospection.capabilities.hair === false, 'Runtime introspection correctly identifies hair capability as false when Head_Socket is absent')
+  assert(pocIntrospection.capabilities.facialMorphs.faceWidth === false, 'Facial morphs correctly identified as false when blendshapes are absent')
+  assert(pocIntrospection.capabilities.skinMaterial === true, 'Skin material correctly identified as true')
+  assert(pocIntrospection.capabilities.eyeMaterial === false, 'Eye material correctly identified as false when iris/cornea absent')
+
+  // Scene with Head_Socket and full facial blendshapes
+  const fullProductionScene = {
+    traverse: (fn) => {
+      fn({ name: 'Head_Socket', isGroup: true })
+      fn({
+        isMesh: true,
+        name: 'Avatar_Body',
+        morphTargetDictionary: {
+          chestScale: 0,
+          waistScale: 1,
+          hipScale: 2,
+          legLength: 3,
+          torsoDepth: 4,
+          faceWidth: 5,
+          jawWidth: 6,
+          chinLength: 7,
+          noseWidth: 8,
+          eyeSpacing: 9,
+          cheekFullness: 10,
+          lipFullness: 11,
+          eyeSize: 12,
+        },
+        material: [
+          { name: 'Mat_Skin_Body', color: { set: () => {} } },
+          { name: 'Mat_Eye_Left', color: { set: () => {} } },
+        ],
+      })
+    },
+  }
+  const fullIntrospection = introspectAvatarScene(fullProductionScene, AVATAR_ASSET_TYPE.PRODUCTION)
+  assert(fullIntrospection.capabilities.hair === true, 'Discovers hair capability when Head_Socket is present')
+  assert(fullIntrospection.capabilities.facialMorphs.faceWidth === true, 'Discovers faceWidth capability when blendshape is present')
+  assert(fullIntrospection.capabilities.facialMorphs.eyeSize === true, 'Discovers eyeSize capability when blendshape is present')
+  assert(fullIntrospection.capabilities.eyeMaterial === true, 'Discovers eyeMaterial capability when eye materials present')
+  assert(fullIntrospection.capabilities.skinMaterial === true, 'Discovers skinMaterial capability when skin materials present')
+
+  // Verify AvatarStudioPage and AvatarViewer integrate verified runtime capabilities
+  assert(studioContent.includes('onCapabilitiesDetected={setModelCapabilities}'), 'AvatarStudioPage connects to onCapabilitiesDetected callback')
+  assert(viewerContent.includes('verifiedCapabilities'), 'AvatarViewer derives and transmits verified capabilities')
+  assert(viewerContent.includes('setRetryNonce'), 'AvatarViewer implements graceful retry without full page refresh')
+
   console.log('\n============================================================')
   console.log(`RESULTS: ${passed} passed, ${failed} failed`)
   if (failed === 0) {
-    console.log('ALL PHASE 5 PRODUCTION AVATAR ASSET TESTS PASSED ✓\n')
+    console.log('ALL PHASE 12 PRODUCTION AVATAR ASSET TESTS PASSED ✓\n')
   } else {
     console.error('TEST FAILURES DETECTED ✗\n')
     process.exit(1)

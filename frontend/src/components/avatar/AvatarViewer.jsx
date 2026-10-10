@@ -16,7 +16,7 @@ const DEFAULT_TARGET = new THREE.Vector3(0, 0.9, 0)
 
 const AvatarViewer = forwardRef(function AvatarViewer(
   {
-    modelUrl = '/models/base_avatar_poc.glb',
+    modelUrl = null,
     demographic = 'men',
     morphWeights = {},
     facialMorphs = {},
@@ -53,12 +53,16 @@ const AvatarViewer = forwardRef(function AvatarViewer(
     })
   }, [demographic, modelUrl])
 
-  const activeModelUrl = modelUrl || resolvedAsset.url || '/models/base_avatar_poc.glb'
+  const activeModelUrl =
+    modelUrl && modelUrl !== '/models/base_avatar_poc.glb'
+      ? modelUrl
+      : resolvedAsset.url || '/models/base_avatar_poc.glb'
 
   const [webglSupported] = useState(() => isWebGLAvailable())
   const [loading, setLoading] = useState(webglSupported)
   const [loadProgress, setLoadProgress] = useState(0)
   const [error, setError] = useState(null)
+  const [retryNonce, setRetryNonce] = useState(0)
 
   const morphWeightsRef = useRef(morphWeights)
   const facialMorphsRef = useRef(facialMorphs)
@@ -231,6 +235,16 @@ const AvatarViewer = forwardRef(function AvatarViewer(
 
     scene.add(groundGroup)
 
+    if (!activeModelUrl) {
+      const timer = setTimeout(() => {
+        if (isMounted) {
+          setLoading(false)
+          setError('Unable to load avatar.')
+        }
+      }, 0)
+      return () => clearTimeout(timer)
+    }
+
     // 6. Model Loader
     setLoading(true)
     setError(null)
@@ -255,19 +269,29 @@ const AvatarViewer = forwardRef(function AvatarViewer(
               primaryMorphMesh = child
               detectedMorphs = { ...child.morphTargetDictionary }
             }
-            // Calibrate skin material to natural semi-matte finish
             if (child.material) {
               const mats = Array.isArray(child.material) ? child.material : [child.material]
               mats.forEach((mat) => {
                 mat.roughness = 0.68
                 mat.metalness = 0.02
-                if (skinColorRef.current && mat.color) {
-                  mat.color.set(skinColorRef.current)
-                }
               })
             }
           }
         })
+
+        // Apply calibrated skin material to identified skin targets
+        if (skinColorRef.current && introspection.skinMaterials.length > 0) {
+          introspection.skinMaterials.forEach((mat) => {
+            if (mat.color) mat.color.set(skinColorRef.current)
+          })
+        } else if (skinColorRef.current && primaryMorphMesh?.material) {
+          const mats = Array.isArray(primaryMorphMesh.material)
+            ? primaryMorphMesh.material
+            : [primaryMorphMesh.material]
+          mats.forEach((mat) => {
+            if (mat.color) mat.color.set(skinColorRef.current)
+          })
+        }
 
         // Apply eye color if eye materials detected
         if (eyeColorRef.current && introspection.eyeMaterials.length > 0) {
@@ -293,8 +317,9 @@ const AvatarViewer = forwardRef(function AvatarViewer(
           onMorphTargetsDetectedRef.current(Object.keys(detectedMorphs))
         }
 
+        const verifiedCapabilities = introspection.capabilities || currentAsset?.capabilities
         if (onCapabilitiesDetectedRef.current) {
-          onCapabilitiesDetectedRef.current(currentAsset?.capabilities)
+          onCapabilitiesDetectedRef.current(verifiedCapabilities)
         }
 
         // Apply initial morph weights with safe clamping [0.0, 1.0]
@@ -386,7 +411,7 @@ const AvatarViewer = forwardRef(function AvatarViewer(
       morphMeshRef.current = null
       rendererRef.current = null
     }
-  }, [activeModelUrl, webglSupported])
+  }, [activeModelUrl, webglSupported, retryNonce])
 
   // React to morphWeights prop updates without rebuilding the scene
   useEffect(() => {
@@ -565,8 +590,11 @@ const AvatarViewer = forwardRef(function AvatarViewer(
           <p className="text-sm text-[var(--tv-error)] mb-4">{error}</p>
           <button
             type="button"
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 text-xs uppercase tracking-wider font-medium rounded-lg bg-[var(--tv-olive)] text-white hover:bg-[var(--tv-olive-hover)] transition-colors"
+            onClick={() => {
+              setError(null)
+              setRetryNonce((n) => n + 1)
+            }}
+            className="px-4 py-2 text-xs uppercase tracking-wider font-medium rounded-lg bg-[var(--tv-olive)] text-white hover:bg-[var(--tv-olive-hover)] transition-colors cursor-pointer"
           >
             Retry
           </button>

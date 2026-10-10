@@ -21,6 +21,23 @@ export const GARMENT_ASSET_STATUS = {
 }
 
 /**
+ * Validates that an asset reference points to a supported 3D binary mesh format (.glb or .gltf).
+ * @param {string|null} ref
+ * @returns {boolean}
+ */
+export function isValid3DAssetUrl(ref) {
+  if (!ref || typeof ref !== 'string') return false
+  const clean = ref.trim().toLowerCase()
+  if (clean.length < 5) return false
+  return (
+    clean.endsWith('.glb') ||
+    clean.endsWith('.gltf') ||
+    clean.includes('.glb?') ||
+    clean.includes('.gltf?')
+  )
+}
+
+/**
  * Checks whether a product has an active production 3D Try-On capability.
  * Customer UI surfaces (ProductCard, ProductDetailsPage) must ONLY present Try-On
  * when this function returns true.
@@ -36,16 +53,7 @@ export function isProductTryOnActive(product) {
     product.tryOn.garmentType === 'top' || product.tryOn.garmentType === 'bottom'
   const hasStatusActive = product.tryOn.assetStatus === GARMENT_ASSET_STATUS.ACTIVE
   const assetRef = product.tryOn.assetUrl || product.tryOn.assetReference
-  const hasValidAssetRef = Boolean(
-    assetRef &&
-      typeof assetRef === 'string' &&
-      assetRef.trim().length > 0 &&
-      (assetRef.endsWith('.glb') ||
-        assetRef.endsWith('.gltf') ||
-        assetRef.startsWith('http://') ||
-        assetRef.startsWith('https://') ||
-        assetRef.startsWith('/'))
-  )
+  const hasValidAssetRef = isValid3DAssetUrl(assetRef)
 
   return Boolean(isValidGarmentType && hasStatusActive && hasValidAssetRef)
 }
@@ -91,14 +99,7 @@ export function resolveGarmentRepresentation(product, { allowDevPlaceholder = fa
   const garmentType = rawType
   const rawAssetRef = product.tryOn.assetUrl || product.tryOn.assetReference
   const trimmedUrl = rawAssetRef ? String(rawAssetRef).trim() : null
-  const hasValidAssetRef = Boolean(
-    trimmedUrl &&
-      (trimmedUrl.endsWith('.glb') ||
-        trimmedUrl.endsWith('.gltf') ||
-        trimmedUrl.startsWith('http://') ||
-        trimmedUrl.startsWith('https://') ||
-        trimmedUrl.startsWith('/'))
-  )
+  const hasValidAssetRef = isValid3DAssetUrl(trimmedUrl)
 
   // ACTIVE: Valid production garment asset exists and status is active
   if (product.tryOn.assetStatus === GARMENT_ASSET_STATUS.ACTIVE && hasValidAssetRef) {

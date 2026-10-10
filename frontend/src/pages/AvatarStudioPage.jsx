@@ -105,7 +105,11 @@ export default function AvatarStudioPage() {
 
   const isYouth = ['Boys', 'Girls', 'Kids'].includes(demographic)
   const avatarAsset = resolveAvatarAsset(demographic)
-  const isModelSupported = Boolean(avatarAsset.isProduction && avatarAsset.capabilities?.facialMorphs?.faceWidth)
+  const [modelCapabilities, setModelCapabilities] = useState(null)
+  const isModelSupported = Boolean(
+    avatarAsset.isProduction &&
+      (modelCapabilities?.facialMorphs?.faceWidth ?? avatarAsset.capabilities?.facialMorphs?.faceWidth)
+  )
 
   // Current serialized state of editable avatar profile
   const currentSnapshot = useMemo(() => {
@@ -646,13 +650,13 @@ export default function AvatarStudioPage() {
                 <div className="h-[440px] sm:h-[540px] lg:h-[620px] w-full">
                   <AvatarViewer
                     ref={viewerRef}
-                    modelUrl="/models/base_avatar_poc.glb"
                     demographic={demographic}
                     morphWeights={morphWeights}
                     facialMorphs={facialMorphs}
                     skinColor={appearance.skinTone}
                     eyeColor={appearance.eyeColor}
                     heightCm={Number(measurements.height) || (isYouth ? 128 : 178)}
+                    onCapabilitiesDetected={setModelCapabilities}
                   />
                 </div>
 
@@ -765,6 +769,7 @@ export default function AvatarStudioPage() {
                       appearance={appearance}
                       onChange={handleAppearanceChange}
                       demographic={demographic}
+                      capabilities={modelCapabilities || avatarAsset.capabilities}
                     />
                   </div>
                 )}

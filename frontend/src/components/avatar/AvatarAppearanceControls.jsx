@@ -11,9 +11,12 @@ export default function AvatarAppearanceControls({
   appearance,
   onChange,
   demographic = 'Men',
+  capabilities = null,
   className = '',
 }) {
   const showFacialHair = demographic === 'Men'
+  const hasHairSupport = Boolean(capabilities?.hair)
+  const hasFacialHairSupport = Boolean(capabilities?.facialHair)
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Header Info */}
@@ -80,7 +83,9 @@ export default function AvatarAppearanceControls({
             <span>Modular Hairstyle Catalog</span>
           </label>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--tv-surface-elevated)] text-[var(--tv-text-muted)] border border-[var(--tv-border)] font-mono">
-            Saved to profile — visual support unavailable (Profile Stored / Head_Socket Gate)
+            {hasHairSupport
+              ? 'Applied to avatar'
+              : 'Saved to profile — visual support unavailable (Profile Stored / Head_Socket Gate)'}
           </span>
         </div>
 
@@ -201,7 +206,9 @@ export default function AvatarAppearanceControls({
               <span>Beard & Facial Hair Styling</span>
             </label>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--tv-surface-elevated)] text-[var(--tv-text-muted)] border border-[var(--tv-border)] font-mono">
-              Saved to profile — visual support unavailable • Profile Stored (Production Gate)
+              {hasFacialHairSupport
+                ? 'Applied to avatar'
+                : 'Saved to profile — visual support unavailable • Profile Stored (Production Gate)'}
             </span>
           </div>
 
