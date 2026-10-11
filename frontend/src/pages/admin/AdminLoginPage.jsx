@@ -4,8 +4,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ShieldCheck, ShieldAlert, Lock, ArrowRight, Eye, EyeOff, Store } from 'lucide-react'
 import SEO from '../../components/SEO'
 import {
+  adminLogin,
   clearAuthError,
-  login,
   logout,
   selectAuthError,
   selectAuthInitialized,
@@ -63,24 +63,15 @@ function AdminLoginPage() {
     }
 
     try {
-      const resultAction = await dispatch(login({ email: trimmedEmail, password }))
-      if (login.fulfilled.match(resultAction)) {
-        const loggedInUser = resultAction.payload?.user
-        if (loggedInUser?.role !== 'admin') {
-          // Immediately revoke session cookie so no customer session persists in admin flow
-          await dispatch(logout())
-          setLocalError(
-            'Access Denied: This account does not possess administrator privileges. Please sign in with an authorized administrator account or return to the customer store.'
-          )
-        } else {
-          const from = location.state?.from
-          const fromPath = from?.pathname
-          const destination =
-            fromPath && fromPath.startsWith('/admin') && fromPath !== '/admin/login'
-              ? `${fromPath}${from?.search || ''}${from?.hash || ''}`
-              : '/admin'
-          navigate(destination, { replace: true })
-        }
+      const resultAction = await dispatch(adminLogin({ email: trimmedEmail, password }))
+      if (adminLogin.fulfilled.match(resultAction)) {
+        const from = location.state?.from
+        const fromPath = from?.pathname
+        const destination =
+          fromPath && fromPath.startsWith('/admin') && fromPath !== '/admin/login'
+            ? `${fromPath}${from?.search || ''}${from?.hash || ''}`
+            : '/admin'
+        navigate(destination, { replace: true })
       }
     } catch {
       setLocalError('An unexpected authentication error occurred. Please try again.')

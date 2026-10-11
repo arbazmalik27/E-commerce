@@ -42,6 +42,18 @@ export const login = createAsyncThunk(
   }
 )
 
+export const adminLogin = createAsyncThunk(
+  'auth/adminLogin',
+  async (credentials, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/auth/admin-login', credentials)
+      return response.data
+    } catch (err) {
+      return rejectWithValue(extractAuthError(err, 'Invalid email or password'))
+    }
+  }
+)
+
 export const register = createAsyncThunk(
   'auth/register',
   async (userData, { rejectWithValue }) => {
@@ -127,6 +139,24 @@ const authSlice = createSlice({
         state.error = null
       })
       .addCase(login.rejected, (state, action) => {
+        state.loading = false
+        state.isAuthenticated = false
+        state.user = null
+        state.error = action.payload
+      })
+
+      // adminLogin
+      .addCase(adminLogin.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(adminLogin.fulfilled, (state, action) => {
+        state.loading = false
+        state.isAuthenticated = true
+        state.user = action.payload.user
+        state.error = null
+      })
+      .addCase(adminLogin.rejected, (state, action) => {
         state.loading = false
         state.isAuthenticated = false
         state.user = null

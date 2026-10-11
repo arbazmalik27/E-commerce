@@ -33,6 +33,7 @@ const authenticate = async (req, res, next) => {
       role: user.role,
       createdAt: user.createdAt,
     }
+    req.tokenPayload = decoded
 
     next()
   } catch {

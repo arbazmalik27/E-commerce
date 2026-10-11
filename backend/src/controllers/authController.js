@@ -7,7 +7,14 @@ const {
   validateForgotPasswordInput,
   validateResetPasswordInput,
 } = require('../validators/authValidator')
-const { signToken, setTokenCookie, clearTokenCookie, COOKIE_NAME } = require('../utils/jwt')
+const {
+  signToken,
+  setTokenCookie,
+  clearTokenCookie,
+  COOKIE_NAME,
+  ADMIN_MAX_AGE_MS,
+  ADMIN_JWT_EXPIRES_IN,
+} = require('../utils/jwt')
 const { sendPasswordResetEmail } = require('../services/emailService')
 
 const BCRYPT_SALT_ROUNDS = 12
@@ -85,8 +92,68 @@ const login = async (req, res) => {
       })
     }
 
+    // Role guard: Admin accounts must not log in via customer endpoint.
+    // They must use the dedicated /api/auth/admin-login endpoint with 8-hour session.
+    // Return identical generic message to prevent role enumeration.
+    if (user.role === 'admin') {
+      return res.status(401).json({ success: false, message: INVALID_CREDENTIALS_MSG })
+    }
+
     const token = signToken(user._id)
     setTokenCookie(res, token)
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    })
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Server error' })
+  }
+}
+
+const adminLogin = async (req, res) => {
+  const { isValid, errors, sanitized } = validateLoginInput(req.body)
+
+  if (!isValid) {
+    return res.status(400).json({ success: false, errors })
+  }
+
+  const { email, password } = sanitized
+
+  try {
+    const user = await User.findOne({ email }).select('+password')
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: INVALID_CREDENTIALS_MSG })
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password)
+
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: INVALID_CREDENTIALS_MSG })
+    }
+
+    if (user.isActive === false) {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been disabled. Please contact support.',
+      })
+    }
+
+    // Role check: Only accounts whose database role is strictly 'admin' are permitted.
+    // Non-admin accounts are rejected with the identical generic authentication error
+    // to prevent user enumeration or disclosing administrative roles.
+    if (user.role !== 'admin') {
+      return res.status(401).json({ success: false, message: INVALID_CREDENTIALS_MSG })
+    }
+
+    const token = signToken(user._id, { expiresIn: ADMIN_JWT_EXPIRES_IN, role: 'admin' })
+    setTokenCookie(res, token, ADMIN_MAX_AGE_MS)
 
     return res.status(200).json({
       success: true,
@@ -208,6 +275,7 @@ const resetPassword = async (req, res) => {
 module.exports = {
   register,
   login,
+  adminLogin,
   getMe,
   logout,
   forgotPassword,

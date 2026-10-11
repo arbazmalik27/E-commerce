@@ -137,13 +137,21 @@ testAssert(
   'AdminLoginPage allows customer to sign out and switch accounts directly'
 )
 
-// ── 6. Role-Based Login Submission Guard ────────────────────────────────────────
-console.log('\n[6] Post-Submission Role Verification & Session Cleansing:')
+// ── 6. Dedicated Admin Auth Endpoint & Submission Guard ─────────────────────────
+console.log('\n[6] Dedicated Admin Auth Endpoint & Submission Guard:')
+
+const authSlicePath = path.join(__dirname, '../features/auth/authSlice.js')
+const authSliceContent = fs.readFileSync(authSlicePath, 'utf8')
 
 testAssert(
-  adminLoginContent.includes("loggedInUser?.role !== 'admin'") &&
-    adminLoginContent.includes('dispatch(logout())'),
-  'AdminLoginPage immediately revokes session and invokes logout if non-admin logs in'
+  authSliceContent.includes('export const adminLogin') &&
+    authSliceContent.includes("api.post('/auth/admin-login', credentials)"),
+  'authSlice defines adminLogin thunk targeting POST /auth/admin-login'
+)
+testAssert(
+  adminLoginContent.includes('adminLogin') &&
+    adminLoginContent.includes('dispatch(adminLogin('),
+  'AdminLoginPage dispatches dedicated adminLogin thunk'
 )
 testAssert(
   adminLoginContent.includes('destination =') &&

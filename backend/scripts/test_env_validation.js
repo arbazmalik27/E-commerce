@@ -1,6 +1,14 @@
 const assert = require('assert')
 const { validateEnv } = require('../src/config/envValidator')
-const { COOKIE_NAME, signToken, setTokenCookie, clearTokenCookie } = require('../src/utils/jwt')
+const {
+  COOKIE_NAME,
+  MAX_AGE_MS,
+  ADMIN_MAX_AGE_MS,
+  ADMIN_JWT_EXPIRES_IN,
+  signToken,
+  setTokenCookie,
+  clearTokenCookie,
+} = require('../src/utils/jwt')
 
 console.log('=== TEST SUITE: PRODUCTION ENVIRONMENT & CONFIGURATION SAFETY ===\n')
 
@@ -198,6 +206,45 @@ test('JWT Cookie is configured safely for development vs production', () => {
   assert.strictEqual(cookieOptions.httpOnly, true)
   assert.strictEqual(cookieOptions.secure, true)
   assert.strictEqual(cookieOptions.sameSite, 'none')
+})
+
+// 13. JWT Expiration Duration: Customer (7d) vs Admin (8h)
+test('JWT token expiry: customer default is 7 days, admin is 8 hours', () => {
+  resetEnv()
+  process.env.JWT_SECRET = 'a_very_long_cryptographically_secure_random_jwt_secret_12345'
+  const jwt = require('jsonwebtoken')
+  const defaultToken = signToken('cust123')
+  const decodedDefault = jwt.decode(defaultToken)
+  assert.strictEqual(decodedDefault.exp - decodedDefault.iat, 7 * 24 * 60 * 60)
+
+  const adminToken = signToken('admin123', { expiresIn: ADMIN_JWT_EXPIRES_IN, role: 'admin' })
+  const decodedAdmin = jwt.decode(adminToken)
+  assert.strictEqual(decodedAdmin.exp - decodedAdmin.iat, 8 * 60 * 60)
+  assert.strictEqual(decodedAdmin.role, 'admin')
+})
+
+// 14. Cookie MaxAge: Customer (7d) vs Admin (8h) vs Logout
+test('Auth cookie maxAge: customer default is 7 days, admin is 8 hours', () => {
+  resetEnv()
+  let cookieOptions = null
+  const mockRes = {
+    cookie: (name, val, opts) => {
+      cookieOptions = opts
+    },
+    clearCookie: (name, opts) => {
+      cookieOptions = opts
+    },
+  }
+  setTokenCookie(mockRes, 'cust_token')
+  assert.strictEqual(cookieOptions.maxAge, MAX_AGE_MS)
+  assert.strictEqual(cookieOptions.maxAge, 7 * 24 * 60 * 60 * 1000)
+
+  setTokenCookie(mockRes, 'admin_token', ADMIN_MAX_AGE_MS)
+  assert.strictEqual(cookieOptions.maxAge, ADMIN_MAX_AGE_MS)
+  assert.strictEqual(cookieOptions.maxAge, 8 * 60 * 60 * 1000)
+
+  clearTokenCookie(mockRes)
+  assert.strictEqual(cookieOptions.maxAge, undefined)
 })
 
 resetEnv()

@@ -2,6 +2,7 @@ const express = require('express')
 const {
   register,
   login,
+  adminLogin,
   getMe,
   logout,
   forgotPassword,
@@ -14,6 +15,7 @@ const router = express.Router()
 
 router.post('/register', authLimiter, register)
 router.post('/login', authLimiter, login)
+router.post('/admin-login', authLimiter, adminLogin)
 router.post('/forgot-password', authLimiter, forgotPassword)
 router.post('/reset-password', authLimiter, resetPassword)
 router.post('/logout', logout)
