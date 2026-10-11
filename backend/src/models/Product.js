@@ -143,6 +143,34 @@ const productSchema = new mongoose.Schema(
         default: null,
       },
     },
+    appliedOps: {
+      type: [
+        new mongoose.Schema(
+          {
+            opId: {
+              type: String,
+              required: true,
+              trim: true,
+            },
+            qty: {
+              type: Number,
+              required: true,
+            },
+            type: {
+              type: String,
+              enum: ['decrement', 'restore'],
+              required: true,
+            },
+            appliedAt: {
+              type: Date,
+              default: Date.now,
+            },
+          },
+          { _id: false }
+        ),
+      ],
+      default: [],
+    },
   },
   { timestamps: true }
 )
@@ -152,6 +180,7 @@ productSchema.index({ brand: 1 })
 productSchema.index({ price: 1 })
 productSchema.index({ stock: 1 })
 productSchema.index({ 'tryOn.enabled': 1 })
+productSchema.index({ 'appliedOps.opId': 1 })
 
 const Product = mongoose.model('Product', productSchema)
 

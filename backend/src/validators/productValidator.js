@@ -237,6 +237,7 @@ const ALLOWED_UPDATE_FIELDS = [
   'brand',
   'images',
   'stock',
+  'expectedStock',
   'isActive',
   'ageRange',
   'sizes',
@@ -268,7 +269,7 @@ const validateUpdateProductInput = (body = {}, existingProduct = null) => {
     errors.fields = `Unapproved field(s): ${unapprovedFields.join(', ')}`
   }
 
-  const { name, description, price, category, department, subcategory, brand, stock, images, isActive, ageRange, sizes, tryOn } = body
+  const { name, description, price, category, department, subcategory, brand, stock, expectedStock, images, isActive, ageRange, sizes, tryOn } = body
   const sanitized = {}
 
   if (name !== undefined) {
@@ -367,6 +368,16 @@ const validateUpdateProductInput = (body = {}, existingProduct = null) => {
       errors.stock = 'Stock must be greater than or equal to 0'
     } else {
       sanitized.stock = stock
+    }
+  }
+
+  if (expectedStock !== undefined && expectedStock !== null) {
+    if (typeof expectedStock !== 'number' || !Number.isInteger(expectedStock)) {
+      errors.expectedStock = 'Expected stock must be an integer'
+    } else if (expectedStock < 0) {
+      errors.expectedStock = 'Expected stock cannot be negative'
+    } else {
+      sanitized.expectedStock = expectedStock
     }
   }
 

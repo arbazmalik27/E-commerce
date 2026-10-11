@@ -10,6 +10,7 @@ const {
   validateVerifyPaymentInput,
 } = require('../validators/paymentValidator')
 const { createOrderConfirmedNotification } = require('../services/notificationService')
+const { allocateOrderInventory } = require('../services/inventoryAllocationService')
 
 const createRazorpayOrder = async (req, res) => {
   const { isValid, errors, sanitized } = validateCreatePaymentOrderInput(req.body)
@@ -196,24 +197,13 @@ const verifyPayment = async (req, res) => {
       })
     }
 
-    // Re-verify current Product stock before deducting
-    for (const item of order.items) {
-      const product = await Product.findById(item.product)
-
-      if (!product || product.stock < item.quantity) {
-        return res.status(400).json({
-          success: false,
-          message: `Insufficient stock for product: ${item.name}`,
-        })
-      }
-    }
-
-    // Deduct stock safely (prevent negative stock via atomic query condition)
-    for (const item of order.items) {
-      await Product.findOneAndUpdate(
-        { _id: item.product, stock: { $gte: item.quantity } },
-        { $inc: { stock: -item.quantity } }
-      )
+    // Atomically allocate inventory with deterministic idempotency and compensation on multi-item failure
+    const allocationResult = await allocateOrderInventory(order)
+    if (!allocationResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: `Insufficient stock for product: ${allocationResult.failedItem || 'requested product'}`,
+      })
     }
 
     // Update order state

@@ -307,10 +307,38 @@ const updateProduct = async (req, res) => {
       return res.status(400).json({ success: false, errors })
     }
 
-    const updatedProduct = await Product.findByIdAndUpdate(id, sanitized, {
-      new: true,
-      runValidators: true,
-    })
+    let updatedProduct
+    const { expectedStock: _exp, ...updatePayload } = sanitized
+
+    if (sanitized.stock !== undefined) {
+      const expectedStock =
+        sanitized.expectedStock !== undefined ? sanitized.expectedStock : existing.stock
+
+      updatedProduct = await Product.findOneAndUpdate(
+        { _id: id, stock: expectedStock },
+        { $set: updatePayload },
+        { new: true, runValidators: true }
+      )
+
+      if (!updatedProduct) {
+        const fresh = await Product.findById(id)
+        if (!fresh) {
+          return res.status(404).json({ success: false, message: 'Product not found' })
+        }
+        return res.status(409).json({
+          success: false,
+          message: 'Product stock has changed since last viewed. Please refresh and try again.',
+          currentStock: fresh.stock,
+          expectedStock,
+        })
+      }
+    } else {
+      updatedProduct = await Product.findByIdAndUpdate(
+        id,
+        { $set: updatePayload },
+        { new: true, runValidators: true }
+      )
+    }
 
     // Trigger back-in-stock alerts if stock or size availability replenished
     try {

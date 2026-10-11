@@ -95,12 +95,12 @@ const validateUpdateStockInput = (body = {}) => {
   }
 
   const keys = Object.keys(body)
-  const unexpectedKeys = keys.filter((k) => k !== 'stock')
+  const unexpectedKeys = keys.filter((k) => k !== 'stock' && k !== 'expectedStock')
   if (unexpectedKeys.length > 0) {
-    errors.payload = `Unexpected field(s) in payload: ${unexpectedKeys.join(', ')}. Only "stock" is accepted.`
+    errors.payload = `Unexpected field(s) in payload: ${unexpectedKeys.join(', ')}. Only "stock" and optional "expectedStock" are accepted.`
   }
 
-  const { stock } = body
+  const { stock, expectedStock } = body
 
   if (stock === undefined || stock === null) {
     errors.stock = 'Stock quantity is required'
@@ -112,10 +112,24 @@ const validateUpdateStockInput = (body = {}) => {
     errors.stock = 'Stock cannot exceed 1,000,000'
   }
 
+  if (expectedStock !== undefined && expectedStock !== null) {
+    if (typeof expectedStock !== 'number' || !Number.isInteger(expectedStock)) {
+      errors.expectedStock = 'Expected stock must be an integer'
+    } else if (expectedStock < 0) {
+      errors.expectedStock = 'Expected stock cannot be negative'
+    }
+  }
+
   return {
     isValid: Object.keys(errors).length === 0,
     errors,
-    sanitized: Object.keys(errors).length === 0 ? { stock } : null,
+    sanitized:
+      Object.keys(errors).length === 0
+        ? {
+            stock,
+            ...(expectedStock !== undefined && expectedStock !== null ? { expectedStock } : {}),
+          }
+        : null,
   }
 }
 

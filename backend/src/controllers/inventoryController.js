@@ -172,18 +172,43 @@ const adjustProductStock = async (req, res) => {
   }
 
   try {
-    // Atomically update stock on the product and retrieve the prior document state
-    const previousProduct = await Product.findByIdAndUpdate(
-      id,
-      { $set: { stock: sanitized.stock } },
-      { returnDocument: 'before', runValidators: true }
-    )
+    let previousProduct
 
-    if (!previousProduct) {
-      return res.status(404).json({
-        success: false,
-        message: 'Product not found',
-      })
+    if (sanitized.expectedStock !== undefined) {
+      previousProduct = await Product.findOneAndUpdate(
+        { _id: id, stock: sanitized.expectedStock },
+        { $set: { stock: sanitized.stock } },
+        { returnDocument: 'before', runValidators: true }
+      )
+
+      if (!previousProduct) {
+        const currentProduct = await Product.findById(id)
+        if (!currentProduct) {
+          return res.status(404).json({
+            success: false,
+            message: 'Product not found',
+          })
+        }
+        return res.status(409).json({
+          success: false,
+          message: 'Stock has changed since last viewed. Please refresh and try again.',
+          currentStock: currentProduct.stock,
+          expectedStock: sanitized.expectedStock,
+        })
+      }
+    } else {
+      previousProduct = await Product.findByIdAndUpdate(
+        id,
+        { $set: { stock: sanitized.stock } },
+        { returnDocument: 'before', runValidators: true }
+      )
+
+      if (!previousProduct) {
+        return res.status(404).json({
+          success: false,
+          message: 'Product not found',
+        })
+      }
     }
 
     // Determine if inventory transitioned from out-of-stock (<= 0) to in-stock (> 0)

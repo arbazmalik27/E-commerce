@@ -40,6 +40,11 @@ const orderItemSchema = new mongoose.Schema(
       trim: true,
       default: null,
     },
+    allocationStatus: {
+      type: String,
+      enum: ['unallocated', 'allocated', 'restored'],
+      default: 'unallocated',
+    },
   },
   { _id: true }
 )
@@ -193,6 +198,11 @@ const orderSchema = new mongoose.Schema(
       default: null,
       index: true,
       sparse: true,
+    },
+    inventoryStatus: {
+      type: String,
+      enum: ['unallocated', 'allocated', 'partially_allocated', 'failed_out_of_stock', 'restored'],
+      default: 'unallocated',
     },
   },
   { timestamps: true }
