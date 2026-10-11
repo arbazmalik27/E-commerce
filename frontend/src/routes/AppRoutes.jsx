@@ -12,6 +12,7 @@ import PublicOnlyRoute from '../components/PublicOnlyRoute'
 // import AdminInventoryPage from '../pages/admin/AdminInventoryPage'
 // import AdminCouponsPage from '../pages/admin/AdminCouponsPage'
 // import AdminFlashSalesPage from '../pages/admin/AdminFlashSalesPage'
+// import AdminLoginPage from '../pages/admin/AdminLoginPage'
 
 // Lazy-loaded route-level page components
 const HomePage = lazy(() => import('../pages/HomePage'))
@@ -27,6 +28,7 @@ const AccountDashboardPage = lazy(() => import('../pages/AccountDashboardPage'))
 const CartPage = lazy(() => import('../pages/CartPage'))
 const WishlistPage = lazy(() => import('../pages/WishlistPage'))
 const CheckoutPage = lazy(() => import('../pages/CheckoutPage'))
+const AdminLoginPage = lazy(() => import('../pages/admin/AdminLoginPage'))
 const AdminDashboardPage = lazy(() => import('../pages/admin/AdminDashboardPage'))
 const AdminAnalyticsPage = lazy(() => import('../pages/admin/AdminAnalyticsPage'))
 const AdminSalesInsightsPage = lazy(() => import('../pages/admin/AdminSalesInsightsPage'))
@@ -156,6 +158,9 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+
+        {/* Admin Login Route (Stand-alone, self-guarded against loops & customer denial) */}
+        <Route path="/admin/login" element={<AdminLoginPage />} />
 
         {/* Admin Routes */}
         <Route
