@@ -8,9 +8,11 @@ import {
   User,
   AlertCircle,
   Compass,
+  Layers,
 } from 'lucide-react'
 import SEO from '../components/SEO'
 import AvatarViewer from '../components/avatar/AvatarViewer'
+import LayeredAvatarPreview from '../components/avatar/LayeredAvatarPreview'
 import VirtualWardrobe from '../components/avatar/VirtualWardrobe'
 import avatarService from '../services/avatarService'
 import api from '../services/api'
@@ -21,6 +23,7 @@ import {
   determineProductWardrobeSlot,
 } from '../constants/wardrobeConstants'
 import { isProductTryOnActive, resolveGarmentRepresentation } from '../utils/garmentAssetResolver'
+import { resolve2DGarmentAsset } from '../utils/layeredGarmentResolver'
 
 export default function AvatarWardrobePage() {
   const viewerRef = useRef(null)
@@ -43,6 +46,7 @@ export default function AvatarWardrobePage() {
   // Client-side wardrobe session outfit state
   const [outfit, setOutfit] = useState(INITIAL_OUTFIT)
   const [preselectNotice, setPreselectNotice] = useState(null)
+  const [wardrobeViewMode, setWardrobeViewMode] = useState('auto')
 
   // 1. Fetch user's saved AvatarProfile
   useEffect(() => {
@@ -71,6 +75,8 @@ export default function AvatarWardrobePage() {
         if (isMounted) {
           if (err.response?.status === 404) {
             setAvatarNotFound(true)
+          } else if (err.response?.status === 401) {
+            setAvatarNotFound(false)
           } else {
             setAvatarError(err.response?.data?.message || 'Failed to load avatar profile')
           }
@@ -257,6 +263,39 @@ export default function AvatarWardrobePage() {
     return garments
   }, [outfit.top, outfit.bottom])
 
+  // Modular 2D Layered Garments resolution for multi-slot outfit preview
+  const active2DGarments = useMemo(() => {
+    const garments = { top: null, bottom: null, shoes: null, accessories: null }
+    if (outfit.top) {
+      const res = resolve2DGarmentAsset(outfit.top, 'top')
+      if (res.isCompatible && res.hasRealAsset) garments.top = res
+    }
+    if (outfit.bottom) {
+      const res = resolve2DGarmentAsset(outfit.bottom, 'bottom')
+      if (res.isCompatible && res.hasRealAsset) garments.bottom = res
+    }
+    if (outfit.shoes) {
+      const res = resolve2DGarmentAsset(outfit.shoes, 'shoes')
+      if (res.isCompatible && res.hasRealAsset) garments.shoes = res
+    }
+    if (Array.isArray(outfit.accessories) && outfit.accessories.length > 0) {
+      const res = resolve2DGarmentAsset(outfit.accessories[0], 'accessories')
+      if (res.isCompatible && res.hasRealAsset) garments.accessories = res
+    }
+    return garments
+  }, [outfit.top, outfit.bottom, outfit.shoes, outfit.accessories])
+
+  const hasActive3D = Boolean(active3DGarments.top || active3DGarments.bottom)
+  const hasActive2D = Boolean(active2DGarments.top || active2DGarments.bottom || active2DGarments.shoes || active2DGarments.accessories)
+
+  const effectiveWardrobeMode = useMemo(() => {
+    if (wardrobeViewMode === '2d') return '2d'
+    if (wardrobeViewMode === '3d') return '3d'
+    // Automatic 2D fallback when outfit items have 2D layers but no 3D meshes
+    if (!hasActive3D && hasActive2D) return '2d'
+    return '3d'
+  }, [wardrobeViewMode, hasActive3D, hasActive2D])
+
   // Morph weights and appearance derived from saved avatar profile
   const avatarMorphWeights = avatarProfile?.morphWeights || {}
   const avatarSkinColor = avatarProfile?.appearance?.skinTone || null
@@ -386,38 +425,81 @@ export default function AvatarWardrobePage() {
                 LEFT / MAIN (lg:col-span-5): 3D AVATAR VIEWER & 360 ROTATION
                ------------------------------------------------------------------- */}
             <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
-              <div className="relative aspect-[3/4] sm:aspect-square lg:aspect-[4/5] w-full rounded-2xl overflow-hidden border border-[var(--tv-border)] bg-[var(--tv-surface)] shadow-xs">
-                <AvatarViewer
-                  ref={viewerRef}
-                  demographic={avatarProfile?.demographic || 'men'}
-                  morphWeights={avatarMorphWeights}
-                  facialMorphs={avatarProfile?.facialSuggestions || {}}
-                  skinColor={avatarSkinColor}
-                  eyeColor={avatarProfile?.appearance?.eyeColor || null}
-                  heightCm={avatarProfile?.heightCm || 178}
-                  garments={active3DGarments}
-                  onGarmentStartLoad={handleGarmentStartLoad}
-                  onGarmentLoaded={handleGarmentLoaded}
-                  onGarmentError={handleGarmentError}
-                  className="w-full h-full"
-                />
-
-                {/* 360 Rotation Guidance Hint */}
-                <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--tv-surface)]/80 backdrop-blur-xs border border-[var(--tv-border)] text-[10px] font-mono text-[var(--tv-text-muted)] pointer-events-none">
-                  <Compass className="w-3 h-3 text-[var(--tv-olive)]" />
-                  <span>Drag to rotate 360°</span>
+              {/* View Mode Switcher Header */}
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[11px] font-mono text-[var(--tv-text-muted)] uppercase tracking-wider">
+                  {effectiveWardrobeMode === '2d' ? '2D Layered Preview' : '3D Orbit View'}
+                </span>
+                <div className="flex items-center rounded-xl p-1 bg-[var(--tv-surface)] border border-[var(--tv-border)] shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => setWardrobeViewMode('3d')}
+                    className={`px-3 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                      effectiveWardrobeMode === '3d'
+                        ? 'bg-[var(--tv-olive)] text-white shadow-2xs'
+                        : 'text-[var(--tv-text-secondary)] hover:text-[var(--tv-text-primary)]'
+                    }`}
+                  >
+                    3D Orbit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWardrobeViewMode('2d')}
+                    className={`px-3 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                      effectiveWardrobeMode === '2d'
+                        ? 'bg-[var(--tv-olive)] text-white shadow-2xs'
+                        : 'text-[var(--tv-text-secondary)] hover:text-[var(--tv-text-primary)]'
+                    }`}
+                  >
+                    2D Layered
+                  </button>
                 </div>
+              </div>
 
-                {/* Reset Camera View Button */}
-                <button
-                  type="button"
-                  onClick={() => viewerRef.current?.resetView?.()}
-                  title="Reset Camera View"
-                  aria-label="Reset Camera View"
-                  className="absolute bottom-3 right-3 z-10 p-2 rounded-xl bg-[var(--tv-surface)]/80 backdrop-blur-xs border border-[var(--tv-border)] text-[var(--tv-text-secondary)] hover:text-[var(--tv-text-primary)] hover:border-[var(--tv-olive)] transition-colors cursor-pointer"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </button>
+              <div className="relative aspect-[3/4] sm:aspect-square lg:aspect-[4/5] w-full rounded-2xl overflow-hidden border border-[var(--tv-border)] bg-[var(--tv-surface)] shadow-xs">
+                {effectiveWardrobeMode === '2d' ? (
+                  <LayeredAvatarPreview
+                    demographic={avatarProfile?.demographic || 'men'}
+                    skinTone={avatarSkinColor || '#DDB088'}
+                    heightCm={avatarProfile?.heightCm || 178}
+                    garments={active2DGarments}
+                    className="w-full h-full"
+                  />
+                ) : (
+                  <>
+                    <AvatarViewer
+                      ref={viewerRef}
+                      demographic={avatarProfile?.demographic || 'men'}
+                      morphWeights={avatarMorphWeights}
+                      facialMorphs={avatarProfile?.facialSuggestions || {}}
+                      skinColor={avatarSkinColor}
+                      eyeColor={avatarProfile?.appearance?.eyeColor || null}
+                      heightCm={avatarProfile?.heightCm || 178}
+                      garments={active3DGarments}
+                      onGarmentStartLoad={handleGarmentStartLoad}
+                      onGarmentLoaded={handleGarmentLoaded}
+                      onGarmentError={handleGarmentError}
+                      className="w-full h-full"
+                    />
+
+                    {/* 360 Rotation Guidance Hint */}
+                    <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--tv-surface)]/80 backdrop-blur-xs border border-[var(--tv-border)] text-[10px] font-mono text-[var(--tv-text-muted)] pointer-events-none">
+                      <Compass className="w-3 h-3 text-[var(--tv-olive)]" />
+                      <span>Drag to rotate 360°</span>
+                    </div>
+
+                    {/* Reset Camera View Button */}
+                    <button
+                      type="button"
+                      onClick={() => viewerRef.current?.resetView?.()}
+                      title="Reset Camera View"
+                      aria-label="Reset Camera View"
+                      className="absolute bottom-3 right-3 z-10 p-2 rounded-xl bg-[var(--tv-surface)]/80 backdrop-blur-xs border border-[var(--tv-border)] text-[var(--tv-text-secondary)] hover:text-[var(--tv-text-primary)] hover:border-[var(--tv-olive)] transition-colors cursor-pointer"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
               </div>
 
               {/* Garment Error Banner if runtime error occurs */}

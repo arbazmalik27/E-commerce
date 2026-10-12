@@ -10,16 +10,19 @@ import {
   User,
   Sliders,
   ExternalLink,
+  Layers,
 } from 'lucide-react'
 import api from '../services/api'
 import avatarService from '../services/avatarService'
 import { selectAuthInitialized, selectIsAuthenticated } from '../features/auth/authSlice'
 import { addToCart } from '../features/cart/cartSlice'
 import AvatarViewer from '../components/avatar/AvatarViewer'
+import LayeredAvatarPreview from '../components/avatar/LayeredAvatarPreview'
 import SEO from '../components/SEO'
 import { recommendSize } from '../constants/sizeCharts'
 import { getProductImage } from '../utils/productImageMap'
 import { resolveGarmentRepresentation } from '../utils/garmentAssetResolver'
+import { determineGarmentPreviewMode } from '../utils/layeredGarmentResolver'
 
 export default function TryOnPage() {
   const { productId } = useParams()
@@ -46,6 +49,7 @@ export default function TryOnPage() {
   const [cartSuccess, setCartSuccess] = useState(false)
   const [cartError, setCartError] = useState(null)
   const [garmentLoadError, setGarmentLoadError] = useState(false)
+  const [preferredMode, setPreferredMode] = useState('auto')
 
   // 1. Fetch Product
   useEffect(() => {
@@ -210,6 +214,17 @@ export default function TryOnPage() {
     }
   }, [garmentRepresentation, product])
 
+  // Phase 11/12 Preview Capabilities & Mode Resolution (3D vs 2D Fallback)
+  const previewCapabilities = useMemo(() => {
+    return determineGarmentPreviewMode(product)
+  }, [product])
+
+  const effectivePreviewMode = useMemo(() => {
+    if (preferredMode === '2d' && previewCapabilities.canUse2D) return '2d'
+    if (preferredMode === '3d' && previewCapabilities.canUse3D) return '3d'
+    return previewCapabilities.mode
+  }, [preferredMode, previewCapabilities])
+
   // Page Loading State
   if (!authInitialized || (productLoading && !product) || (isAuthenticated && avatarLoading && !avatarProfile && !avatarNotFound)) {
     return (
@@ -284,7 +299,7 @@ export default function TryOnPage() {
   }
 
   // 3. Product Does Not Support Active Try-On
-  if (!product.tryOn?.enabled || !garmentRepresentation.isSupported) {
+  if ((!product.tryOn?.enabled || !garmentRepresentation.isSupported) && !previewCapabilities.canUse2D) {
     return (
       <div className="min-h-screen bg-[#F5F0E8] text-[#1F211C] pt-28 sm:pt-36 pb-20 px-4">
         <SEO title={`${product.name} — Try-On Unavailable | TrendVolt`} />
@@ -299,7 +314,7 @@ export default function TryOnPage() {
             3D Try-On Not Available For This Piece
           </h1>
           <p className="text-sm text-[#5F6057] leading-relaxed mb-6">
-            <strong className="text-[#1F211C]">{product.name}</strong> {product.tryOn?.enabled ? 'has Try-On enabled, but a production 3D garment asset is pending.' : 'is currently a standard catalog item without an enabled 3D garment visualization layer.'} You can purchase this product using standard size selection.
+            <strong className="text-[#1F211C]">{product.name}</strong> {product.tryOn?.enabled ? 'has Try-On enabled, but a production 3D garment asset is pending.' : 'is currently a standard catalog item without an enabled 3D garment visualization layer or compatible 2D overlay.'} Standard catalog photos cannot automatically fit an avatar body. You can purchase this product using standard size selection.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
@@ -379,9 +394,35 @@ export default function TryOnPage() {
           </Link>
 
           <div className="flex items-center gap-2">
+            {previewCapabilities.canUse3D && previewCapabilities.canUse2D && (
+              <div className="flex items-center rounded-xl p-1 bg-[#FFFDF8] border border-[#DED7CA] shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setPreferredMode('3d')}
+                  className={`px-3 py-1 rounded-lg text-[11px] font-mono font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                    effectivePreviewMode === '3d'
+                      ? 'bg-[#34452F] text-white shadow-2xs'
+                      : 'text-[#5F6057] hover:text-[#1F211C]'
+                  }`}
+                >
+                  3D Orbit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreferredMode('2d')}
+                  className={`px-3 py-1 rounded-lg text-[11px] font-mono font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                    effectivePreviewMode === '2d'
+                      ? 'bg-[#34452F] text-white shadow-2xs'
+                      : 'text-[#5F6057] hover:text-[#1F211C]'
+                  }`}
+                >
+                  2D Layered
+                </button>
+              </div>
+            )}
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#34452F]/10 border border-[#34452F]/20 text-[11px] font-mono font-bold text-[#34452F]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#34452F] animate-pulse" />
-              Try-On Studio Active
+              {effectivePreviewMode === '2d' ? '2D Layered Try-On' : '3D Try-On Studio Active'}
             </span>
           </div>
         </div>
@@ -389,22 +430,32 @@ export default function TryOnPage() {
         {/* Studio Grid: Desktop 2-column layout; Mobile stacked layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* =========================================================================
-              LEFT COLUMN: 3D AVATAR VIEWER + GARMENT LAYER (Col 7)
+              LEFT COLUMN: AVATAR VIEWER + GARMENT LAYER (Col 7)
              ========================================================================= */}
           <div className="lg:col-span-7 flex flex-col gap-4">
             <div className="relative w-full aspect-3/4 sm:aspect-4/5 lg:aspect-auto lg:h-[620px] rounded-3xl overflow-hidden border border-[#DED7CA] bg-gradient-to-b from-[#FAF7F0] to-[#EAE3D6] shadow-sm">
-              <AvatarViewer
-                demographic={avatarProfile?.demographic || 'men'}
-                morphWeights={avatarProfile?.morphWeights || {}}
-                facialMorphs={avatarProfile?.facialSuggestions || {}}
-                skinColor={avatarProfile?.appearance?.skinTone || null}
-                eyeColor={avatarProfile?.appearance?.eyeColor || null}
-                heightCm={avatarProfile?.heightCm || 178}
-                garment={garmentLayerProp}
-                onGarmentLoaded={() => setGarmentLoadError(false)}
-                onGarmentError={() => setGarmentLoadError(true)}
-                className="w-full h-full"
-              />
+              {effectivePreviewMode === '2d' ? (
+                <LayeredAvatarPreview
+                  demographic={avatarProfile?.demographic || 'men'}
+                  skinTone={avatarProfile?.appearance?.skinTone || '#DDB088'}
+                  heightCm={avatarProfile?.heightCm || 178}
+                  garment={previewCapabilities.asset2D}
+                  className="w-full h-full"
+                />
+              ) : (
+                <AvatarViewer
+                  demographic={avatarProfile?.demographic || 'men'}
+                  morphWeights={avatarProfile?.morphWeights || {}}
+                  facialMorphs={avatarProfile?.facialSuggestions || {}}
+                  skinColor={avatarProfile?.appearance?.skinTone || null}
+                  eyeColor={avatarProfile?.appearance?.eyeColor || null}
+                  heightCm={avatarProfile?.heightCm || 178}
+                  garment={garmentLayerProp}
+                  onGarmentLoaded={() => setGarmentLoadError(false)}
+                  onGarmentError={() => setGarmentLoadError(true)}
+                  className="w-full h-full"
+                />
+              )}
             </div>
 
             {/* Customer-Safe Garment Load Failure Notice */}
